@@ -568,7 +568,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             dlc_generator.cases[i_case].IEC_WindType = actualwindtype
 
     if not dlc_generator.cases[i_case].turbulent_wind or dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
-        if dlc_generator.cases[i_case].IEC_WindType in ('NWP','Steady'):
+        if dlc_generator.cases[i_case].IEC_WindType.split('-')[-1] in ('NWP','Steady'):
             wind_file_type = 1
             wind_file_path_InflowWind = 'unused'
         else:
@@ -597,24 +597,4 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             else:
                 wind_file_type = 2
     wind_file_plexp = dlc_generator.cases[i_case].PLExp_windtype1
-
     return wind_file_type, wind_file_plexp, wind_file_path_InflowWind
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

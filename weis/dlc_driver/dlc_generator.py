@@ -427,6 +427,7 @@ class DLCGenerator(object):
         for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
             idlc.turbulent_wind = False
+            idlc.PLExp_windtype1 = 0.12 # Default value of shear exponent 0.12 for wind_type = 1
             
             if dlc_options['IEC_WindType'].split('-')[-1] == 'ECD':
                 idlc.turbulent_wind = False
@@ -1639,11 +1640,86 @@ class DLCGenerator(object):
 
         # Get mooring faiure options
         if 'mooring_failurepoint' not in dlc_options:
-            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.1")
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.2")
         if 'mooring_failureline' not in dlc_options:
-            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.1")
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.2")
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['mooring_failureid','mooring_failuretension','mooring_failurepoint','mooring_failureline','mooring_failuretime']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_10p1(self, dlc_options):
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '10.1'
+        dlc_options['sea_state'] = '50-year'
+        dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['PSF'] = 1.1
+        dlc_options['mooring_failureid'] = [[1]]
+        dlc_options['mooring_failuretension'] = [[0]]
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Get mooring faiure options
+        if 'mooring_failurepoint' not in dlc_options:
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.1")
+        if 'mooring_failureline' not in dlc_options:
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.1")
         if 'mooring_failuretime' not in dlc_options:
-            raise Exception("'mooring_failuretime' needs to be provided for DLC 9.1")
+            raise Exception("'mooring_failuretime' needs to be provided for DLC 10.1")
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['mooring_failureid','mooring_failuretension','mooring_failurepoint','mooring_failureline','mooring_failuretime']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_10p2(self, dlc_options):
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '10.2'
+        dlc_options['sea_state'] = '50-year'
+        dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['PSF'] = 1.1
+        dlc_options['mooring_failureid'] = [[1]]
+        dlc_options['mooring_failuretension'] = [[0]]
+        dlc_options['mooring_failuretime'] = [[0]]
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Get mooring faiure options
+        if 'mooring_failurepoint' not in dlc_options:
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.2")
+        if 'mooring_failureline' not in dlc_options:
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.2")
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
