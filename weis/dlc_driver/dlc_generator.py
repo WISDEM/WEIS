@@ -20,6 +20,7 @@ openfast_input_map = {
     
     'WindFile_type': ("InflowWind","WindType"),
     'wind_speed': ("InflowWind","HWindSpeed"),
+    'PLExp_windtype1': ("InflowWind","PLExp"),
     'WindFile_name': ("InflowWind","FileName_BTS"),
     'WindFile_name': ("InflowWind","FileName_Uni"),
     'rotorD': ("InflowWind","RefLength"),
@@ -93,10 +94,12 @@ openfast_input_map = {
     'wake_mod': ("AeroDyn","Wake_Mod"),
     'tau1_const': ("AeroDyn","tau1_const"),
 
+    'mooring_failureid': ("MoorDyn","Failure_ID"),
+    'mooring_failurepoint': ("MoorDyn","Failure_Point"),
+    'mooring_failureline': ("MoorDyn","Failure_Line(s)"),
+    'mooring_failuretime': ("MoorDyn","FailTime"),
+    'mooring_failuretension': ("MoorDyn","FailTen"),
 
-    # 'dlc_label': ("DLC","Label"),
-    # 'wind_seed': ("DLC","WindSeed"),
-    # 'wind_speed': ("DLC","MeanWS"),
 
     # TODO: where should turbsim live?
     # These aren't actually used to generate turbsim, the generic inputs are used
@@ -130,7 +133,7 @@ class DLCInstance(object):
         self.direction_pn = '' # Positive (p) or negative (n), used for ECD
         self.shear_hv = '' # Horizontal (h) or vertical (v), used for EWS
         self.sigma1 = '' # Standard deviation of the wind
-        self.RandSeed1 = 0
+        self.RandSeed1 = 0 
         self.wave_seed1 = 0
         self.label = '' # For 1.1/Custom
         self.wind_file = ''
@@ -423,28 +426,43 @@ class DLCGenerator(object):
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
         for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
-            if dlc_options['IEC_WindType'] == 'ECD':
+            idlc.turbulent_wind = False
+            
+            if dlc_options['IEC_WindType'].split('-')[-1] == 'ECD':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
-            elif dlc_options['IEC_WindType'] == 'EOG':
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'EOG':
                 idlc.turbulent_wind = False
                 idlc.sigma1,idlc.V_e1 = self.IECturb.EOG(case['wind_speed'])
-                idlc.gust_wait_time = case['gust_wait_time']
-            elif dlc_options['IEC_WindType'] == 'EDC':
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'EDC':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
                 idlc.sigma1 = self.IECturb.NTM(case['wind_speed'])
-            elif dlc_options['IEC_WindType'] == 'EWS':
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'EWS':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
                 idlc.shear_hv = case['shear']
                 idlc.sigma1 = self.IECturb.NTM(case['wind_speed'])
-            elif dlc_options['IEC_WindType'] == 'NWP':
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'NWP':
                 idlc.turbulent_wind = False
-                idlc.PLExp = 0.2  # According to IEC 61400-1, PLExp should be 0.2 for NWP
+                idlc.PLExp_windtype1 = 0.2  # According to IEC 61400-1, PLExp should be 0.2 for NWP
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'Ramp':
+                idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
+                idlc.ramp_duration = dlc_options['ramp_duration']
+                idlc.gust_wait_time = dlc_options['gust_wait_time']
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'Step':
+                idlc.step_speeddelta = dlc_options['step_speeddelta']
+                idlc.gust_wait_time = dlc_options['gust_wait_time']
+            elif dlc_options['IEC_WindType'] == 'Steady':
+                pass
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
+            
+            if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
+                idlc.turbulent_wind = True
+                idlc.RandSeed1 = case['wind_seed']
+           
             idlc.URef = case['wind_speed']
             idlc.label = dlc_options['label']
             idlc.total_time = case['total_time']
@@ -1560,6 +1578,208 @@ class DLCGenerator(object):
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_9p1(self, dlc_options):
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '9.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['PSF'] = 1.1
+        dlc_options['mooring_failureid'] = [[1]]
+        dlc_options['mooring_failuretension'] = [[0]]
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Get mooring faiure options
+        if 'mooring_failurepoint' not in dlc_options:
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.1")
+        if 'mooring_failureline' not in dlc_options:
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.1")
+        if 'mooring_failuretime' not in dlc_options:
+            raise Exception("'mooring_failuretime' needs to be provided for DLC 9.1")
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['mooring_failureid','mooring_failuretension','mooring_failurepoint','mooring_failureline','mooring_failuretime']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_9p2(self, dlc_options):
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '9.2'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['PSF'] = 1.1
+        dlc_options['mooring_failureid'] = [[1]]
+        dlc_options['mooring_failuretension'] = [[0]]
+        dlc_options['mooring_failuretime'] = [[0]]
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Get mooring faiure options
+        if 'mooring_failurepoint' not in dlc_options:
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.1")
+        if 'mooring_failureline' not in dlc_options:
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.1")
+        if 'mooring_failuretime' not in dlc_options:
+            raise Exception("'mooring_failuretime' needs to be provided for DLC 9.1")
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['mooring_failureid','mooring_failuretension','mooring_failurepoint','mooring_failureline','mooring_failuretime']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_Steady(self, dlc_options):
+        # Power production steady wind
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = 'Steady'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'Steady'
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+        
+        dlc_options['PLExp_windtype1'] = dlc_options.get('PLExp_windtype1',0.12)     # Use user input, otherwise disabled
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_Ramp(self, dlc_options):
+        # Power production ramp wind
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = 'Ramp'
+        dlc_options['sea_state'] = 'normal'
+        if dlc_options['turbulent_wind']['flag']:
+            dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
+        else:
+            dlc_options['IEC_WindType'] = 'Ramp'
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Check options
+        if 'ramp_speeddelta' not in dlc_options:
+            raise Exception('ramp_speeddelta must be set for the Ramp DLC')
+        if 'ramp_duration' not in dlc_options:
+            raise Exception('ramp_duration must be set for the Ramp DLC')
+        if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
+            raise Exception('ramp_duration must be smaller than analysis_time')
+        if 'gust_wait_time' in dlc_options:
+            if dlc_options['gust_wait_time'] + dlc_options['ramp_duration'] > dlc_options['analysis_time']:
+                raise Exception('ramp_duration+gust_wait_time must be smaller than analysis_time')
+        else:
+            dlc_options['gust_wait_time'] = 0
+
+        generic_case_inputs = []
+
+        # Add initial conditions
+        # Note that for initial conditions to not be overwritten, turbine_status should be parked (still or idling)
+        group0 = ['total_time','transient_time','wake_mod','wave_model']
+        if 'pitch_initial' in dlc_options:
+            group0.extend(['pitch_initial'])
+        if 'rot_speed_initial' in dlc_options:
+            group0.extend(['rot_speed_initial'])
+        
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_Step(self, dlc_options):
+        # Power production Step wind
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = 'Step'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'Step'
+
+        if dlc_options['turbulent_wind']['flag']:
+            dlc_options['IEC_WindType'] = 'Turbulent-Step'
+        else:
+            dlc_options['IEC_WindType'] = 'Step'
+
+        
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Check options
+        if 'step_speeddelta' not in dlc_options:
+            raise Exception('step_speeddelta must be set for the Step DLC')
+        if 'step_time' in dlc_options:
+            if dlc_options['step_time'] > dlc_options['analysis_time']:
+                raise Exception('step_time must be less than analysis_time')
+            dlc_options['gust_wait_time'] = dlc_options['step_time']
+        else:
+            raise Exception('step_time must be set for the Step DLC')
+        #if dlc_options['ramp_duration'] >= dlc_options['analysis_time']:
+        #    raise Exception('Analysis_time should be greater than ramp_duration')
+        
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_freedecay(self,dlc_options):

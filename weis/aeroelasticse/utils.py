@@ -562,30 +562,59 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
 
         # Pass data to CaseGen_General to call OpenFAST
         wind_file_type = 3
+        
         # If IEC_WindType is Turbulent-<Gust>, switch IEC_WindType variable back to original wind type
         if Turbulent_Gust:
             dlc_generator.cases[i_case].IEC_WindType = actualwindtype
 
     if not dlc_generator.cases[i_case].turbulent_wind or dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
-        if dlc_generator.cases[i_case].IEC_WindType == 'NWP':
+        if dlc_generator.cases[i_case].IEC_WindType in ('NWP','Steady'):
             wind_file_type = 1
             wind_file_path_InflowWind = 'unused'
         else:
-            if dlc_generator.cases[i_case].label != '12.1':
-                gusts = IEC_CoherentGusts()
-                gusts.D = rotorD
-                gusts.HH = hub_height
-                gusts.dt = dlc_generator.cases[i_case].TimeStep
-                gusts.TStart = dlc_generator.cases[i_case].transient_time + dlc_generator.cases[i_case].gust_wait_time 
-                gusts.TF = dlc_generator.cases[i_case].total_time
-                wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
-                if not os.path.isabs(wind_file_name):
-                    wind_file_path_InflowWind = os.path.join("wind", os.path.basename(wind_file_name))
-                else:
-                    wind_file_path_InflowWind = wind_file_name
-                wind_file_type = 2
+            gusts = IEC_CoherentGusts()
+            gusts.D = rotorD
+            gusts.HH = hub_height
+            gusts.dt = dlc_generator.cases[i_case].TimeStep
+            gusts.TStart = dlc_generator.cases[i_case].transient_time + dlc_generator.cases[i_case].gust_wait_time 
+            gusts.TF = dlc_generator.cases[i_case].total_time
+            gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
+            wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
+            if not os.path.isabs(wind_file_name):
+                wind_file_path_InflowWind = os.path.join("wind", os.path.basename(wind_file_name))
             else:
-                wind_file_type = 1
-                wind_file_path_InflowWind = 'unused'
-    wind_file_plexp = dlc_generator.cases[i_case].PLExp
+                wind_file_path_InflowWind = wind_file_name
+            
+            if dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
+                turbulent_NTM_file = os.path.join(wind_directory, FAST_namingOut + '_NTM' +
+                                    ('_U%1.6f'%dlc_generator.cases[i_case].URef +
+                                    '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.bts')
+                wind_file_path_InflowWind = os.path.join(wind_directory, FAST_namingOut + '_' + 
+                                dlc_generator.cases[i_case].IEC_WindType + ('_U%1.6f'%dlc_generator.cases[i_case].URef +
+                                '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.bts')
+                gusts.write_bts(bts_file = turbulent_NTM_file, wnd_file = wind_file_name, new_fname = wind_file_path_InflowWind)
+                wind_file_type = 3
+            else:
+                wind_file_type = 2
+    wind_file_plexp = dlc_generator.cases[i_case].PLExp_windtype1
+
     return wind_file_type, wind_file_plexp, wind_file_path_InflowWind
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
