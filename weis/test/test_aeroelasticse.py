@@ -25,7 +25,7 @@ class TestGeneral(unittest.TestCase):
         # Paths calling the standard modules of WEIS
         fastBatch = runFAST_pywrapper_batch()
         fastBatch.FAST_exe          = of_dir   # Path to executable
-        fastBatch.FAST_directory    = os.path.join(weis_dir,'examples','01_aeroelasticse', 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        fastBatch.FAST_directory    = os.path.join(weis_dir,'examples','00_setup', 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
         fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
         fastBatch.debug_level       = 2
@@ -145,9 +145,6 @@ class TestGeneral(unittest.TestCase):
         # Run OpenFAST, either serially or sequentially
         cruncher = fastBatch.run_serial()
 
-        # Update pkl file
-        # with open('./general_regression_values.pkl', 'wb') as file:
-        #     pickle.dump(out, file)
         compare_regression_values([m.to_dict() for m in cruncher.outputs],
                                   'general_regression_values.pkl',
                                   directory=this_file_dir, tol=5e-1, train=False)

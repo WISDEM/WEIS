@@ -23,6 +23,6 @@ In general, it's a good idea to start with working examples and change inputs wi
    :maxdepth: 1
    :caption: Contents:
 
+   geometry_schema
    modeling_schema
    analysis_schema
-   geometry_schema

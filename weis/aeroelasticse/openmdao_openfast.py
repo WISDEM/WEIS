@@ -24,7 +24,7 @@ from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
 from weis.aeroelasticse.LinearFAST import LinearFAST
-from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
+from weis.control.LinearModel import LinearTurbineModel #, LinearControlModel
 from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.utils import OLAFParams, generate_wind_files
@@ -217,7 +217,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
             self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
             self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
-            self.add_input('rna_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the rna [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
             self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
             self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
             self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
@@ -333,7 +332,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn inputs
             mooropt = modopt["mooring"]
-            if self.options["modeling_options"]["flags"]["mooring"]:
+            if modopt["flags"]["mooring"]:
                 n_nodes = mooropt["n_nodes"]
                 n_lines = mooropt["n_lines"]
                 self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
@@ -974,18 +973,18 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
-        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
-        
-
-        # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
-        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
-        
+        fst_vt['ServoDyn']['GenEff'] = float(inputs['generator_efficiency'][0]/inputs['gearbox_efficiency'][0]) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'][0])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'][0])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'][0])
+        # Tune simple variable speed controller in ServoDyn, mostly to support free-free rotor configurations during linearization
+        fst_vt['ServoDyn']['VS_RtGnSp'] = fst_vt['DISCON_in']['VS_RefSpd'] * 30. / np.pi # rpm
+        fst_vt['ServoDyn']['VS_RtTq'] = fst_vt['DISCON_in']['VS_RtTq'] # Nm
+        fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['DISCON_in']['VS_Rgn2K'] / (30./np.pi)**2. # N-m/rpm^2
+        # Prevent error in OpenFAST
+        if fst_vt['ServoDyn']['VS_Rgn2K']*fst_vt['ServoDyn']['VS_RtGnSp']**2. > fst_vt['ServoDyn']['VS_RtTq']:
+            fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['ServoDyn']['VS_RtTq']/fst_vt['ServoDyn']['VS_RtGnSp']**2.
+            logger.debug('VS_Rgn2K adjusted to VS_RtTq/VS_RtGnSp**2. New value: %f'%fst_vt['ServoDyn']['VS_Rgn2K'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
@@ -998,17 +997,17 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
-        tower_top_height = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        tower_top_height = float(inputs['hub_height'][0]) - float(inputs['distance_tt_hub'][0]) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
         # The Twr2Shft is just the difference between hub height, tower top height, and sin(tilt)*overhang
-        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['hub_height']) - tower_top_height - abs(fst_vt['ElastoDyn']['OverHang'])*np.sin(np.deg2rad(inputs['tilt'][0]))
-        fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
+        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['hub_height'][0]) - tower_top_height - abs(fst_vt['ElastoDyn']['OverHang'])*np.sin(np.deg2rad(inputs['tilt'][0]))
+        fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'][0])
 
         # Mass and inertia inputs
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
 
-        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_total_center_of_mass"][2]))
+        tower_base_height = max(float(inputs['tower_base_height'][0]), float(inputs["platform_total_center_of_mass"][2]))
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = tower_top_height
 
@@ -1017,7 +1016,7 @@ class FASTLoadCases(ExplicitComponent):
         #   if this is floating, the z ref. point is 0.  Is this the reference that platform_total_center_of_mass is relative to?
         #   if fixed bottom, it's the tower base height.
         if modopt['flags']['floating']:
-            fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
+            fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"][0])
             fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
             fst_vt['ElastoDyn']['PtfmPIner'] = float(inputs["platform_I_total"][1])
             fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2])
@@ -1044,7 +1043,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmYIner'] = 1e8 if modopt['flags']['offshore'] else 0.0
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
-            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
+            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'][0])
             fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
 
@@ -1052,17 +1051,17 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # Drivetrain inputs
-        fst_vt['ElastoDyn']['DTTorSpr'] = float(inputs['drivetrain_spring_constant'])
-        fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'])
+        fst_vt['ElastoDyn']['DTTorSpr'] = float(inputs['drivetrain_spring_constant'][0])
+        fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'][0])
 
         # Update Inflowwind
-        fst_vt['InflowWind']['RefHt'] = float(inputs['hub_height'])
-        fst_vt['InflowWind']['RefHt_Uni'] = float(inputs['hub_height'])
-        fst_vt['InflowWind']['PLexp'] = float(inputs['shearExp'])
+        fst_vt['InflowWind']['RefHt'] = float(inputs['hub_height'][0])
+        fst_vt['InflowWind']['RefHt_Uni'] = float(inputs['hub_height'][0])
+        fst_vt['InflowWind']['PLexp'] = float(inputs['shearExp'][0])
         if fst_vt['InflowWind']['NWindVel'] == 1:
             fst_vt['InflowWind']['WindVxiList'] = ['0.']
             fst_vt['InflowWind']['WindVyiList'] = ['0.']
-            fst_vt['InflowWind']['WindVziList'] = [str(float(inputs['hub_height']))]
+            fst_vt['InflowWind']['WindVziList'] = [str(float(inputs['hub_height'][0]))]
         else:
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
@@ -1099,12 +1098,12 @@ class FASTLoadCases(ExplicitComponent):
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
         # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
         damp_ratio = 0.01
-        f_torsion = float(inputs['tor_freq'])
+        f_torsion = float(inputs['tor_freq'][0])
         fst_vt['ServoDyn']['YawSpr'] = k_tow_tor
         if f_torsion > 0.0:
             fst_vt['ServoDyn']['YawDamp'] = damp_ratio * k_tow_tor / np.pi / f_torsion
         else:
-            fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['rna_I_TT'][2])
+            fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['nacelle_I_TT'][2])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDyn']['BldFile1'] = ''
@@ -1139,7 +1138,7 @@ class FASTLoadCases(ExplicitComponent):
         # Compute dimensional and nondimensional coordinate along blade span
         r = (inputs['r']-inputs['Rhub'])
         r[0]  = 0.
-        r[-1] = inputs['Rtip']-inputs['Rhub']
+        r[-1] = inputs['Rtip'][0]-inputs['Rhub'][0]
         s = r/r[-1]
 
         # Update BeamDyn Blade
@@ -1151,9 +1150,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['BeamDynBlade']['beam_inertia'] = I_BD
 
         # Update AeroDyn
-        fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'])
+        fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'][0])
         fst_vt['AeroDyn']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
-        fst_vt['AeroDyn']['SpdSound']  = float(inputs['speed_sound_air'])
+        fst_vt['AeroDyn']['SpdSound']  = float(inputs['speed_sound_air'][0])
 
         # Update AeroDyn Blade Input File
         fst_vt['AeroDynBlade']['NumBlNds'] = self.n_span
@@ -1413,7 +1412,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NXPropSets'] = 0
             fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
             fst_vt['SubDyn']['CMJointID'] = [itrans+1]
-            fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
+            fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'][0])]
             fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
             fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
             fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
@@ -1477,12 +1476,12 @@ class FASTLoadCases(ExplicitComponent):
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
                 
         if modopt['flags']['offshore']:
-            fst_vt['SeaState']['WtrDens'] = float(inputs['rho_water'])
-            fst_vt['SeaState']['WtrDpth'] = float(inputs['water_depth'])
+            fst_vt['SeaState']['WtrDens'] = float(inputs['rho_water'][0])
+            fst_vt['SeaState']['WtrDpth'] = float(inputs['water_depth'][0])
             fst_vt['SeaState']['MSL2SWL'] = 0.0
-            fst_vt['SeaState']['WaveHs'] = float(inputs['Hsig_wave'])
-            fst_vt['SeaState']['WaveTp'] = float(inputs['Tsig_wave'])
-            fst_vt['SeaState']['WaveDir'] = float(inputs['beta_wave'])
+            fst_vt['SeaState']['WaveHs'] = float(inputs['Hsig_wave'][0])
+            fst_vt['SeaState']['WaveTp'] = float(inputs['Tsig_wave'][0])
+            fst_vt['SeaState']['WaveDir'] = float(inputs['beta_wave'][0])
             fst_vt['SeaState']['WaveDirRange'] = fst_vt['SeaState']['WaveDirRange'] / np.rad2deg(1)
             fst_vt['SeaState']['WaveElevxi'] = [str(m) for m in fst_vt['SeaState']['WaveElevxi']]
             fst_vt['SeaState']['WaveElevyi'] = [str(m) for m in fst_vt['SeaState']['WaveElevyi']]
@@ -1600,7 +1599,7 @@ class FASTLoadCases(ExplicitComponent):
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
             
-            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
+            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'][0])] 
 
 
         # Moordyn inputs
@@ -1615,13 +1614,14 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Name'] = fst_vt['MAP']['LineType'] = line_names
             fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
             fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
-            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['EA'] = [[k] for k in inputs["line_stiffness"]]
             fst_vt['MoorDyn']['EI'] = np.zeros(n_lines)     # MoorPy does not have EI, yet
-            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['BA_zeta'] = n_lines * [[-1]]
             fst_vt['MoorDyn']['Ca'] = inputs["line_transverse_added_mass"]
             fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
             fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['NonLinearEA'] = n_lines * [None]
 
             # Connection properties - Points
             n_nodes = mooropt["n_nodes"]
@@ -1666,6 +1666,25 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn Control - Optional
             fst_vt['MoorDyn']['ChannelID'] = []
+
+            # MoorDyn options
+            fst_vt['MoorDyn']['option_names'] = ['dtM','kbot','cbot','dtIC','TmaxIC','CdScaleIC','threshIC']
+            fst_vt['MoorDyn']['option_values'] = []
+
+            for option in fst_vt['MoorDyn']['option_names']:
+                fst_vt['MoorDyn']['option_values'].append(fst_vt['MoorDyn'][option])
+
+            # MoorDyn output channels: could pull these from schema, but co-pilot will do for now
+            fst_vt['MoorDyn']['option_descriptions'] = [
+                'Time step for MoorDyn',
+                'Bottom spring stiffness',
+                'Bottom damping coefficient',
+                'Time step for initial conditions',
+                'Max time for initial conditions',
+                'Drag scale factor for initial conditions',
+                'Threshold for initial conditions'
+                ]
+
             
             # MAP - linearization only
             for key in fst_vt['MoorDyn']:
@@ -1867,14 +1886,14 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
         DLCs = modopt['DLC_driver']['DLCs']
         # Initialize the DLC generator
-        cut_in = float(inputs['V_cutin'])
-        cut_out = float(inputs['V_cutout'])
-        rated = float(inputs['Vrated'])
+        cut_in = float(inputs['V_cutin'][0])
+        cut_out = float(inputs['V_cutout'][0])
+        rated = float(inputs['Vrated'][0])
         ws_class = discrete_inputs['turbine_class']
         wt_class = discrete_inputs['turbulence_class']
-        hub_height = float(inputs['hub_height'])
-        rotorD = float(inputs['Rtip'])*2.
-        PLExp = float(inputs['shearExp'])
+        hub_height = float(inputs['hub_height'][0])
+        rotorD = float(inputs['Rtip'][0])*2.
+        PLExp = float(inputs['shearExp'][0])
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
@@ -1892,8 +1911,7 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
                 Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
             else:
-                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.",
-                        " This file does not exist. Check WEIS example 02 for a template file")
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.\n This file does not exist. Check WEIS example 02 for a template file")
                 U_interp = np.arange(cut_in, cut_out)
                 pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
                 rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
@@ -2107,13 +2125,13 @@ class FASTLoadCases(ExplicitComponent):
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
                                                    slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                                   ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
+                                                   ultimate_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
                                                    S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
                 blade_fatigue_te = FatigueParams(load2stress=1.0,
                                                  slope=inputs[f'blade_te{u}_wohlerexp'],
-                                                 ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
+                                                 ultimate_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
                                                  S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
-                
+
                 for k in range(1,self.n_blades+1):
                     blade_root_Fz = blade_fatigue_root.copy()
                     blade_root_Fz.load2stress = inputs[f'blade_root_spar{u}_load2stress'][2]
@@ -2151,7 +2169,7 @@ class FASTLoadCases(ExplicitComponent):
             lss_fatigue = FatigueParams(load2stress=1.0,
                                         dnv_name='B1',
                                         dnv_type='air',
-                                        ult_stress=1e-3*inputs['lss_ultstress'],
+                                        ultimate_stress=1e-3*inputs['lss_ultstress'],
                                         S_intercept=1e-3*inputs['lss_wohlerA'])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
@@ -2176,7 +2194,7 @@ class FASTLoadCases(ExplicitComponent):
             tower_fatigue_base = FatigueParams(load2stress=1.0,
                                                dnv_name='D',
                                                dnv_type='air',
-                                               ult_stress=1e-3*inputs['tower_ultstress'][0],
+                                               ultimate_stress=1e-3*inputs['tower_ultstress'][0],
                                                S_intercept=1e-3*inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
@@ -2195,7 +2213,7 @@ class FASTLoadCases(ExplicitComponent):
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
                                                       dnv_name='D',
                                                       dnv_type='sea',
-                                                      ult_stress=inputs['monopile_ultstress'][0],
+                                                      ultimate_stress=inputs['monopile_ultstress'][0],
                                                       S_intercept=inputs['monopile_wohlerA'][0])
                 for s in ['Ax','Sh']:
                     sstr = 'axial' if s=='Ax' else 'shear'
