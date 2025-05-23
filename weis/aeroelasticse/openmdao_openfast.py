@@ -2392,27 +2392,28 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # Analysis
-        if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
-            outputs = self.get_blade_loading(inputs, outputs)
+        comp_aero = any([cl[('Fst', 'CompAero')] for cl in case_list if ('Fst','CompAero') in cl]) or bool(self.fst_vt['Fst']['CompAero'])   # do any sims have required AeroDyn channels?
+        if self.options['modeling_options']['flags']['blade'] and comp_aero:
+            self.get_blade_loading(inputs, outputs)
             
         if self.options['modeling_options']['flags']['tower']:
-            outputs = self.get_tower_loading(inputs, outputs)
+            self.get_tower_loading(inputs, outputs)
             
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
         if modopt['flags']['monopile']:
-            outputs = self.get_monopile_loading(inputs, outputs)
+            self.get_monopile_loading(inputs, outputs)
 
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
-        outputs = self.calculate_AEP(case_list, dlc_generator, discrete_inputs, outputs)
+        self.calculate_AEP(case_list, dlc_generator, discrete_inputs, outputs)
 
-        outputs = self.get_weighted_DELs(dlc_generator, inputs, discrete_inputs, outputs)
+        self.get_weighted_DELs(dlc_generator, inputs, discrete_inputs, outputs)
         
-        outputs = self.get_control_measures(inputs, outputs)
+        self.get_control_measures(inputs, outputs)
 
-        outputs, discrete_outputs = self.get_signalperiods( dlc_generator, outputs, discrete_outputs)
+        self.get_signalperiods( outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['OpenFAST']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs = self.get_floating_measures(inputs, outputs)
+            self.get_floating_measures(inputs, outputs)
 
         # Did any OpenFAST runs fail?
         if modopt['OpenFAST']['flag']:
@@ -2432,7 +2433,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
-            outputs = self.get_OL2CL_error(outputs)
+            self.get_OL2CL_error(outputs)
 
     def get_blade_loading(self, inputs, outputs):
         """
@@ -2553,7 +2554,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['std_aoa']  = spline_aoa_std(r)
         outputs['mean_aoa'] = spline_aoa_mean(r)
 
-        return outputs
 
     def get_tower_loading(self, inputs, outputs):
         """
@@ -2607,7 +2607,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['tower_maxMy_My'] = spline_My(z)
         outputs['tower_maxMy_Mz'] = spline_Mz(z)
         
-        return outputs
 
     def get_monopile_loading(self, inputs, outputs):
         """
@@ -2673,7 +2672,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['monopile_maxMy_My'] = 1e-3*spline_My(z)
         outputs['monopile_maxMy_Mz'] = 1e-3*spline_Mz(z)
 
-        return outputs
 
     def calculate_AEP(self, case_list, dlc_generator, discrete_inputs, outputs):
         """
@@ -2735,7 +2733,6 @@ class FASTLoadCases(ExplicitComponent):
         if self.fst_vt['Fst']['CompServo'] == 1:
             outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
 
-        return outputs
 
     def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
         modopt = self.options['modeling_options']
@@ -2817,7 +2814,6 @@ class FASTLoadCases(ExplicitComponent):
             if self.options['opt_options']['constraints']['damage']['tower_base']['log']:
                 outputs['damage_tower_base'] = np.log(outputs['damage_tower_base'])
 
-        return outputs
 
     def get_control_measures(self, inputs, outputs):
         '''
@@ -2870,7 +2866,6 @@ class FASTLoadCases(ExplicitComponent):
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
-        return outputs
 
     def get_floating_measures(self, inputs, outputs):
         '''
@@ -2895,9 +2890,8 @@ class FASTLoadCases(ExplicitComponent):
         # Max platform offset        
         outputs['Max_Offset'] = np.max(sum_stats['PtfmOffset']['max'])
 
-        return outputs
     
-    def get_signalperiods( self, dlc_generator, outputs, discrete_outputs, method="peaks"):
+    def get_signalperiods( self, outputs, discrete_outputs, method="peaks"):
         """
         Calculates the period of time domian signals
 
@@ -2906,6 +2900,12 @@ class FASTLoadCases(ExplicitComponent):
             - dlc_generator
         """
         signal_periods = {} # Dictionary to save the periods
+
+        # Skip if there are no free decay DLCs
+        dlc_names = [i_dlc['DLC'] for i_dlc in self.options['modeling_options']['DLC_driver']['DLCs']]
+        if 'freedecay' not in dlc_names:
+            return
+
 
         # Channels to calculate periods of
         period_channels = {
@@ -2953,7 +2953,6 @@ class FASTLoadCases(ExplicitComponent):
                 else:
                     raise Exception("method needs to be 'peaks' or 'fft' for get_signalperiods")
         discrete_outputs['signal_periods'] = signal_periods
-        return outputs, discrete_outputs
 
     def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
@@ -2984,7 +2983,6 @@ class FASTLoadCases(ExplicitComponent):
 
         # Average over DLCs and return, TODO: weight in future?  only works for a few wind speeds currently
         outputs['OL2CL_pitch'] = np.mean(rms_pitch_error)
-        return outputs
 
 
     def get_ac_axis(self, inputs):
