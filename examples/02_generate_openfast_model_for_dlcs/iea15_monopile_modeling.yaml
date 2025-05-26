@@ -91,6 +91,10 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvHiCOffD: 3.04292
     HydroDyn:
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+    outlist:
+        ElastoDyn:
+            TTDspFA: True
+            TTDspSS: True
 
 ROSCO:
     flag: True
