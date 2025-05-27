@@ -36,6 +36,7 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml, write_yaml
+from rosco.toolbox.utilities import read_DISCON
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -763,8 +764,14 @@ class FASTLoadCases(ExplicitComponent):
             if fst_vt['HydroDyn']:
                 fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
 
-            if modopt['ROSCO']['flag']:
+            if modopt['ROSCO']['flag']: # ROSCO is tuned from a yaml
                 fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
+            else:   
+                if 'DISCON_in' in modopt['General']['openfast_configuration']:
+                    # DISCON is provided by the user (Controls Tesbench)
+                    fst_vt['ServoDyn']['DLL_InFile'] = modopt['General']['openfast_configuration']['DISCON_in']
+                    fst_vt.pop('DISCON_in',None)    # Remove DISCON_in data struct so it's not written out as a new DISCON input
+                # else DISCON will be read from the OpenFAST input file set, do nothing
 
         #  Allow user-defined OpenFAST options to override WISDEM-generated ones
         #  Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
@@ -2692,6 +2699,11 @@ class FASTLoadCases(ExplicitComponent):
         given:
             - sum_stats : pd.DataFrame
         '''
+
+        # Read parameters from DISCON if not previously set
+        if 'DISCON_in' not in self.fst_vt:
+            self.fst_vt['DISCON_in'] = read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+
         nblades = self.fst_vt['ElastoDyn']['NumBl']
         chanmax = [f'dBldPitch{k+1}' for k in range(nblades)]
         chanmax += ['GenSpeed','NcIMUTA']   # Note: this order needs to be maintained for the indexing below to work
@@ -2699,15 +2711,22 @@ class FASTLoadCases(ExplicitComponent):
         
         # rotor overspeed
         max_gen_speed = maxes['val'].loc[maxes['channel'] == 'GenSpeed'].values[0]
-        outputs['rotor_overspeed'] = (max_gen_speed * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0     # Convert to rad/s (like DISCON) and normalize
+        if 'PC_RefSpd' in self.fst_vt['DISCON_in']:
+            outputs['rotor_overspeed'] = (max_gen_speed * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0     # Convert to rad/s (like DISCON) and normalize
+        else:
+            logger.warning('openmdao_openfast warning: rotor_overspeed requires PC_RefSpd from the DISCON_in')
 
         # nacelle accelleration
         outputs['max_nac_accel'] = maxes['val'].loc[maxes['channel'] == 'NcIMUTA'].values[0]
 
         # Pitch rates
         max_pitch_rates = maxes['val'].to_numpy()[:nblades]
-        outputs['max_pitch_rate_sim'] = max_pitch_rates.max() / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
-        
+
+        if 'PC_MaxRat' in self.fst_vt['DISCON_in']:
+            outputs['max_pitch_rate_sim'] = max_pitch_rates.max() / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+        else:
+            logger.warning('openmdao_openfast warning: max_pitch_rate_sim requires PC_MaxRat from the DISCON_in')
+
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
             tot_time = 0
@@ -2876,6 +2895,9 @@ class FASTLoadCases(ExplicitComponent):
                     # Average over fb range
                     df = psd_df_i.copy()
 
+                    # Remove duplicate columns
+                    df = df.loc[:, ~df.columns.duplicated()]
+
                     # Add rows to dataframe at frequency of interest
                     f_range = np.linspace(fb[0],fb[1])  # use default of 50 bins
 
@@ -2905,13 +2927,19 @@ class FASTLoadCases(ExplicitComponent):
                     # Value at frequency of interest (fb)
                     df = psd_df_i.copy()
 
-                    # Add nan row to dataframe at fb
-                    new_dict = {chan: np.nan for chan in df.columns}
-                    new_row = pd.DataFrame(new_dict,index=[fb])
+                    # Remove duplicate columns
+                    df = df.loc[:, ~df.columns.duplicated()]
 
+                    # Add nan row to dataframe at fb
+
+                    new_dict = {chan: np.nan for chan in df.columns}
+                    new_row = pd.DataFrame(new_dict, index=[fb])
+                    new_row.index.name = 'Freq'
+
+                    # Pandas interpolation works by filling in nan values, so we're going to add them at the f_range of interest
                     df = pd.concat([df, new_row])
+                    
                     df.sort_index(inplace=True)
-                    # TODO: remove duplicates?
                     df.interpolate(axis=0,inplace=True,method='index',order=1) # Pandas interpolate()s at nan values
 
                     for chan, val in df.loc[fb].items():    # df.loc[fb] is value of each channel at fb

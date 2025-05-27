@@ -1,13 +1,20 @@
-General:
-  openfast_configuration:
-    save_iterations: True
-    save_timeseries: True
-
 Testbench_Options:
-    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/7_new_cases   # relative to this file
-    output_filebase: testbench
-    n_cores: 4  # not yet set up
-    use_mpi: False
+    output_directory: outputs/19_clean_input
+    n_cores: 1
+    # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+    # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+
+
+Controller:
+    path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
+    DISCON_in: temp
+
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+    flag: True
+    from_openfast: True
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 
 # TODO: simplify this, maybe move to Testbench_Options
@@ -43,14 +50,6 @@ PostProcessing:
     frequency_bins:
         - 1.0
         - [2.0,3.0]
-
-
-OpenFAST: 
-    flag: True
-    from_openfast: True
-    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
-    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 DLC_driver:
     metocean_conditions:
