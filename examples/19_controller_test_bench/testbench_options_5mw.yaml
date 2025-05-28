@@ -1,5 +1,5 @@
 Testbench_Options:
-    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/17_nrel_5mw_rosco  # relative to this file
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/19_nrel_5mw_retune  # relative to this file
     FAST_exe: /projects/ssc/dzalkind/shared/openfast
     path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
     turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
@@ -8,11 +8,12 @@ Testbench_Options:
 
 Controller:
     path2dll: /scratch/dzalkind/software/ROSCO/rosco/controller/build/libdiscon.so
-    DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/19_controller_test_bench/Demo_Controllers/NREL-5MW/DISCON.IN
+    DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/19_controller_test_bench/Demo_Controllers/NREL-5MW/DISCON_retune.IN
 
 OpenFAST: 
     openfast_file: NREL-5MW.fst
     openfast_dir: /scratch/dzalkind/software/ROSCO/Examples/Test_Cases/NREL-5MW
+    write_stdout: True
 
 PostProcessing:
     binning_time: 20
@@ -62,8 +63,7 @@ DLC_driver:
         - DLC: "5.1"
         - DLC: "AEP"
           TI_factor: 0.5
-          wind_speed: [12]
-          seeds: 6
+          n_seeds: 6
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]
