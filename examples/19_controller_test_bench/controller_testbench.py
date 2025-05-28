@@ -84,6 +84,8 @@ def main():
 
     OFmgmt['FAST_exe'] = testbench_options['Testbench_Options'].get('FAST_exe',shutil.which('openfast'))
     OFmgmt['turbsim_exe'] = testbench_options['Testbench_Options'].get('turbsim_exe',shutil.which('turbsim'))
+
+    OFmgmt['write_stdout'] = testbench_options['OpenFAST'].get('write_stdout', False)
     
     # Controller inputs
     if 'path2dll' in testbench_options['Controller']:
