@@ -1,24 +1,22 @@
 Testbench_Options:
-    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/15_aep_6seeds   # relative to this file
-    output_filebase: testbench  # hard-coding, keep the same
-    n_cores: 4  # not yet set up
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/16_aep_6seeds_pull   # relative to this file
+    FAST_exe: /projects/ssc/dzalkind/shared/openfast
+    path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
+    turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
+    n_cores: 1  # (Optional) Only used for multi-processing, not MPI
 
-
-# TODO: simplify this, maybe merge with Testbench_Options
-General:
-    openfast_configuration:
-        use_exe: True       # hard-code this in testbench?
-        allow_fails: True   # make this hard-coded in testbench?
-        write_stdout: True    # make this hard-coded in testbench?
-        save_timeseries: True  # remove from schema?
-        save_iterations: True  # remove from schema?
-        FAST_exe: /projects/ssc/dzalkind/shared/openfast
-        path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
-        turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
 
 Controller:
   path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
-  DISCON: DISCON.IN
+  DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_DISCON.IN
+
+
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+    flag: True
+    from_openfast: True
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml  # remove, check
@@ -77,11 +75,6 @@ DLC_driver:
         - DLC: "AEP"
           n_seeds: 6
           TI_factor: 0.5
-<<<<<<< HEAD
-=======
-          wind_speed: [12]
-          seeds: 6
->>>>>>> c56fe82f681a789a73f01c18aa8cc342201f04af
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]

@@ -1,17 +1,18 @@
 Testbench_Options:
-    output_directory: outputs/19_clean_input
-    n_cores: 1  # (Optional) Number of cores to use for mulit-processing, MPI cores will be determined automatically
-    # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
-    # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/17_nrel_5mw_rosco  # relative to this file
+    FAST_exe: /projects/ssc/dzalkind/shared/openfast
+    path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
+    turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
+    n_cores: 1
 
 
 Controller:
-    path2dll: /Users/dzalkind/Tools/ROSCO-PRC/rosco/controller/build/libdiscon.dylib   # dev
-    DISCON_in: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/DISCON.IN
+    path2dll: /scratch/dzalkind/software/ROSCO/rosco/controller/build/libdiscon.so
+    DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/19_controller_test_bench/Demo_Controllers/NREL-5MW/DISCON.IN
 
 OpenFAST: 
     openfast_file: NREL-5MW.fst
-    openfast_dir: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/
+    openfast_dir: /scratch/dzalkind/software/ROSCO/Examples/Test_Cases/NREL-5MW
 
 PostProcessing:
     binning_time: 20
@@ -58,7 +59,6 @@ DLC_driver:
           n_seeds: 6
         - DLC: "1.4"
         - DLC: "1.5"
-        - DLC: "1.6"
         - DLC: "5.1"
         - DLC: "AEP"
           TI_factor: 0.5
