@@ -102,4 +102,7 @@ DLC_driver:
           analysis_time: 400.
           ramp_speeddelta: 27
           ramp_duration: 400.
+        - DLC: "Gust"   # EOG gust at rated wind speed
+          IEC_WindType: 'EOG'
+          wind_speed: [11.4]
 
