@@ -2855,6 +2855,9 @@ class FASTLoadCases(ExplicitComponent):
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
         os.makedirs(save_dir, exist_ok=True)
 
+        # for ind in range(binned_cruncher.noutputs):
+        #     print(f"Concatenating binned output {ind} of {binned_cruncher.outputs[ind].df}")
+
 
         binned_data_all = pd.concat([binned_cruncher.outputs[ind].df for ind in range(binned_cruncher.noutputs)])
         binned_data_all.to_pickle(os.path.join(save_dir,f'binned_all.p'))
@@ -2882,12 +2885,14 @@ class FASTLoadCases(ExplicitComponent):
             output_init = self.cruncher.outputs[i_case]
             # output_init.trim_data(np.min([120,output_init.time.max()/2]))
 
-            freq_obj = output_init.psd(nfft=1024)        
+            freq_obj = output_init.psd(nfft=512)        
 
             psd_df_i = freq_obj.df
             psd_df_i.set_index('Freq',inplace=True)
 
             all_psd_dfs.append(psd_df_i)
+
+            logging.info(f"Frequency measure: {i_case}/{len(cm['case_name'])}")
 
             # Compute measures at certain frequencies
             for fb in freq_bins:
