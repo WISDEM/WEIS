@@ -2,7 +2,6 @@ Testbench_Options:
     output_directory: /scratch/dzalkind/Controller_Testbench/outputs/15_aep_6seeds   # relative to this file
     output_filebase: testbench  # hard-coding, keep the same
     n_cores: 4  # not yet set up
-    use_mpi: False   # not used
 
 
 # TODO: simplify this, maybe merge with Testbench_Options
@@ -17,10 +16,14 @@ General:
         path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
         turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
 
-# Controller:
-#   path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
-#   DISCON: DISCON.IN
+Controller:
+  path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
+  DISCON: DISCON.IN
 
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml  # remove, check
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
@@ -74,6 +77,11 @@ DLC_driver:
         - DLC: "AEP"
           n_seeds: 6
           TI_factor: 0.5
+<<<<<<< HEAD
+=======
+          wind_speed: [12]
+          seeds: 6
+>>>>>>> c56fe82f681a789a73f01c18aa8cc342201f04af
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]
@@ -110,4 +118,9 @@ DLC_driver:
           analysis_time: 400.
           ramp_speeddelta: 27
           ramp_duration: 400.
-
+        - DLC: "Steady"
+          wind_speed: [5,11.4,17]
+          analysis_time: 400.
+        - DLC: "Gust"   # EOG gust at rated wind speed
+          IEC_WindType: 'EOG'
+          wind_speed: [11.4]

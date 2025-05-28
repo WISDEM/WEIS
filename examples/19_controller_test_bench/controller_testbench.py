@@ -30,7 +30,11 @@ def load_testbench_yaml(filename):
 def main():
 
 
+<<<<<<< HEAD
     input_file = 'testbench_options.yaml'
+=======
+    input_file = 'testbench_options_lite_5mw.yaml'
+>>>>>>> c56fe82f681a789a73f01c18aa8cc342201f04af
     testbench_options = load_testbench_yaml(os.path.join(this_dir,input_file))
 
     #### NOTHING BELOW HERE SHOULD CHANGE FOR THE USER
@@ -72,8 +76,12 @@ def main():
     # TODO: should we do any tuning or specify a DISCON?
     testbench_options['ROSCO']['flag'] = False   
 
+    # OpenFAST: should always use pre-existing input set
+    testbench_options['OpenFAST']['flag'] = True
+    testbench_options['OpenFAST']['from_openfast'] = True
+
     OFmgmt = testbench_options['General']['openfast_configuration']
-    OFmgmt['cores'] = testbench_options['Testbench_Options']['n_cores']
+    OFmgmt['cores'] = testbench_options['Testbench_Options'].get('n_cores', 1)
     OFmgmt['use_exe'] = True
     OFmgmt['allow_fails'] = True    
 

@@ -1379,6 +1379,39 @@ class DLCGenerator(object):
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_Gust(self,dlc_options):
+        # Describe the design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'Gust'
+        dlc_options['sea_state'] = 'normal'
+        
+        if 'IEC_WindType' not in dlc_options:
+            raise Exception('IEC_WindType must be set for the gust DLC.')
+        if dlc_options['turbulent_wind']['flag']:
+            dlc_options['IEC_WindType'] = 'Turbulent-'+dlc_options['IEC_WindType']
+
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_new_dlc(self,dlc_options):
         # Describe the new design load case

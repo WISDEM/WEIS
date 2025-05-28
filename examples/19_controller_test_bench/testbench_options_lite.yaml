@@ -1,26 +1,25 @@
 Testbench_Options:
-    output_directory: outputs/21_user_discon
-    n_cores: 1
+    output_directory: outputs/23_2_aep_seeds
+    n_cores: 1  # (Optional) Number of cores to use for mulit-processing, MPI cores will be determined automatically
     # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
     # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
 
 
 Controller:
     path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
-    # DISCON_in: /Users/dzalkind/Tools/WEIS-DLC/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_DISCON.IN
+    DISCON_in: /Users/dzalkind/Tools/WEIS-DLC/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_DISCON.IN
 
-OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
-    flag: True
-    from_openfast: True
-    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+OpenFAST: 
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml  # (Optional) for setting initial conditions
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 PostProcessing:
     binning_time: 20
-    frequency_bins:
-        - 1.0
-        - [2.0,3.0]
+    frequency_bins:   # TODO: add NFFT somewhere here
+        - 0.0339  # Platform pitch
+        - [.1134, .1387]  # 1P \pm 10%
+        - [.340, .416]  # 3P \pm 10%
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
@@ -58,7 +57,7 @@ DLC_driver:
         - DLC: "1.1"
           n_seeds: 1
           wind_speed: [8,15]
-          analysis_time: 1.
+          analysis_time: 100.
           transient_time: 0.0
         # - DLC: "1.3"
         #   n_seeds: 2
@@ -77,10 +76,12 @@ DLC_driver:
         #   analysis_time: 1.
         #   transient_time: 0.0
         #   shutdown_time: 0.5
-        # - DLC: "AEP"
-        #   analysis_time: 1.
-        #   transient_time: 0.0
-        #   TI_factor: 0.5
+        - DLC: "AEP"
+          analysis_time: 1.
+          transient_time: 0.0
+          seeds: 6
+          TI_factor: 0.5
+          wind_speed: [12,14]
         # - DLC: "Ramp"  # Up
         #   wind_speed: [10]
         #   n_seeds: 1
