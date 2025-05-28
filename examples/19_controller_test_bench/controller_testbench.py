@@ -40,6 +40,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
         )
 
+    logging.info('Running controller testbench with input file: %s', input_file)
 
     # Configure modeling options for FASTLoadCases 
     modopt_file = os.path.join(this_dir,input_file)
@@ -95,6 +96,7 @@ def main():
         OFmgmt['DISCON_in'] = os.path.join(os.path.dirname(modopt_file), OFmgmt['DISCON_in'])
         if not os.path.isfile(OFmgmt['DISCON_in']):
             raise FileNotFoundError(f"DISCON_in file not found: {OFmgmt['DISCON_in']}")
+        logger.info('Using DISCON_in: %s', OFmgmt['DISCON_in'])
     else:
         logger.warning('No DISCON_in specified in testbench_options.yaml. Using DISCON input defined in OpenFAST input set.')
 
