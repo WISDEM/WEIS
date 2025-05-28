@@ -10,8 +10,6 @@ Controller:
     DISCON_in: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/DISCON.IN
 
 OpenFAST: 
-    flag: True
-    from_openfast: True
     openfast_file: NREL-5MW.fst
     openfast_dir: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/
 

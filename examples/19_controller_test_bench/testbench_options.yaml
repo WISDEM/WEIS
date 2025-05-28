@@ -10,9 +10,7 @@ Controller:
     DISCON_in: temp
 
 OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
-    flag: True
-    from_openfast: True
-    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml  # remove, check
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
@@ -37,9 +35,10 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
 
 PostProcessing:
     binning_time: 20
-    frequency_bins:
-        - 1.0
-        - [2.0,3.0]
+    frequency_bins:   # TODO: add NFFT somewhere here
+        - 0.0339  # Platform pitch
+        - [.1134, .1387]  # 1P \pm 10%
+        - [.340, .416]  # 3P \pm 10%
 
 DLC_driver:
     metocean_conditions:
@@ -66,6 +65,7 @@ DLC_driver:
         - DLC: "AEP"
           TI_factor: 0.5
           wind_speed: [12]
+          seeds: 6
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]
