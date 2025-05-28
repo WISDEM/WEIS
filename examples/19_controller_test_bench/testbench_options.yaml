@@ -1,6 +1,6 @@
 Testbench_Options:
     output_directory: outputs/19_clean_input
-    n_cores: 1
+    n_cores: 1  # (Optional) Number of cores to use for mulit-processing, MPI cores will be determined automatically
     # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
     # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
 

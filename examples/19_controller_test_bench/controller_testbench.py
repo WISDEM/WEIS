@@ -73,7 +73,7 @@ def main():
     testbench_options['ROSCO']['flag'] = False   
 
     OFmgmt = testbench_options['General']['openfast_configuration']
-    OFmgmt['cores'] = testbench_options['Testbench_Options']['n_cores']
+    OFmgmt['cores'] = testbench_options['Testbench_Options'].get('n_cores', 1)
     OFmgmt['use_exe'] = True
     OFmgmt['allow_fails'] = True    
 

@@ -1,13 +1,13 @@
 Testbench_Options:
-    output_directory: outputs/23_5MW_setup
-    n_cores: 1
+    output_directory: outputs/23_5MW_boost
+    n_cores: 1  # (Optional) Number of cores to use for mulit-processing, MPI cores will be determined automatically
     # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
     # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
 
 
 Controller:
-    path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
-    DISCON_in: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/DISCON.IN
+    path2dll: /Users/dzalkind/Tools/ROSCO-PRC/rosco/controller/build/libdiscon.dylib   # dev
+    DISCON_in: /Users/dzalkind/Tools/ROSCO-PRC/Examples/Test_Cases/NREL-5MW/DISCON_power_boost.IN
 
 OpenFAST: 
     flag: True
@@ -57,7 +57,7 @@ DLC_driver:
         - DLC: "1.1"
           n_seeds: 1
           wind_speed: [8,15]
-          analysis_time: 100.
+          analysis_time: 10.
           transient_time: 0.0
         # - DLC: "1.3"
         #   n_seeds: 2
