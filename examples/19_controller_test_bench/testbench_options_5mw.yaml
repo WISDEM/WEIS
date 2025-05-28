@@ -1,0 +1,105 @@
+Testbench_Options:
+    output_directory: outputs/19_clean_input
+    n_cores: 1
+    # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+    # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+
+
+Controller:
+    path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
+    DISCON_in: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/DISCON.IN
+
+OpenFAST: 
+    flag: True
+    from_openfast: True
+    openfast_file: NREL-5MW.fst
+    openfast_dir: /Users/dzalkind/Tools/ROSCO-main/Examples/Test_Cases/NREL-5MW/
+
+PostProcessing:
+    binning_time: 20
+    frequency_bins:
+        - [0.18149, 0.221826]  # 1P \pm 10%
+        - [0.54448, 0.66547] # 3P \pm 10%
+
+Turbine_Info:  # Can we pull this information from OpenFAST input?
+    # used to generate wind inputs
+    wind_speed_cut_in: 5
+    wind_speed_cut_out: 25
+    wind_speed_rated: 11.4  
+    hub_height: 92.5  
+    rotor_radius:  63
+    turbine_class: I
+    turbulence_class: B
+    
+    # Determines OpenFAST output channels
+    flags:
+        offshore: False
+        floating: False
+        monopile: False
+        TMDs: False 
+        blade: False  # used to do local blade loading analysis
+        tower: False   # used to do local tower loading analysis
+
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+    DLCs:
+        - DLC: "1.1"
+          n_seeds: 6
+        - DLC: "1.3"
+          n_seeds: 6
+        - DLC: "1.4"
+        - DLC: "1.5"
+        - DLC: "1.6"
+        - DLC: "5.1"
+        - DLC: "AEP"
+          TI_factor: 0.5
+          wind_speed: [12]
+          seeds: 6
+        - DLC: "Ramp"   # 0 to cutin+1
+          turbine_status: parked-still
+          wind_speed: [0]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 6
+          ramp_duration: 200.
+          rot_speed_initial: 0
+          pitch_initial: 90
+        - DLC: "Ramp"   # Cutin-1 to cutin+1
+          turbine_status: parked-still
+          wind_speed: [4]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 2
+          ramp_duration: 200.
+          rot_speed_initial: 0
+          pitch_initial: 90
+        - DLC: "Ramp"   # Cutin to rated
+          wind_speed: [5]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 6.4
+          ramp_duration: 200.
+        - DLC: "Ramp"   # Rated-2 to rated+2
+          wind_speed: [9.4]
+          transient_time: 20
+          analysis_time: 400.
+          ramp_speeddelta: 13.4
+          ramp_duration: 400.
+        - DLC: "Ramp"   # Rated to Cutout + 2
+          wind_speed: [11.4]
+          transient_time: 20
+          analysis_time: 400.
+          ramp_speeddelta: 27
+          ramp_duration: 400.
+
