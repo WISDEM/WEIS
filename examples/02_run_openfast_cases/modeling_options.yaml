@@ -43,31 +43,13 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [16]
           n_seeds: 1
-<<<<<<< HEAD
-        #   analysis_time: 600.
-        #   transient_time: 120.
-=======
           analysis_time: 1.
           transient_time: 0.
->>>>>>> 89a7097b5f4a71c8ecb66c62e2692ba67d77f4ea
           turbulent_wind:
               HubHt: 142
               RefHt: 142
               GridHeight: 275
               GridWidth: 275
-<<<<<<< HEAD
-        # - DLC: "6.1"
-        #   analysis_time: 10.
-        #   transient_time: 0.1
-        #   wind_speed: [46.789]
-        #   turbulent_wind:
-        #       HubHt: 142
-        #       RefHt: 142
-        #       GridHeight: 275
-        #       GridWidth: 275
-        #       PLExp: 0.14
-        #       IECturbc: 0.12
-=======
         - DLC: "6.1"
           analysis_time: 1.
           transient_time: 0.
@@ -79,7 +61,6 @@ DLC_driver:
               GridWidth: 275
               PLExp: 0.14
               IECturbc: 0.12
->>>>>>> 89a7097b5f4a71c8ecb66c62e2692ba67d77f4ea
               
 
               

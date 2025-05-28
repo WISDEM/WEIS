@@ -1,29 +1,25 @@
 Testbench_Options:
-    output_directory: outputs/19_clean_input
-    n_cores: 1
-    # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
-    # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/15_aep_6seeds   # relative to this file
+    output_filebase: testbench  # hard-coding, keep the same
+    n_cores: 4  # not yet set up
+    use_mpi: False   # not used
 
 
-Controller:
-    path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
-    DISCON_in: temp
-
-OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
-    flag: True
-    from_openfast: True
-    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
-    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
-
-
-# TODO: simplify this, maybe move to Testbench_Options
+# TODO: simplify this, maybe merge with Testbench_Options
 General:
     openfast_configuration:
-        use_exe: True
-        FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
-        path2dll: /home/dzalkind/Tools/ROSCO-1/rosco/lib/libdiscon.so
-        turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+        use_exe: True       # hard-code this in testbench?
+        allow_fails: True   # make this hard-coded in testbench?
+        write_stdout: True    # make this hard-coded in testbench?
+        save_timeseries: True  # remove from schema?
+        save_iterations: True  # remove from schema?
+        FAST_exe: /projects/ssc/dzalkind/shared/openfast
+        path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
+        turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
+
+# Controller:
+#   path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
+#   DISCON: DISCON.IN
 
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
@@ -47,9 +43,10 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
 
 PostProcessing:
     binning_time: 20
-    frequency_bins:
-        - 1.0
-        - [2.0,3.0]
+    frequency_bins:   # TODO: add NFFT somewhere here
+        - 0.0339  # Platform pitch
+        - [.1134, .1387]  # 1P \pm 10%
+        - [.340, .416]  # 3P \pm 10%
 
 DLC_driver:
     metocean_conditions:
@@ -70,13 +67,13 @@ DLC_driver:
         - DLC: "1.3"
           n_seeds: 6
         - DLC: "1.4"
-        - DLC: "1.5"
+        # - DLC: "1.5"
         - DLC: "1.6"
-        - DLC: "5.1"
-          n_azimuth: 4
+        # - DLC: "5.1"
+          # n_azimuth: 4
         - DLC: "AEP"
+          n_seeds: 6
           TI_factor: 0.5
-          wind_speed: [12]
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]
