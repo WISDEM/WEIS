@@ -71,6 +71,7 @@ openfast_input_map = {
     'aero_mod': ("AeroDyn","AFAeroMod"),
     'wake_mod': ("AeroDyn","Wake_Mod"),
     'tau1_const': ("AeroDyn","tau1_const"),
+    'ua_mod': ("AeroDyn","UA_Mod"),
 
 
     # 'dlc_label': ("DLC","Label"),
@@ -737,7 +738,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'ECD'
         dlc_options['direction'] = ['n', 'p']
-        dlc_options['aero_mod'] = 1     # don't use unsteady aero
+        dlc_options['ua_mod'] = 0     # don't use unsteady aero
         
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
 
@@ -751,7 +752,7 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','aero_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['total_time','transient_time','ua_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign','azimuth_init']) # group 2: 
         generic_case_inputs.append(['direction']) # group 3: 
