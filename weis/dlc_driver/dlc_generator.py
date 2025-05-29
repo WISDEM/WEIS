@@ -876,10 +876,10 @@ class DLCGenerator(object):
         if 'ramp_duration' not in dlc_options:
             raise Exception('ramp_duration must be set for the Ramp DLC')
         if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
-            raise Exception(f'ramp_duration ({dlc_options['ramp_duration']}) must be smaller than analysis_time ({dlc_options['analysis_time']})')
+            raise Exception(f"ramp_duration ({dlc_options['ramp_duration']}) must be smaller than analysis_time ({dlc_options['analysis_time']})")
         if 'gust_wait_time' in dlc_options:
             if dlc_options['gust_wait_time'] + dlc_options['ramp_duration'] > dlc_options['analysis_time']:
-                raise Exception(f'ramp_duration ({dlc_options['ramp_duration']}) + gust_wait_time ({dlc_options['gust_wait_time']}) must be smaller than analysis_time ({dlc_options['analysis_time']})')
+                raise Exception(f"ramp_duration ({dlc_options['ramp_duration']}) + gust_wait_time ({dlc_options['gust_wait_time']}) must be smaller than analysis_time ({dlc_options['analysis_time']})")
         else:
             dlc_options['gust_wait_time'] = 0
 
