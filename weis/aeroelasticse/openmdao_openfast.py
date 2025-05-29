@@ -2275,7 +2275,7 @@ class FASTLoadCases(ExplicitComponent):
 
         outputs = self.get_weighted_DELs(dlc_generator, inputs, discrete_inputs, outputs)
         
-        outputs = self.get_control_measures(inputs, outputs)
+        outputs = self.get_control_measures(dlc_generator, inputs, outputs)
 
         self.get_characteristic_loads()
 
@@ -2609,7 +2609,7 @@ class FASTLoadCases(ExplicitComponent):
 
     def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
         modopt = self.options['modeling_options']
-        fatigue_dlc_operation = ['1.2', '3.1', '4.1']
+        fatigue_dlc_operation = ['1.1', '3.1', '4.1']
         fatigue_dlc_parked = ['6.4']
         fatigue_dlc_fault = ['2.4', '7.2']
         fatigue_dlcs = fatigue_dlc_operation + fatigue_dlc_parked + fatigue_dlc_fault
@@ -2688,9 +2688,19 @@ class FASTLoadCases(ExplicitComponent):
             if self.options['opt_options']['constraints']['damage']['tower_base']['log']:
                 outputs['damage_tower_base'] = np.log(outputs['damage_tower_base'])
 
+        # Save the damage results
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        os.makedirs(save_dir, exist_ok=True)
+
+        prob = self.cruncher.prob[ifat]
+        del_summary = dels_total.to_dict()
+        del_summary['probability'] = prob.tolist()
+        del_summary['wind_speeds'] = U.tolist()
+        write_yaml(del_summary, os.path.join(save_dir, 'del_summary.yaml'))
+
         return outputs
 
-    def get_control_measures(self, inputs, outputs):
+    def get_control_measures(self, dlc_generator, inputs, outputs):
         '''
         calculate control measures:
             - rotor_overspeed
@@ -2731,24 +2741,59 @@ class FASTLoadCases(ExplicitComponent):
             tot_time = 0
             tot_travel = 0
             num_dir_changes = 0
-            max_pitch_rates = [0,0,0]
+
+            pitch_travel_table = np.zeros((nblades, self.cruncher.noutputs))
+            dir_change_table = np.zeros((nblades, self.cruncher.noutputs))
+            simulation_time_table = np.zeros(self.cruncher.noutputs)
             for i_ts in range(self.cruncher.noutputs):
                 iout = self.cruncher.outputs[i_ts].copy()
                 iout.trim_data(self.TStart[i_ts], self.TMax[i_ts])
                 
                 # total time
                 tot_time += iout.elapsed_time
+                simulation_time_table[i_ts] = iout.elapsed_time
                 
                 for i_blade in range(nblades):
                     # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
-                    tot_travel += iout.total_travel(f'BldPitch{i_blade+1}')
+                    travel_blade_sim = iout.total_travel(f'BldPitch{i_blade+1}')
+                    pitch_travel_table[i_blade, i_ts] = travel_blade_sim
+                    tot_travel += travel_blade_sim
 
                     # number of direction changes on each blade
-                    num_dir_changes += 0.5 * np.sum(np.abs(np.diff(np.sign(iout[f'dBldPitch{i_blade+1}']))))
+                    dir_change_sim = 0.5 * np.sum(np.abs(np.diff(np.sign(iout[f'dBldPitch{i_blade+1}']))))
+                    dir_change_table[i_blade, i_ts] = dir_change_sim
+                    num_dir_changes += dir_change_sim
 
-            # Normalize by number of blades, total time
-            outputs['avg_pitch_travel'] = tot_travel / nblades / tot_time
-            outputs['pitch_duty_cycle'] = num_dir_changes / nblades / tot_time
+            # Normalize by probability of each case, use all cases regarless of dlc
+            prob = self.cruncher.prob / np.sum(self.cruncher.prob)
+
+            lifetime_travel = pitch_travel_table @ prob.T
+            lifetime_dir_change = dir_change_table @ prob.T
+
+            # Average over blades
+            lifetime_travel = np.mean(lifetime_travel)
+            lifetime_dir_change = np.mean(lifetime_dir_change)
+
+            U = [c.URef for c in dlc_generator.cases]
+
+            # Normalize by total time (deg/sec, changes/sec)
+            outputs['avg_pitch_travel'] = lifetime_travel / tot_time
+            outputs['pitch_duty_cycle'] = lifetime_dir_change / tot_time
+
+            # Save pitch rates to yaml
+            pitch_actuation_summary = {
+                'avg_pitch_travel': outputs['avg_pitch_travel'],
+                'pitch_duty_cycle': outputs['pitch_duty_cycle'],
+                'U': U,
+                'probability': prob.tolist(),
+                'simulation_time_table': simulation_time_table,
+                'direction_change_table': dir_change_table.tolist(),
+                'pitch_travel_table': pitch_travel_table.tolist(),
+            }
+            save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+            os.makedirs(save_dir, exist_ok=True)
+            write_yaml(pitch_actuation_summary, os.path.join(save_dir, 'pitch_actuation_summary.yaml'))
+
 
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
