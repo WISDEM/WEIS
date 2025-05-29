@@ -827,6 +827,10 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Steady'
 
+        # Time options, set defaults if not provided
+        if dlc_options['analysis_time'] == self.dlc_schema['analysis_time']['default']: 
+            dlc_options['analysis_time'] = 600
+
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -856,6 +860,10 @@ class DLCGenerator(object):
         else:
             dlc_options['IEC_WindType'] = 'Ramp'
 
+        # Time options, set defaults if not provided
+        if dlc_options['analysis_time'] == self.dlc_schema['analysis_time']['default']: 
+            dlc_options['analysis_time'] = 600
+
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -868,10 +876,10 @@ class DLCGenerator(object):
         if 'ramp_duration' not in dlc_options:
             raise Exception('ramp_duration must be set for the Ramp DLC')
         if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
-            raise Exception('ramp_duration must be smaller than analysis_time')
+            raise Exception(f'ramp_duration ({dlc_options['ramp_duration']}) must be smaller than analysis_time ({dlc_options['analysis_time']})')
         if 'gust_wait_time' in dlc_options:
             if dlc_options['gust_wait_time'] + dlc_options['ramp_duration'] > dlc_options['analysis_time']:
-                raise Exception('ramp_duration+gust_wait_time must be smaller than analysis_time')
+                raise Exception(f'ramp_duration ({dlc_options['ramp_duration']}) + gust_wait_time ({dlc_options['gust_wait_time']}) must be smaller than analysis_time ({dlc_options['analysis_time']})')
         else:
             dlc_options['gust_wait_time'] = 0
 
@@ -911,7 +919,9 @@ class DLCGenerator(object):
         else:
             dlc_options['IEC_WindType'] = 'Step'
 
-        
+        # Time options, set defaults if not provided
+        if dlc_options['analysis_time'] == self.dlc_schema['analysis_time']['default']: 
+            dlc_options['analysis_time'] = 600        
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:

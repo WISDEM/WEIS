@@ -1,5 +1,5 @@
 Testbench_Options:
-    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/19_nrel_5mw_retune  # relative to this file
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/22_boost_new_cases  # relative to this file
     FAST_exe: /projects/ssc/dzalkind/shared/openfast
     path2dll: /projects/ssc/dzalkind/shared/libdiscon.so    # put this in controller section?
     turbsim_exe: /projects/ssc/dzalkind/shared/turbsim
@@ -8,7 +8,7 @@ Testbench_Options:
 
 Controller:
     path2dll: /scratch/dzalkind/software/ROSCO/rosco/controller/build/libdiscon.so
-    DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/19_controller_test_bench/Demo_Controllers/NREL-5MW/DISCON_retune.IN
+    DISCON_in: /projects/weis/dzalkind/WEIS-DLCs/examples/19_controller_test_bench/Demo_Controllers/NREL-5MW/DISCON_power_boost.IN
 
 OpenFAST: 
     openfast_file: NREL-5MW.fst
@@ -67,8 +67,6 @@ DLC_driver:
         - DLC: "Ramp"   # 0 to cutin+1
           turbine_status: parked-still
           wind_speed: [0]
-          transient_time: 20
-          analysis_time: 200.
           ramp_speeddelta: 6
           ramp_duration: 200.
           rot_speed_initial: 0
@@ -76,38 +74,34 @@ DLC_driver:
         - DLC: "Ramp"   # Cutin-1 to cutin+1
           turbine_status: parked-still
           wind_speed: [4]
-          transient_time: 20
-          analysis_time: 200.
+          analysis_time: 400.
           ramp_speeddelta: 2
           ramp_duration: 200.
           rot_speed_initial: 0
           pitch_initial: 90
         - DLC: "Ramp"   # Cutin to rated
           wind_speed: [5]
-          transient_time: 20
-          analysis_time: 200.
+          analysis_time: 400.
           ramp_speeddelta: 6.4
           ramp_duration: 200.
         - DLC: "Ramp"   # Rated-2 to rated+2
           wind_speed: [9.4]
-          transient_time: 20
-          analysis_time: 400.
-          ramp_speeddelta: 13.4
+          ramp_speeddelta: 4
           ramp_duration: 400.
         - DLC: "Ramp"   # Rated to Cutout + 2
           wind_speed: [11.4]
           transient_time: 20
-          analysis_time: 400.
-          ramp_speeddelta: 27
-          ramp_duration: 400.
+          analysis_time: 1200.
+          ramp_speeddelta: 16
+          ramp_duration: 800.
         - DLC: "Steady"
-          wind_speed: [5,11.4,17]
+          wind_speed: [5,9,11.4,17]
           analysis_time: 400.
-        - DLC: "Gust"   # EOG gust at rated wind speed
+        - DLC: "Gust" 
           IEC_WindType: 'EOG'
-          wind_speed: [5,11.4,17]
+          wind_speed: [5,9,11.4,17]
         - DLC: "Step"
-          wind_speed: [9.4]
-          step_speeddelta: 4
+          wind_speed: [5,9,11.4,17]
+          step_speeddelta: 1
           analysis_time: 400
           step_time: 200
