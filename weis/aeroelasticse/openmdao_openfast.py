@@ -2711,7 +2711,11 @@ class FASTLoadCases(ExplicitComponent):
 
         # Read parameters from DISCON if not previously set
         if 'DISCON_in' not in self.fst_vt:
-            self.fst_vt['DISCON_in'] = read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+            try: 
+                self.fst_vt['DISCON_in'] = read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+            except Exception as e:
+                logger.warning('could not read DISCON_in file from ServoDyn')
+                self.fst_vt['DISCON_in'] = {}
 
         nblades = self.fst_vt['ElastoDyn']['NumBl']
         chanmax = [f'dBldPitch{k+1}' for k in range(nblades)]
