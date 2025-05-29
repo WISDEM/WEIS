@@ -928,8 +928,6 @@ class DLCGenerator(object):
             dlc_options['gust_wait_time'] = dlc_options['step_time']
         else:
             raise Exception('step_time must be set for the Step DLC')
-        if dlc_options['ramp_duration'] >= dlc_options['analysis_time']:
-            raise Exception('Analysis_time should be greater than ramp_duration')
         
 
         # DLC-specific: define groups
