@@ -2760,12 +2760,12 @@ class FASTLoadCases(ExplicitComponent):
                 for i_blade in range(nblades):
                     # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
                     travel_blade_sim = iout.total_travel(f'BldPitch{i_blade+1}')
-                    pitch_travel_table[i_blade, i_ts] = travel_blade_sim
+                    pitch_travel_table[i_blade, i_ts] = travel_blade_sim / iout.elapsed_time
                     tot_travel += travel_blade_sim
 
                     # number of direction changes on each blade
                     dir_change_sim = 0.5 * np.sum(np.abs(np.diff(np.sign(iout[f'dBldPitch{i_blade+1}']))))
-                    dir_change_table[i_blade, i_ts] = dir_change_sim
+                    dir_change_table[i_blade, i_ts] = dir_change_sim / iout.elapsed_time
                     num_dir_changes += dir_change_sim
 
             # Normalize by probability of each case, use all cases regarless of dlc
