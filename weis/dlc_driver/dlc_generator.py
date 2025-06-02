@@ -781,6 +781,9 @@ class DLCGenerator(object):
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
             dlc_options['yaw_misalign'] = [0]*len(dlc_options['azimuth_init'])
+        
+        # Set default wind speed to rated wind speed according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2,self.ws_rated,self.ws_rated+2])
 
 
         # DLC-specific: define groups
@@ -940,6 +943,9 @@ class DLCGenerator(object):
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
+        
+        # Set default wind speed to rated wind speed +- 2 m/sec and v_out according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2., self.ws_rated+2.,self.ws_cut_out])
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1074,6 +1080,9 @@ class DLCGenerator(object):
         dlc_options['SU_LoadHoldDuration'] = dlc_options.get('SU_LoadHoldDuration',20)
 
         dlc_options['gust_wait_time'] = dlc_options.get('gust_wait_time',[10,13,16,19])
+        
+        # Set default wind speed to rated wind speed +- 2 m/sec and v_out according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2., self.ws_rated+2.,self.ws_cut_out])
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1125,6 +1134,9 @@ class DLCGenerator(object):
         dlc_options['SU_LoadStages'] = dlc_options.get('SU_LoadStages',"[0.4,0.8]")
         dlc_options['SU_LoadRampDuration'] = dlc_options.get('SU_LoadRampDuration',"[20,20]")
         dlc_options['SU_LoadHoldDuration'] = dlc_options.get('SU_LoadHoldDuration',"[20,20]")
+        
+        # Set default wind speed to rated wind speed +- 2 m/sec and v_out according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2., self.ws_rated+2.,self.ws_cut_out])
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1226,6 +1238,9 @@ class DLCGenerator(object):
             dlc_options['normal_shutdown_time'] = dlc_options['normal_shutdown_time']
         
         dlc_options['gust_wait_time'] = dlc_options['normal_shutdown_time']+np.array([-10,0,10,20,30,40])
+        
+        # Set default wind speed to rated wind speed +- 2 m/sec and v_out according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2., self.ws_rated+2.,self.ws_cut_out])
 
 
         # DLC-specific: define groups
@@ -1279,6 +1294,9 @@ class DLCGenerator(object):
         # Specify shutdown time for this case
         if dlc_options['shutdown_time'] > dlc_options['analysis_time']:
             raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({dlc_options['shutdown_time']}) option is greater than the analysis_time ({dlc_options['analysis_time']})")
+        
+        # Set default wind speed to rated wind speed +- 2 m/sec and v_out according to IEC 61400
+        dlc_options['wind_speed'] = dlc_options.get('wind_speed',[self.ws_rated-2., self.ws_rated+2.,self.ws_cut_out])
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1677,6 +1695,9 @@ class DLCGenerator(object):
             raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.1")
         if 'mooring_failuretime' not in dlc_options:
             raise Exception("'mooring_failuretime' needs to be provided for DLC 10.1")
+
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e50]
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1715,6 +1736,9 @@ class DLCGenerator(object):
             raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.2")
         if 'mooring_failureline' not in dlc_options:
             raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.2")
+
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e50]
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
