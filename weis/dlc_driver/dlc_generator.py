@@ -1229,8 +1229,10 @@ class DLCGenerator(object):
         # Specify shutdown time for this case
         if 'normal_shutdown_time' not in dlc_options:
             raise Exception('normal_shutdown_time must be set for the DLC 4.2')
-        elif dlc_options['analysis_time']<50.5:
-            raise Exception('analysis_time must be greater than or equal to 50.5 for DLC 4.2')
+        elif dlc_options['normal_shutdown_time']<10:
+            raise Exception('normal_shutdown_time must be greater than or equal to 10 for DLC 4.2')
+        elif dlc_options['analysis_time']<60.5:
+            raise Exception('analysis_time must be greater than or equal to 60.5 for DLC 4.2')
         elif dlc_options['normal_shutdown_time'] + 50.5 > dlc_options['analysis_time']:
             raise Exception(f"normal_shutdown_time ({dlc_options['normal_shutdown_time']}) must be less than or equal to"
                 + f" analysis_time ({dlc_options['analysis_time']}) - 50.5 = {dlc_options['analysis_time']-50.5}")

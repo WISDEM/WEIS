@@ -92,8 +92,8 @@ DLC_driver:
           analysis_time: 0.1
           normal_shutdown_time: 0.1
         - DLC: "4.2"
-          analysis_time: 50.5
-          normal_shutdown_time: 0
+          analysis_time: 60.5
+          normal_shutdown_time: 10
         - DLC: "5.1"
           n_seeds: 1
           n_azimuth: 3
