@@ -1451,7 +1451,7 @@ class DLCGenerator(object):
             dlc_options['wind_speed'] = dlc_options['wind_speed'].tolist()
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
-        dlc_options['yaw_misalign'] = dlc_options.get('yaw_misalign',0.)
+        dlc_options['yaw_misalign'] = dlc_options.get('yaw_misalign',[0])
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
