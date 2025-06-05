@@ -53,7 +53,7 @@ def set_modopt_test_runs(fname_input_modeling, modeling_override, analysis_overr
 
     for dlc_option in test_modeling_overrides['DLC_driver']['DLCs']:
         dlc_option['transient_time'] = 0
-        dlc_option['analysis_time'] = 60.5
+        dlc_option['analysis_time'] = 0.5
         dlc_option['n_seeds'] = 1
         dlc_option['wind_speed'] = [10]
         if dlc_option['wave_period']: # if user specified array is used

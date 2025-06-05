@@ -1,5 +1,10 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+        FAST_exe: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/openfast/build_4p0p4/glue-codes/openfast/openfast
+        path2dll: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/ROSCO/rosco/lib/libdiscon.so
+        turbsim_exe: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/openfast/build_4p0p4/modules/turbsim/turbsim
 
 WISDEM:
     RotorSE:
@@ -92,8 +97,8 @@ DLC_driver:
           analysis_time: 0.1
           normal_shutdown_time: 0.1
         - DLC: "4.2"
-          analysis_time: 60.5
-          normal_shutdown_time: 10
+          normal_shutdown_time: 0.1
+          gust_wait_time: 0.1
         - DLC: "5.1"
           n_seeds: 1
           n_azimuth: 3
@@ -110,26 +115,28 @@ DLC_driver:
             PLExp: 0.14
             IECturbc: 0.12
         - DLC: "6.2"
+          yaw_misalign: [0.0]
         - DLC: "6.3"
         - DLC: "6.4" #idling 
           ws_bin_size: 10
         - DLC: "7.1"
-          yawfault_time: 200
+          yawfault_time: 0.5
           yawfault_yawpos: 15
+          yaw_misalign: [0.0]
         - DLC: "7.2"
-          yawfault_time: 200
+          yawfault_time: 0.5
           yawfault_yawpos: 15
         - DLC: "9.1"
           mooring_failurepoint: [['1']]
           mooring_failureline: [[[1]]]
-          mooring_failuretime: [[100]]
+          mooring_failuretime: [[0.1]]
         - DLC: "9.2"
           mooring_failurepoint: [['1']]
           mooring_failureline: [[[1]]]
         - DLC: "10.1"
           mooring_failurepoint: [['1']]
           mooring_failureline: [[[1]]]
-          mooring_failuretime: [[100]]
+          mooring_failuretime: [[0.1]]
         - DLC: "10.2"
           mooring_failurepoint: [['1']]
           mooring_failureline: [[[1]]]
