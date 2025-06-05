@@ -1,10 +1,5 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_configuration:
-        use_exe: True
-        FAST_exe: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/openfast/build_4p0p4/glue-codes/openfast/openfast
-        path2dll: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/ROSCO/rosco/lib/libdiscon.so
-        turbsim_exe: /kfs2/projects/weis/agupta/Tasks/ControllerTestBench/tools/openfast/build_4p0p4/modules/turbsim/turbsim
 
 WISDEM:
     RotorSE:
