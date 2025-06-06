@@ -1954,7 +1954,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
-        WindFile_plexp = 0.12*np.ones(dlc_generator.n_cases, dtype=int)
+        WindFile_plexp = PLExp * np.ones(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
 
         self.TMax = np.zeros(dlc_generator.n_cases)
