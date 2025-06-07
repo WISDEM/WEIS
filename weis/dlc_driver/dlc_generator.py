@@ -1600,8 +1600,8 @@ class DLCGenerator(object):
         dlc_options['label'] = '9.1'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.1
-        dlc_options['mooring_failureid'] = [[1]]
-        dlc_options['mooring_failuretension'] = [[0]]
+        dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
+        dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1611,11 +1611,11 @@ class DLCGenerator(object):
 
         # Get mooring faiure options
         if 'mooring_failurepoint' not in dlc_options:
-            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.1")
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.1 (e.g. mooring_failurepoint: [['1']])")
         if 'mooring_failureline' not in dlc_options:
-            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.1")
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.1 (e.g. mooring_failureline: [[[1]]])")
         if 'mooring_failuretime' not in dlc_options:
-            raise Exception("'mooring_failuretime' needs to be provided for DLC 9.1")
+            raise Exception("'mooring_failuretime' needs to be provided for DLC 9.1 (e.g. mooring_failuretime: [[10]])")
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1637,9 +1637,9 @@ class DLCGenerator(object):
         dlc_options['label'] = '9.2'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.1
-        dlc_options['mooring_failureid'] = [[1]]
-        dlc_options['mooring_failuretension'] = [[0]]
-        dlc_options['mooring_failuretime'] = [[0]]
+        dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
+        dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
+        dlc_options['mooring_failuretime'] = [[0.1]] # Failure time is set a small, non-zero value to ensure mooring line failure is triggered at the start 
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1649,9 +1649,9 @@ class DLCGenerator(object):
 
         # Get mooring faiure options
         if 'mooring_failurepoint' not in dlc_options:
-            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.2")
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 9.2 (e.g. mooring_failurepoint: [['1']])")
         if 'mooring_failureline' not in dlc_options:
-            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.2")
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 9.2 (e.g. mooring_failureline: [[[1]]])")
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1675,8 +1675,8 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
         dlc_options['turbine_status'] = 'parked-idling'
         dlc_options['PSF'] = 1.1
-        dlc_options['mooring_failureid'] = [[1]]
-        dlc_options['mooring_failuretension'] = [[0]]
+        dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
+        dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1686,11 +1686,11 @@ class DLCGenerator(object):
 
         # Get mooring faiure options
         if 'mooring_failurepoint' not in dlc_options:
-            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.1")
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.1 (e.g. mooring_failurepoint: [['1']])")
         if 'mooring_failureline' not in dlc_options:
-            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.1")
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.1 (e.g. mooring_failureline: [[[1]]])")
         if 'mooring_failuretime' not in dlc_options:
-            raise Exception("'mooring_failuretime' needs to be provided for DLC 10.1")
+            raise Exception("'mooring_failuretime' needs to be provided for DLC 10.1 (e.g. mooring_failuretime: [[10]])")
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e50]
@@ -1717,9 +1717,9 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
         dlc_options['turbine_status'] = 'parked-idling'
         dlc_options['PSF'] = 1.1
-        dlc_options['mooring_failureid'] = [[1]]
-        dlc_options['mooring_failuretension'] = [[0]]
-        dlc_options['mooring_failuretime'] = [[0]]
+        dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
+        dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
+        dlc_options['mooring_failuretime'] = [[0.1]] # Failure time is set a small, non-zero value to ensure mooring line failure is triggered at the start 
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1729,9 +1729,9 @@ class DLCGenerator(object):
 
         # Get mooring faiure options
         if 'mooring_failurepoint' not in dlc_options:
-            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.2")
+            raise Exception("One value for 'mooring_failurepoint' needs to be provided for DLC 10.2 (e.g. mooring_failurepoint: [['1']])")
         if 'mooring_failureline' not in dlc_options:
-            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.2")
+            raise Exception("One value for 'mooring_failureline' needs to be provided for DLC 10.2 (e.g. mooring_failureline: [[[1]]])")
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e50]
