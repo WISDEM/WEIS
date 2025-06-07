@@ -855,7 +855,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_2p1(self, dlc_options):
-        # Power production plus loss of electrical network
+        # Power production plus loss of electrical network - normal turbulence model
 
         # Get default options
         dlc_options.update(self.default_options)   
@@ -883,7 +883,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_2p2(self, dlc_options):
-        # Power production plus occurrence of fault
+        # Power production plus occurrence of fault - normal turbulence model
 
         # Get default options
         dlc_options.update(self.default_options)   
@@ -927,7 +927,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_2p3(self, dlc_options):
-        # Power production plus loss of electrical network
+        # Power production plus loss of elecrical network - extreme operating gust
 
         # Get default options
         dlc_options.update(self.default_options)   
@@ -940,6 +940,8 @@ class DLCGenerator(object):
         
         if 'genfault_time' not in dlc_options:
             raise Exception('genfault_time must be set for the DLC 2.3')
+        if 'gust_wait_time' not in dlc_options:
+            raise Exception('gust_wait_time (time at which gust starts) must be set for the DLC 4.2.')
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -954,6 +956,7 @@ class DLCGenerator(object):
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','genfault_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
+        generic_case_inputs.append(['gust_wait_time']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
     
@@ -1005,7 +1008,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_3p1(self, dlc_options):
-        # Start up - normal wind - fatigue
+        # Start up - normal wind profile - fatigue analysis
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1056,7 +1059,7 @@ class DLCGenerator(object):
     
 
     def generate_3p2(self, dlc_options):
-        # Start up - EOG + gust_wait_time
+        # Start up - extreme operating gust
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1111,7 +1114,7 @@ class DLCGenerator(object):
     
 
     def generate_3p3(self, dlc_options):
-        # Start up - EDC
+        # Start up - extreme wind direction change
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1164,7 +1167,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_4p1(self, dlc_options):
-        # Shutdown - normal wind
+        # Normal shutdown - normal wind profile - fatigue analysis
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1212,7 +1215,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_4p2(self, dlc_options):
-        # Shutdown - normal wind
+        # Normal shutdown - extreme operating gust
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1262,7 +1265,7 @@ class DLCGenerator(object):
 
     
     def generate_5p1(self, dlc_options):
-        # Power production normal turbulence model - emergency shutdown with various azimuth initial conditions
+        #  Emergency shutdown with normal turbulence model
         
         # Get default options
         dlc_options.update(self.default_options)      
@@ -1588,7 +1591,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
     
     def generate_9p1(self, dlc_options):
-        # 
+        # Mooring line failure - transient analysis - normal turbulence model, normal sea state
         
         # Get default options
         dlc_options.update(self.default_options)   
@@ -1625,7 +1628,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
     
     def generate_9p2(self, dlc_options):
-        # 
+        # Mooring line failure - steady-state analysis - normal turbulence model, normal sea state
         
         # Get default options
         dlc_options.update(self.default_options)   
@@ -1661,7 +1664,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_10p1(self, dlc_options):
-        # 
+        # Mooring line failure - transient analysis - extreme wind model - 50 year return period, extreme sea state
         
         # Get default options
         dlc_options.update(self.default_options)   
@@ -1703,7 +1706,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
     
     def generate_10p2(self, dlc_options):
-        # 
+        # Mooring line failure - steady-state analysis - extreme wind model - 50 year return period, extreme sea state
         
         # Get default options
         dlc_options.update(self.default_options)   
@@ -1847,6 +1850,8 @@ class DLCGenerator(object):
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
             dlc_options['yaw_misalign'] = [0]
+        
+        dlc_options['PLExp_windtype1'] = dlc_options.get('PLExp_windtype1',0.12)     # Use user input, otherwise disabled
 
         # Check options
         if 'step_speeddelta' not in dlc_options:
@@ -1871,7 +1876,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_freedecay(self,dlc_options):
-        # Describe the new design load case
+        # Free decay with parked-still turbine, no waves, no wind, with inital platform deflection
 
         # Get default options
         dlc_options.update(self.default_options)   
