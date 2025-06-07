@@ -83,6 +83,7 @@ DLC_driver:
           pitchfault_blade1pos: 20
         - DLC: "2.3"
           genfault_time: 0.1
+          gust_wait_time: 0.1
         - DLC: "2.4"
           genfault_time: 0.1
         - DLC: "3.1"

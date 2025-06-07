@@ -941,7 +941,7 @@ class DLCGenerator(object):
         if 'genfault_time' not in dlc_options:
             raise Exception('genfault_time must be set for the DLC 2.3')
         if 'gust_wait_time' not in dlc_options:
-            raise Exception('gust_wait_time (time at which gust starts) must be set for the DLC 4.2.')
+            raise Exception('gust_wait_time (time at which gust starts) must be set for the DLC 2.3.')
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
