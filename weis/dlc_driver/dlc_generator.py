@@ -1746,14 +1746,14 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options)
     
-    def generate_Steady(self, dlc_options):
+    def generate_steady(self, dlc_options):
         # Power production steady wind
 
         # Get default options
         dlc_options.update(self.default_options)   
         
         # DLC Specific options:
-        dlc_options['label'] = 'Steady'
+        dlc_options['label'] = 'steady'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Steady'
 
@@ -1774,14 +1774,14 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options)
 
-    def generate_Ramp(self, dlc_options):
+    def generate_ramp(self, dlc_options):
         # Power production ramp wind
 
         # Get default options
         dlc_options.update(self.default_options)   
         
         # DLC Specific options:
-        dlc_options['label'] = 'Ramp'
+        dlc_options['label'] = 'ramp'
         dlc_options['sea_state'] = 'normal'
         if dlc_options['turbulent_wind']['flag']:
             dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
@@ -1796,9 +1796,9 @@ class DLCGenerator(object):
 
         # Check options
         if 'ramp_speeddelta' not in dlc_options:
-            raise Exception('ramp_speeddelta must be set for the Ramp DLC')
+            raise Exception('ramp_speeddelta must be set for the ramp DLC')
         if 'ramp_duration' not in dlc_options:
-            raise Exception('ramp_duration must be set for the Ramp DLC')
+            raise Exception('ramp_duration must be set for the ramp DLC')
         if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
             raise Exception('ramp_duration must be smaller than analysis_time')
         if 'gust_wait_time' in dlc_options:
@@ -1827,14 +1827,14 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options)
     
-    def generate_Step(self, dlc_options):
-        # Power production Step wind
+    def generate_step(self, dlc_options):
+        # Power production step wind
 
         # Get default options
         dlc_options.update(self.default_options)   
         
         # DLC Specific options:
-        dlc_options['label'] = 'Step'
+        dlc_options['label'] = 'step'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Step'
 
@@ -1855,13 +1855,13 @@ class DLCGenerator(object):
 
         # Check options
         if 'step_speeddelta' not in dlc_options:
-            raise Exception('step_speeddelta must be set for the Step DLC')
+            raise Exception('step_speeddelta must be set for the step DLC')
         if 'step_time' in dlc_options:
             if dlc_options['step_time'] > dlc_options['analysis_time']:
                 raise Exception('step_time must be less than analysis_time')
             dlc_options['gust_wait_time'] = dlc_options['step_time']
         else:
-            raise Exception('step_time must be set for the Step DLC')
+            raise Exception('step_time must be set for the step DLC')
         #if dlc_options['ramp_duration'] >= dlc_options['analysis_time']:
         #    raise Exception('Analysis_time should be greater than ramp_duration')
         

@@ -135,12 +135,12 @@ DLC_driver:
         - DLC: "10.2"
           mooring_failurepoint: [['1']]
           mooring_failureline: [[[1]]]
-        - DLC: "Steady"
-        - DLC: "Ramp"
+        - DLC: "steady"
+        - DLC: "ramp"
           analysis_time: 0.1
           ramp_speeddelta: 5
           ramp_duration: 0.1
-        - DLC: "Step"
+        - DLC: "step"
           analysis_time: 0.1
           step_speeddelta: 5
           step_time: 0.1
