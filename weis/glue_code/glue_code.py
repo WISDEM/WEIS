@@ -229,6 +229,7 @@ class WindPark(om.Group):
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.connect('configuration.turb_class',        'raft.turbulence_class')
             self.connect('configuration.ws_class' ,         'raft.turbine_class')
+            self.connect("configuration.rotor_orientation", "raft.rotor_orientation")
 
             self.connect("high_level_tower_props.hub_height", "raft.turbine_hHub")
             self.connect("nacelle.overhang", "raft.turbine_overhang")
