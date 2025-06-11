@@ -101,7 +101,10 @@ def convert_str(val):
     elif val=='False':
         return False
     elif try_type(val,str):
-        return str(val)
+        try:
+            return(eval(val))
+        except Exception:
+            return str(val)
     # elif type(val)!=str and try_list(val):
     #     return ", ".join(['{:}'.format(i) for i in val])
     else:
@@ -134,8 +137,10 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True, f
             for g in matrix_group_idx[j]:
                 row_out[g] = change_vals[g][val]
         matrix_out.append(row_out)
-    
-    matrix_out = np.asarray(matrix_out, dtype=object)
+    try:
+        matrix_out = np.array([[str(item) for item in row] for row in matrix_out])
+    except:
+        matrix_out = np.asarray(matrix_out)
     n_cases = np.shape(matrix_out)[0]
 
     # case naming
