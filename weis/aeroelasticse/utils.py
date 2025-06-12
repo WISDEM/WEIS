@@ -518,8 +518,8 @@ class ModesElastoDyn(ExplicitComponent):
 def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, turbsim_exe, i_case):
 
     if dlc_generator.cases[i_case].turbulent_wind:
-        if dlc_generator.cases[i_case].user_bts:
-            wind_file_path_InflowWind = dlc_generator.cases[i_case].user_bts
+        if dlc_generator.cases[i_case].user_btsfilename:
+            wind_file_path_InflowWind = dlc_generator.cases[i_case].user_btsfilename
             wind_file_type = 3
         else:
             # If IEC_WindType is Turbulent-<Gust>, create a temporary NTM turbulent file to be used to add turbulence to gust later

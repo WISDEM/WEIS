@@ -113,7 +113,7 @@ openfast_input_map = {
     # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
     'wind_seed': ("TurbSim", "RandSeed1"),
     'direction': ("TurbSim", "direction_pn"),
-    'user_bts': ("TurbSim", "FileName_BTS"),
+    'user_btsfilename': ("TurbSim", "user_btsfilename"),
     'shear': ("TurbSim", "shear_hv"),
     'gust_wait_time': ("InflowWind","gust_wait_time"),  # This is a dummy input to inflowwind, it applies to wind generation
 }
@@ -467,15 +467,12 @@ class DLCGenerator(object):
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
-                if dlc_options['user_bts']:
-                    idlc.user_bts = dlc_options['user_bts']
+                if dlc_options['user_btsfilename']:
+                    idlc.user_btsfilename = dlc_options['user_btsfilename']
             
             if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
-                if dlc_options['user_bts']:
-                    idlc.user_bts = dlc_options['user_bts']
-
            
             idlc.URef = case['wind_speed']
             idlc.label = dlc_options['label']
@@ -2027,6 +2024,32 @@ class DLCGenerator(object):
         # Don't need wind/waves/yaw
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, should be length 1 for this DLC
         generic_case_inputs.append(['excursion_load']) # group 2, load excursions
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_userwind(self,dlc_options):
+        # Describe the new design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'userwind'
+        dlc_options['IEC_WindType'] = 'NTM'
+        if ('user_btsfilename' not in dlc_options) or ('wind_speed' not in dlc_options):
+            raise Exception('Both wind_speed and user_btsfilename must be set for userwind DLC. Please ensure that they match.')
+        else:
+            dlc_options['wind_speed'] = list(np.linspace(self.ws_cut_in,self.ws_cut_out,len(dlc_options['user_btsfilename'])))
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed','user_btsfilename']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        # generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
