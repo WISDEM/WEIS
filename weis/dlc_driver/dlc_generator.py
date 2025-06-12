@@ -113,6 +113,7 @@ openfast_input_map = {
     # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
     'wind_seed': ("TurbSim", "RandSeed1"),
     'direction': ("TurbSim", "direction_pn"),
+    'user_bts': ("TurbSim", "FileName_BTS"),
     'shear': ("TurbSim", "shear_hv"),
     'gust_wait_time': ("InflowWind","gust_wait_time"),  # This is a dummy input to inflowwind, it applies to wind generation
 }
@@ -470,6 +471,8 @@ class DLCGenerator(object):
             if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
+                if dlc_options['user_bts']:
+                    idlc.user_bts = dlc_options['user_bts']
            
             idlc.URef = case['wind_speed']
             idlc.label = dlc_options['label']
