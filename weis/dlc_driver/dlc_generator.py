@@ -467,12 +467,15 @@ class DLCGenerator(object):
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
+                if dlc_options['user_bts']:
+                    idlc.user_bts = dlc_options['user_bts']
             
             if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
                 if dlc_options['user_bts']:
                     idlc.user_bts = dlc_options['user_bts']
+
            
             idlc.URef = case['wind_speed']
             idlc.label = dlc_options['label']
