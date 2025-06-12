@@ -222,8 +222,8 @@ class TuneROSCO(ExplicitComponent):
 
         # Speicifc parameters
         if rosco_init_options['Flp_Mode'] > 0:
-            rosco_init_options['flp_kp_norm'] = float(inputs['flp_kp_norm'])
-            rosco_init_options['flp_tau']  = float(inputs['flp_tau'])
+            rosco_init_options['flp_kp_norm'] = float(inputs['flp_kp_norm'][0])
+            rosco_init_options['flp_tau']  = float(inputs['flp_tau'][0])
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
@@ -233,7 +233,7 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['twr_freq']    = float(inputs['twr_freq']) * 2 * np.pi
 
         if rosco_init_options['Flp_Mode'] > 0:
-            rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'])
+            rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'][0])
 
         # If Kp_float is a design variable, do not automatically tune it
         dv_names = [dv['name'] for dv in self.opt_options['design_variables']['control']['rosco_tuning']]
@@ -253,27 +253,27 @@ class TuneROSCO(ExplicitComponent):
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
-        WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.J            = float(inputs['rotor_inertia'])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
-        WISDEM_turbine.rho          = float(inputs['rho'])
-        WISDEM_turbine.rotor_radius = float(inputs['R'])
-        WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
+        WISDEM_turbine.v_min        = float(inputs['v_min'][0])
+        WISDEM_turbine.J            = float(inputs['rotor_inertia'][0])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDE
+        WISDEM_turbine.rho          = float(inputs['rho'][0])
+        WISDEM_turbine.rotor_radius = float(inputs['R'][0])
+        WISDEM_turbine.Ng           = float(inputs['gear_ratio'][0])
         # Incoming value already has gearbox eff included, so have to separate it out
-        WISDEM_turbine.GenEff       = float(inputs['generator_efficiency'] / inputs['gearbox_efficiency']) * 100.
-        WISDEM_turbine.GBoxEff      = float(inputs['gearbox_efficiency']) * 100.
-        WISDEM_turbine.rated_rotor_speed   = float(inputs['rated_rotor_speed'])
-        WISDEM_turbine.rated_power  = float(inputs['rated_power'])
-        WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'])
+        WISDEM_turbine.GenEff       = float(inputs['generator_efficiency'][0] / inputs['gearbox_efficiency'][0]) * 100.
+        WISDEM_turbine.GBoxEff      = float(inputs['gearbox_efficiency'][0]) * 100.0
+        WISDEM_turbine.rated_rotor_speed   = float(inputs['rated_rotor_speed'][0])
+        WISDEM_turbine.rated_power  = float(inputs['rated_power'][0])
+        WISDEM_turbine.rated_torque = float(inputs['rated_torque'][0]) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'][0])
         WISDEM_turbine.max_torque   = WISDEM_turbine.rated_torque * 1.1  # TODO: make this an input if studying constant power
-        WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'])*float(inputs['R']) / float(inputs['tsr_operational'])
-        WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.v_max        = float(inputs['v_max'])
-        WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'])
-        WISDEM_turbine.min_pitch_rate   = -float(inputs['max_pitch_rate'])
-        WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'])
-        WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
-        WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
-        WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
+        WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'][0])*float(inputs['R'][0]) / float(inputs['tsr_operational'][0])
+        WISDEM_turbine.v_min        = float(inputs['v_min'][0])
+        WISDEM_turbine.v_max        = float(inputs['v_max'][0])
+        WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'][0])
+        WISDEM_turbine.min_pitch_rate   = -float(inputs['max_pitch_rate'][0])
+        WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'][0])
+        WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'][0])
+        WISDEM_turbine.TowerHt          = float(inputs['TowerHt'][0])
+        WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq'][0]) * 2 * np.pi
         
 
         # Load Cp tables
@@ -304,7 +304,7 @@ class TuneROSCO(ExplicitComponent):
                     af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
             
             # Initialize CCBlade as cc_rotor object 
-            WISDEM_turbine.cc_rotor = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+            WISDEM_turbine.cc_rotor = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'][0], inputs['Rtip'][0], discrete_inputs['nBlades'], inputs['rho'][0], inputs['mu'][0], inputs['precone'][0], inputs['tilt'][0], inputs['yaw'][0], inputs['shearExp'][0], inputs['hub_height'][0], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'][0],inputs['presweep'], inputs['presweepTip'][0], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
             # Load aerodynamic performance data for blades
             WISDEM_turbine.af_data = [{} for i in range(self.n_span)]
@@ -386,7 +386,7 @@ class TuneROSCO(ExplicitComponent):
         ROSCO_input = DISCON_dict(WISDEM_turbine,controller)
 
         # Cp table info
-        ROSCO_input['v_rated'] = float(inputs['v_rated'])
+        ROSCO_input['v_rated'] = float(inputs['v_rated'][0])
         ROSCO_input['Cp_pitch_initial_rad'] = self.pitch_vector
         ROSCO_input['Cp_TSR_initial'] = self.tsr_vector
         ROSCO_input['Cp_table'] = WISDEM_turbine.Cp_table
@@ -509,7 +509,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         tsr_vector = inputs['tsr_vector_in']
         pitch_vector = inputs['pitch_vector_in']
 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'][0], inputs['Rtip'][0], discrete_inputs['nBlades'], inputs['rho'][0], inputs['mu'][0], inputs['precone'][0], inputs['tilt'][0], inputs['yaw'][0], inputs['shearExp'][0], inputs['hub_height'][0], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'][0],inputs['presweep'], inputs['presweepTip'][0], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
         if max(U_vector) == 0.:
             U_vector    = np.linspace(V_in[0],V_out[0], n_U)

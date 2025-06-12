@@ -2,41 +2,41 @@
 # Use pytest-order to customize the order in which tests are run.
 # Input vizFile Generation => Run the app with Input yaml file => Test WEIS Output Viz => Test WEIS Input Viz
 
-import pytest
 import os
 import subprocess
-import numpy as np
 from contextvars import copy_context
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
 import dash_bootstrap_components as dbc
 
 # Import all of the names of callback functions to tests
+from weis import weis_main
 from weis.visualization.appServer.app.mainApp import app        # Needed to prevent dash.exceptions.PageError: `dash.register_page()` must be called after app instantiation
 from weis.visualization.appServer.app.pages.visualize_openfast import read_default_variables, define_graph_cfg_layout, save_openfast, update_graph_layout
 from weis.visualization.appServer.app.pages.visualize_opt import read_variables, preprocess_data, define_preprocess_layout, complete_raft_sublayout, toggle_conv_layout, update_graphs, toggle_iteration_with_dlc_layout
 from weis.visualization.utils import parse_yaml, convert_dict_values_to_list
 
 # Input vizFile Generation
-modeling_options = 'examples/17_IEA22_Optimization/modeling_options_raft.yaml'
-analysis_options = 'examples/17_IEA22_Optimization/analysis_options_raft_ptfm_opt.yaml'
-wt_input = 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'
-vizFilepath = 'weis/visualization/appServer/app/tests/input/testIEA22RAFT.yaml'
+run_dir = os.path.dirname( os.path.realpath(__file__) )
+weis_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( run_dir ) ) ) ) )
+modeling_options = os.path.join(weis_dir, 'examples','04_frequency_domain_analysis_design','iea22_raft_opt_modeling.yaml')
+analysis_options = os.path.join(weis_dir, 'examples','04_frequency_domain_analysis_design','iea22_raft_opt_analysis.yaml')
+wt_input = os.path.join(weis_dir, 'examples','00_setup','ref_turbines','IEA-22-280-RWT_Floater.yaml')
+vizFilepath = os.path.join(weis_dir, 'weis','visualization','appServer','app','tests','input','testIEA22RAFT.yaml')
+vizExec = os.path.join(weis_dir, 'weis','visualization','appServer', 'share','vizFileGen.py')
 
+global opt_options
+opt_options = read_variables( parse_yaml(vizFilepath) )
 
 def test_vizFile_generation(request):
-    root_dir = request.config.rootdir
+    root_dir = request.config.rootdir    
     print(f'Moving back to root directory..{root_dir}\n')
     os.chdir(root_dir)
-    subprocess.run(['python', 'weis/visualization/appServer/share/vizFileGen.py', '--modeling_options', modeling_options, '--analysis_options', analysis_options, '--wt_input', wt_input, '--output', vizFilepath], cwd=root_dir)
+    subprocess.run(['python', vizExec, '--modeling_options', modeling_options, '--analysis_options', analysis_options, '--wt_input', wt_input, '--output', vizFilepath], cwd=root_dir)
 
 
 # Optimization Visualization Test
 def test_read_variables():
-    global opt_options
-    input_dict = parse_yaml(vizFilepath)
-    opt_options = read_variables(input_dict)
-
     assert opt_options['opt_type'] == 'RAFT'
 
 

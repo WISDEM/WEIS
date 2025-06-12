@@ -519,7 +519,7 @@ components:
                     values: [15.0, 110., 144.582]
             outer_diameter:
                 grid: *grid_tower
-                values: [10.0, 7.0, 6.5]
+                values: [8.0, 7.0, 6.5]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [0.5, 0.5]

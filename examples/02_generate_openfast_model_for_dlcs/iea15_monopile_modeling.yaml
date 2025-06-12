@@ -1,0 +1,112 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+        n_span: 60
+    DriveSE:
+        flag: True
+    TowerSE:
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    FixedBottomSE:
+        flag: True
+        soil_springs: True
+    BOS:
+        flag: True
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.0002
+        CompElast: 2
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 1
+        CompMooring: 0
+        CompIce: 0
+    linearization:
+        Linearize: False
+    ElastoDyn:      # DZ: taking level 2 DOFs from here now, let's set linearization DOFs in Level 2 modelling options next
+        flag: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: True  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+    BeamDynBlade:
+        mu1: 0.00299005 
+        mu2: 0.00218775 
+        mu3: 0.00084171 
+        mu4: 0.00218775 
+        mu5: 0.00299005 
+        mu6: 0.00084171
+    AeroDyn:
+        DBEMT_Mod: 0
+    ElastoDynBlade:
+        BldFlDmp1: 3.0
+        BldFlDmp2: 3.0
+        BldEdDmp1: 3.0
+    ServoDyn:
+        YawSpr: 4.6273E+10
+        YawDamp: 3.9088E+07
+        WaveTMax: 1 #3630
+    SeaState:
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WvLowCOffD: 0.0
+        WvHiCOffD: 3.04292
+    HydroDyn:
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+    outlist:
+        ElastoDyn:
+            TTDspFA: True
+            TTDspSS: True
+
+ROSCO:
+    flag: True
+    zeta_pc: [1.0]
+    omega_pc: [0.2]
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 10
+          n_seeds: 1
+          analysis_time: 0.1
+          transient_time: 0.
