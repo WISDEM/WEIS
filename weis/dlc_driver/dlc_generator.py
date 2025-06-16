@@ -20,17 +20,17 @@ openfast_input_map = {
     
     'WindFile_type': ("InflowWind","WindType"),
     'wind_speed': ("InflowWind","HWindSpeed"),
-    'PLExp_windtype1': ("InflowWind","PLExp"),
+    'wind_shear_exponent': ("InflowWind","PLExp"),
     'WindFile_name': ("InflowWind","FileName_BTS"),
     'WindFile_name': ("InflowWind","FileName_Uni"),
     'rotorD': ("InflowWind","RefLength"),
-    'WindHd': ("InflowWind","PropagationDir"),
+    'wind_heading': ("InflowWind","PropagationDir"),   # This should be opposite of yaw_misalign
     'hub_height': ("InflowWind","RefHt_Uni"),
     
     'rot_speed_initial': ("ElastoDyn","RotSpeed"),
     'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
     'azimuth_init': ("ElastoDyn","Azimuth"),
-    'yaw_misalign': ("ElastoDyn","NacYaw"),
+    'yaw_misalign': [("ElastoDyn","NacYaw"),("ServoDyn","YawNeut")],
 
     'compute_aerodynamics': ("Fst", "CompAero"),
     'compute_inflow': ("Fst", "CompInflow"),
@@ -331,7 +331,7 @@ class DLCGenerator(object):
         wind_speeds_indiv = self.get_wind_speeds(options)
         wind_speed, wind_seed = self.get_wind_seeds(options, wind_speeds_indiv)
         wave_seed = self.get_wave_seeds(options, wind_speed)
-        wind_heading = self.get_wind_heading(options)
+        # wind_heading = self.get_wind_heading(options)
         wave_height = self.get_wave_height(options)
         wave_period = self.get_wave_period(options)
         wave_gamma = self.get_wave_gamma(options)
@@ -340,8 +340,8 @@ class DLCGenerator(object):
 
         if len(wind_seed) > 1 and len(wind_seed) != len(wind_speed):
             raise Exception("The vector of wind_seed must have either length=1 or the same length of wind speeds")
-        if len(wind_heading) > 1 and len(wind_heading) != len(wind_speed):
-            raise Exception("The vector of wind_heading must have either length=1 or the same length of wind speeds")
+        # if len(wind_heading) > 1 and len(wind_heading) != len(wind_speed):
+        #     raise Exception("The vector of wind_heading must have either length=1 or the same length of wind speeds")
         if len(wave_seed) > 1 and len(wave_seed) != len(wind_speed):
             raise Exception("The vector of wave seeds must have the same length of wind speeds or not defined")
         if len(wave_height) > 1 and len(wave_height) != len(wind_speed):
@@ -361,7 +361,7 @@ class DLCGenerator(object):
         metocean_case_info['wind_speed'] = wind_speed
         metocean_case_info['wind_seed'] = wind_seed
         metocean_case_info['wave_seed'] = wave_seed
-        metocean_case_info['wind_heading'] = wind_heading
+        # metocean_case_info['wind_heading'] = wind_heading
         metocean_case_info['wave_height'] = wave_height
         metocean_case_info['wave_period'] = wave_period
         # metocean_case_info['current_speeds'] = current_speeds
@@ -435,7 +435,7 @@ class DLCGenerator(object):
         for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
             idlc.turbulent_wind = False
-            idlc.PLExp_windtype1 = 0.12 # Default value of shear exponent 0.12 for wind_type = 1
+            idlc.wind_shear_exponent = 0.12 # Default value of shear exponent 0.12 for wind_type = 1
             
             if dlc_options['IEC_WindType'].split('-')[-1] == 'ECD':
                 idlc.turbulent_wind = False
@@ -454,7 +454,7 @@ class DLCGenerator(object):
                 idlc.sigma1 = self.IECturb.NTM(case['wind_speed'])
             elif dlc_options['IEC_WindType'].split('-')[-1] == 'NWP':
                 idlc.turbulent_wind = False
-                idlc.PLExp_windtype1 = 0.2  # According to IEC 61400-1, PLExp should be 0.2 for NWP
+                idlc.wind_shear_exponent = 0.2  # According to IEC 61400-1, PLExp should be 0.2 for NWP
             elif dlc_options['IEC_WindType'].split('-')[-1] == 'Ramp':
                 idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
                 idlc.ramp_duration = dlc_options['ramp_duration']
@@ -467,8 +467,10 @@ class DLCGenerator(object):
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
-                if dlc_options['user_btsfilename']:
+                if 'user_btsfilename' in dlc_options:
                     idlc.user_btsfilename = dlc_options['user_btsfilename']
+                else:
+                    idlc.user_btsfilename = None
             
             if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
                 idlc.turbulent_wind = True
@@ -1767,20 +1769,18 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Steady'
 
-        # Set yaw_misalign, else default
-        if 'yaw_misalign' in dlc_options:
-            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
-        else: # default
-            dlc_options['yaw_misalign'] = [0]
+        dlc_options['wind_heading'] = np.array(dlc_options.get('wind_heading',[0]))  # Default wind heading is 0 degrees, can be set by user
+        dlc_options['yaw_misalign'] = wrap_180(-dlc_options['wind_heading'])  
         
-        dlc_options['PLExp_windtype1'] = dlc_options.get('PLExp_windtype1',0.12)     # Use user input, otherwise disabled
+        
+        dlc_options['wind_shear_exponent'] = dlc_options.get('wind_shear_exponent',0.12)     # Use user input, otherwise disabled
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['yaw_misalign','wind_heading']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
 
@@ -1861,7 +1861,7 @@ class DLCGenerator(object):
         else: # default
             dlc_options['yaw_misalign'] = [0]
         
-        dlc_options['PLExp_windtype1'] = dlc_options.get('PLExp_windtype1',0.12)     # Use user input, otherwise disabled
+        dlc_options['wind_shear_exponent'] = dlc_options.get('wind_shear_exponent',0.12)     # Use user input, otherwise disabled
 
         # Check options
         if 'step_speeddelta' not in dlc_options:
@@ -2137,6 +2137,23 @@ def is_list_of_lists(lst):
             return False
 
     return True
+
+def wrap_180(angles):
+    """Wraps angles to the range (-180, 180] degrees.
+
+    Args:
+        angles: A NumPy array of angles in degrees.
+
+    Returns:
+        A NumPy array of wrapped angles in the range (-180, 180] degrees.
+    """
+    wrapped = ((angles + 180) % 360) - 180
+    # If angle is exactly -180, return 180 instead
+    if isinstance(wrapped, np.ndarray):
+            wrapped[wrapped == -180] = 180
+    elif wrapped == -180:
+            wrapped = 180
+    return wrapped
 
 if __name__ == "__main__":
 

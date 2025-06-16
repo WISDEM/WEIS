@@ -601,5 +601,5 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
                 wind_file_type = 3
             else:
                 wind_file_type = 2
-    wind_file_plexp = dlc_generator.cases[i_case].PLExp_windtype1
+    wind_file_plexp = dlc_generator.cases[i_case].wind_shear_exponent
     return wind_file_type, wind_file_plexp, wind_file_path_InflowWind
