@@ -196,7 +196,6 @@ class DLCGenerator(object):
         # Set and update default_options, applied to dlc_options and first group in case_inputs
         self.default_options = {
             'wake_mod': 1,
-            'wave_model': 2,
         }
         self.default_options.update(default_options)
 
@@ -671,6 +670,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.1'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.25
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -697,6 +697,8 @@ class DLCGenerator(object):
         dlc_options['label'] = 'AEP'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.25
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
         if 'TI_factor' not in dlc_options:
             raise Exception('A TI_factor must be set for the AEP DLC.')
         
@@ -730,6 +732,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.2'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.0
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -757,6 +760,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.3'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = '1ETM'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -785,7 +789,8 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = 'ECD'
         dlc_options['direction'] = ['n', 'p']
         dlc_options['ua_mod'] = 0     # don't use unsteady aero
-        
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
 
         # Set yaw_misalign, else default
@@ -821,7 +826,8 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = 'EWS'
         dlc_options['direction'] = ['p', 'n']
         dlc_options['shear'] = ['h', 'v']
-        
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -850,6 +856,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.6'
         dlc_options['sea_state'] = 'severe'
         dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -877,7 +884,8 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
-        
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
         if 'genfault_time' not in dlc_options:
             raise Exception('genfault_time must be set for the DLC 2.1')
 
@@ -905,6 +913,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -949,7 +958,8 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EOG'
         dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
-        
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
         if 'genfault_time' not in dlc_options:
             raise Exception('genfault_time must be set for the DLC 2.3')
         if 'gust_wait_time' not in dlc_options:
@@ -983,6 +993,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.0  # PSF = 1.0 for fatigue DLCs
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -1032,6 +1043,7 @@ class DLCGenerator(object):
         dlc_options['PSF'] = 1.0  # PSF = 1.0 for fatigue DLCs
         dlc_options['pitch_initial'] = 90.
         dlc_options['turbine_status'] = 'parked-idling'     # initial turbine status is what matters here
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Startup options
         dlc_options['startup_mode'] = 1
@@ -1082,6 +1094,7 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = 'EOG'
         dlc_options['pitch_initial'] = 90.
         dlc_options['turbine_status'] = 'parked-idling'     # initial turbine status is what matters here
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Specify startup time for this case
 
@@ -1138,6 +1151,7 @@ class DLCGenerator(object):
         dlc_options['direction'] = ['n', 'p']
         dlc_options['pitch_initial'] = 90.
         dlc_options['turbine_status'] = 'parked-idling'     # initial turbine status is what matters here
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Specify startup time for this case
 
@@ -1189,6 +1203,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NWP'
         dlc_options['PSF'] = 1.0  # PSF = 1.0 for fatigue DLCs
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Specify shutdown options
         dlc_options['shutdown_mode'] = 1
@@ -1236,6 +1251,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '4.2'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EOG'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Specify shutdown options
         dlc_options['shutdown_mode'] = 1
@@ -1287,6 +1303,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['final_blade_pitch'] = 90.
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Time options, set defaults if not provided
         if dlc_options['analysis_time'] == self.dlc_schema['analysis_time']['default']: 
@@ -1328,6 +1345,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '6.1'
         dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
@@ -1370,6 +1388,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
         dlc_options['PSF'] = 1.1
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
@@ -1409,6 +1428,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '6.3'
         dlc_options['sea_state'] = '1-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         dlc_options['yaw_misalign'] = dlc_options.get('yaw_misalign',np.arange(-20,20+10,10))
@@ -1449,6 +1469,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.0
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set wind speeds to DLC spec if not defined by the user
         if len(dlc_options['wind_speed']) == 0:
@@ -1493,6 +1514,7 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = '1-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
         dlc_options['PSF'] = 1.1
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
 
         if not dlc_options['wind_speed']:
@@ -1550,7 +1572,8 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.0
-        
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
+
         # Set wind speeds to DLC spec if not defined by the user
         if len(dlc_options['wind_speed']) == 0:
             dlc_options['wind_speed'] = np.arange(0,self.ws_cut_out, dlc_options['ws_bin_size'])
@@ -1614,6 +1637,7 @@ class DLCGenerator(object):
         dlc_options['PSF'] = 1.1
         dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
         dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1652,6 +1676,7 @@ class DLCGenerator(object):
         dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
         dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
         dlc_options['mooring_failuretime'] = [[0.1]] # Failure time is set a small, non-zero value to ensure mooring line failure is triggered at the start 
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1689,6 +1714,7 @@ class DLCGenerator(object):
         dlc_options['PSF'] = 1.1
         dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
         dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1732,6 +1758,7 @@ class DLCGenerator(object):
         dlc_options['mooring_failureid'] = [[1]] # Mooring failure DLCs assume one mooring line failure which is given id=1
         dlc_options['mooring_failuretension'] = [[0]] # Setting failure tension to 0, which disables mooring line failure due to tension exheeding the limit 
         dlc_options['mooring_failuretime'] = [[0.1]] # Failure time is set a small, non-zero value to ensure mooring line failure is triggered at the start 
+        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1768,6 +1795,7 @@ class DLCGenerator(object):
         dlc_options['label'] = 'steady'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Steady'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',0)
 
         dlc_options['wind_heading'] = np.array(dlc_options.get('wind_heading',[0]))  # Default wind heading is 0 degrees, can be set by user
         dlc_options['yaw_misalign'] = wrap_180(-dlc_options['wind_heading'])  
@@ -1793,6 +1821,8 @@ class DLCGenerator(object):
         # DLC Specific options:
         dlc_options['label'] = 'ramp'
         dlc_options['sea_state'] = 'normal'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',0)
+
         if dlc_options['turbulent_wind']['flag']:
             dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
         else:
@@ -1847,6 +1877,7 @@ class DLCGenerator(object):
         dlc_options['label'] = 'step'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Step'
+        dlc_options['wave_model'] = dlc_options.get('wave_model',0)
 
         if dlc_options['turbulent_wind']['flag']:
             dlc_options['IEC_WindType'] = 'Turbulent-Step'
@@ -2042,6 +2073,8 @@ class DLCGenerator(object):
             raise Exception('Both wind_speed and user_btsfilename must be set for userwind DLC. Please ensure that they match.')
         else:
             dlc_options['wind_speed'] = list(np.linspace(self.ws_cut_in,self.ws_cut_out,len(dlc_options['user_btsfilename'])))
+
+        dlc_options['wave_model'] = dlc_options.get('wave_model',0)
 
         # DLC-specific: define groups
         # Groups are dependent variables, the cases are a cross product of the independent groups
