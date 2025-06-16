@@ -2171,7 +2171,7 @@ class FASTLoadCases(ExplicitComponent):
             # Convert StaticLoad back to float aray
             for case_i in case_list_i:
                 if ('ServoDyn', 'StaticLoad') in case_i:
-                    case_i[('ServoDyn', 'StaticLoad')] = [float(load) for load in case_i[('ServoDyn', 'StaticLoad')][1:-1].split(',')]
+                    case_i[('ServoDyn', 'StaticLoad')] = [float(load) for load in case_i[('ServoDyn', 'StaticLoad')]]
                     case_i[('ServoDyn', 'SStCfiles')] = [case_i[('ServoDyn', 'SStCfiles')]]
             
 
