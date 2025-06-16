@@ -2076,13 +2076,16 @@ class DLCGenerator(object):
 
         dlc_options['wave_model'] = dlc_options.get('wave_model',0)
 
+        dlc_options['wind_heading'] = np.array(dlc_options.get('wind_heading',[0]))  # Default wind heading is 0 degrees, can be set by user
+        dlc_options['yaw_misalign'] = wrap_180(-dlc_options['wind_heading'])  
+
         # DLC-specific: define groups
         # Groups are dependent variables, the cases are a cross product of the independent groups
         # The options in each group should have the same length
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed','user_btsfilename']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        # generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['yaw_misalign','wind_heading']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
