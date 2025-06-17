@@ -1646,6 +1646,9 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N2))
                 fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
                 fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N2))
+
+                # Axial coefficients
+                fst_vt['HydroDyn']['AxCp'][:] = 0
             
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
