@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import os
+from weis import weis_main
+
+TEST_RUN = False
+
+## File management
+run_dir = os.path.dirname( os.path.realpath(__file__) )
+fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-22-280-RWT_Floater.yaml")
+fname_modeling_options = os.path.join(run_dir, "modeling_options_iea22.yaml")
+fname_analysis_options = os.path.join(run_dir, "analysis_options_dfsm_fowt.yaml")
+
+wt_opt, modeling_options, opt_options = weis_main(fname_wt_input, 
+                                                 fname_modeling_options, 
+                                                 fname_analysis_options,
+                                                 test_run=TEST_RUN
+                                                 )
+
+

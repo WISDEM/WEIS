@@ -46,7 +46,8 @@ class SimpleTrustRegion(BaseMethod):
         trust_radius=0.2,
         expansion_ratio=2.0,
         contraction_ratio=0.25,
-        optimization_log = False
+        optimization_log = False,
+        log_filename = None
     ):
         """
         Initialize the trust region method and store the user-defined options.
@@ -84,6 +85,7 @@ class SimpleTrustRegion(BaseMethod):
         self.expansion_ratio = expansion_ratio
         self.contraction_ratio = contraction_ratio
         self.optimization_log = optimization_log
+        self.log_filename = log_filename
 
 
 
@@ -134,11 +136,12 @@ class SimpleTrustRegion(BaseMethod):
                 minimizer_kwargs=minimizer_kwargs,
             )
         else:
+
             res = minimize(
                 scaled_function,
                 x0,
-                method="SLSQP",
-                tol=1e-5,
+                method="COBYLA",
+                tol=1e-3,
                 bounds=bounds,
                 constraints=self.list_of_constraints,
                 options={"disp": self.disp == 2, "maxiter": 50},
@@ -220,7 +223,11 @@ class SimpleTrustRegion(BaseMethod):
             print("Best func value:", new_point_high)
 
         if self.optimization_log:
-            with open(self.filename,'a') as f:
+            # con_name = self.constraints[0]['name']
+
+            # con_val_old = self.model_high.run(self.design_vectors[-2])[con_name]
+            # con_val_new = self.model_high.run(x_new)[con_name]
+            with open(self.log_filename,'a') as f:
                 f.write("================\n")
                 f.write('Iteration number : '+str(iter+1)+'\n')
                 param_str_new = ", ".join(f"{p:.4f}" for p in x_new)
@@ -233,6 +240,8 @@ class SimpleTrustRegion(BaseMethod):
                 f.write('Predicted Obj value at x_old:{:}\n'.format(np.squeeze(prev_point_approx)))
                 f.write('Actual Obj value at x_new:{:}\n'.format(new_point_high))
                 f.write('Predicted Obj value at x_new:{:}\n'.format(np.squeeze(new_point_approx)))
+                # f.write('Constraint Value at x_old:{:}\n'.format(np.squeeze(con_val_old)))
+                # f.write('Constraint Value at x_new:{:}\n'.format(np.squeeze(con_val_new)))
                 if rho >= self.eta:
                     f.write("Trust region expanded\n")
                 else:
@@ -257,10 +266,11 @@ class SimpleTrustRegion(BaseMethod):
         self.process_constraints()
 
         if self.optimization_log:
-            filename = 'optimization_log_slsqp.txt'
-            self.filename = filename
+            if self.log_filename == None:
+                log_filename = 'optimization_log_slsqp.txt'
+                self.log_filename = log_filename
 
-            with open(filename, 'w') as f:
+            with open(self.log_filename, 'w') as f:
                 f.write("Optimization Log\n")
                 #f.write("================\n")
                 f.write("\n")  # Blank line for spacing

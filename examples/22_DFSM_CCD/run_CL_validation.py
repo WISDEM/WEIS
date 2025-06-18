@@ -1,4 +1,5 @@
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+
 import numpy as np
 import os, platform
 import sys
@@ -11,27 +12,26 @@ from rosco import discon_lib_path
 from scipy.interpolate import CubicSpline
 import time as timer
 from rosco.toolbox.ofTools.util import spectral
-
-# DFSM modules
-
-from weis.dfsm.ode_algorithms import RK4,ABM4
-from scipy.interpolate import interp1d
-
+from scipy.io import savemat
 # DFSM modules
 from weis.dfsm.simulation_details import SimulationDetails
 from weis.dfsm.dfsm_utilities import valid_extension,calculate_MSE
+from weis.dfsm.ode_algorithms import RK4,ABM4
 
-from wisdem.commonse.mpi_tools import MPI
+from weis.glue_code.mpi_tools import MPI
+
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
 
 # plot properties
 markersize = 10
 linewidth = 1.5
 fontsize_legend = 16
 fontsize_axlabel = 18
-fontsize_tick = 12
+fontsize_tick = 15
 
 # parameters
-bins = 10
+bins = 5
 slope = 4
 
 
@@ -44,9 +44,11 @@ def evaluate_multi(case_data):
     t1 = timer.time()
     output = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
     t2 = timer.time()
+    sim_time = t2-t1
     print(t2-t1)
     # shut down controller
     case_data['param']['controller_interface'].kill_discon()
+    output = output+(sim_time,)
 
 
     return output
@@ -64,8 +66,10 @@ def run_serial(case_data_all):
         case_data['param']['controller_interface'] = ROSCO_ci.ControllerInterface(case_data['param']['lib_name'],param_filename=case_data['param']['param_filename'],**case_data['param']['args'])
         
         # run simulation
+        t1 = timer.time()
         t,x,u,y = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
-        
+        t2 = timer.time()
+
         # shut down controller
         case_data['param']['controller_interface'].kill_discon()
 
@@ -76,6 +80,7 @@ def run_serial(case_data_all):
         sim_results['states_dfsm'] = x 
         sim_results['controls_dfsm'] = u 
         sim_results['outputs_dfsm'] = y
+        sim_results['model_sim_time'] = t2-t1
 
         outputs.append(sim_results)
     
@@ -120,6 +125,7 @@ def run_mpi(case_data_all,mpi_options):
         x = result_[1]
         u = result_[2]
         y = result_[3]
+        sim_time = result_[4]
 
         # initialize
         sim_results = {}
@@ -130,10 +136,9 @@ def run_mpi(case_data_all,mpi_options):
         sim_results['states_dfsm'] = x 
         sim_results['controls_dfsm'] = u 
         sim_results['outputs_dfsm'] = y
+        sim_results['model_sim_time'] = sim_time
 
         outputs.append(sim_results)
-
-
 
     return outputs
 
@@ -143,10 +148,10 @@ def run_mpi(case_data_all,mpi_options):
 def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_path,PSD_path,format,test_inds,mpi_options):
 
     # path to DISCON library
-    lib_name = '/home/athulsun/anaconda3/envs/weis-dev/lib/libdiscon.so'
+    lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = '/home/athulsun/WEIS-AKS-commit/examples/19_DFSM/IEA_15_MW/IEA_w_TMD_DISCON.IN'
+    param_filename = '/home/athulsun/WEIS-AKS-DEV/examples/19_DFSM/outputs/fowt_test_1p62/DLC1.6_0_weis_job_00_DISCON.IN'
    
 
     T_of = []
@@ -164,16 +169,19 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         Y_OF_list.append(test_data['outputs'])
         
         wind_speed = test_data['controls'][:,0] #
+        gt0 = test_data['controls'][0,1]
+        bp0 = test_data['controls'][0,2]
+
+        time = test_data['time']
+
         nt = len(wind_speed)
-        t0 = 0;tf = 600
+        t0 = 0;tf = time[-1]
         time_of = np.linspace(t0,tf,nt)
 
         T_of.append(time_of)
         
         w_fun = CubicSpline(time_of, wind_speed)
-        bp0 = test_data['controls'][0,2]
-        gt0 = test_data['controls'][0,1]
-        print(bp0);print(gt0)
+        
         
         if reqd_controls[-1] == 'Wave1Elev':
             wave_elev = test_data['controls'][:,3]
@@ -191,9 +199,9 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         args = {'DT': dt, 'num_blade': num_blade,'pitch':bp0}
 
         # hardcoded for now
-        param = {'VS_GenEff':95.75622000000,
+        param = {'VS_GenEff':95.75,
                     'WE_GearboxRatio':1.0,
-                    'VS_RtPwr':95.75622000000,
+                    'VS_RtPwr':15000000.00000,
                     'time':[t0],
                     'dt':[dt],
                     'blade_pitch':[bp0],
@@ -237,11 +245,13 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
     max_dict = {}
     min_dict = {}
     PSD_dict = {}
+    w_mean = []
 
-    PSD_quantities = ['GenSpeed','TwrBsMyt','PtfmPitch','BldPitch1','GenTq','Wave1Elev']
+    PSD_quantities = ['GenSpeed','TwrBsMyt','BldPitch1','GenPwr','PtfmPitch','PtfmSurge','Wave1Elev']
 
     BldPitch_array = []
     currspeed_array = []
+    waveelev_array = []
     GenPwr_array = []
     TwrBsMyt_array = []
     PtfmPitch_array = []
@@ -253,7 +263,16 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
     
     elapsed = tf - transition_time
     tf = tf - transition_time
-    tspan = [t0,tf]
+    tspan = [200,500]
+
+    model_sim_time = []
+    n_test = len(outputs)
+    bp_mse = np.zeros((n_test,))
+    twrbsmyt_mse = np.zeros((n_test,))
+    gs_mse = np.zeros((n_test,))
+
+    color_of = 'k'
+    color_dfsm = 'r'
 
     for icase,sim_result in enumerate(outputs):
 
@@ -267,6 +286,10 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
 
         controls_dfsm = sim_result['controls_dfsm']
         controls_of = U_OF_list[icase]
+
+        model_sim_time.append(sim_result['model_sim_time'])
+
+        w_mean.append(FAST_sim[icase]['w_mean'])
 
         outputs_dfsm = sim_result['outputs_dfsm']
         outputs_of = Y_OF_list[icase]
@@ -295,6 +318,25 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         for iu,control in enumerate(reqd_controls):
             MSE_dict[control+ '_'+str(icase)] = calculate_MSE(controls_of[:,iu],controls_dfsm[:,iu],scaled = False)
 
+            if reqd_controls[iu] == 'BldPitch1':
+                bp_mse[icase] = calculate_MSE(controls_of[:,iu],controls_dfsm[:,iu],scaled = False)
+
+            if control == 'BldPitch1':
+                plt_title = 'Blade Pitch'
+                unit = ' [deg]'
+
+            elif control == 'GenTq':
+                plt_title = 'Generator Torque'
+                unit = ' [kNm]'
+
+            elif control == 'RtVAvgxh':
+                plt_title = 'Wind Speed'
+                unit = ' [m/s]'
+            elif control == 'Wave1Elev':
+                plt_title = 'Wave Elevation'
+                unit = ' [m]'
+
+
             mean_dict[control+'_of_'+ str(icase)] = np.mean(controls_of[:,iu])
             mean_dict[control+'_dfsm_'+ str(icase)] = np.mean(controls_dfsm[:,iu])
 
@@ -315,17 +357,23 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 dict = {'RtVAvgxh':controls_of[:,iu]}
                 currspeed_array.append(dict)
 
+            if control == 'Wave1Elev':
+                dict = {'Wave1Elev':controls_of[:,iu]}
+                waveelev_array.append(dict)
+                
+
             if control in PSD_quantities:
                 xf,FFT_of,_ = spectral.fft_wrap(time_of,controls_of[:,iu],averaging = 'Welch',averaging_window= 'hamming')
                 xf,FFT_dfsm,_ = spectral.fft_wrap(time_dfsm,controls_dfsm[:,iu],averaging = 'Welch',averaging_window= 'hamming')
 
                 fig1,ax1 = plt.subplots(1)
-                ax1.loglog(xf,np.sqrt(FFT_of),label = 'OpenFAST')
-                ax1.loglog(xf,np.sqrt(FFT_dfsm),label = 'DFSM')
+                ax1.loglog(xf,np.sqrt(FFT_of),color = color_of,label = 'OpenFAST')
+                ax1.loglog(xf,np.sqrt(FFT_dfsm),color = color_dfsm,label = 'DFSM')
                 ax1.set_xlabel('Freq [Hz]',fontsize = fontsize_axlabel)
-                ax1.set_title(control + '_PSD',fontsize = fontsize_axlabel)
+                ax1.set_title(plt_title + ' PSD',fontsize = fontsize_axlabel)
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)
-                ax1.set_xlim([np.min(xf),np.max(xf)])
+                ax1.tick_params(labelsize=fontsize_tick)
+                #ax1.set_xlim([np.min(xf),np.max(xf)])
 
                 if save_flag:       
                     fig1.savefig(PSD_path +os.sep+ control + '_' + str(icase) +'_comp' + format)
@@ -338,10 +386,10 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
 
         
             fig,ax = plt.subplots(1)
-            ax.plot(time_of,controls_of[:,iu],label = 'OpenFAST')
-            ax.plot(time_dfsm,controls_dfsm[:,iu],label = 'DFSM')
+            ax.plot(time_of,controls_of[:,iu],color = color_of,label = 'OpenFAST')
+            ax.plot(time_dfsm,controls_dfsm[:,iu],color = color_dfsm,label = 'DFSM')
             
-            ax.set_title(control,fontsize = fontsize_axlabel)
+            ax.set_title(plt_title+unit,fontsize = fontsize_axlabel)
             ax.set_xlim(tspan)
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
@@ -359,7 +407,25 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         #------------------------------------------------------
         for ix,state in enumerate(reqd_states):
 
+            if state == 'GenSpeed':
+                plt_title = 'Generator Speed'
+                unit = ' [rpm]'
+
+            elif state == 'PtfmPitch':
+                plt_title = 'Platfrom Pitch'
+                unit = ' [deg]'
+
+            elif state == 'PtfmSurge':
+                plt_title = 'Platform Surge'
+                unit = ' [m]'
+            else:
+                plt_title = state
+                unit = ''
+
             MSE_dict[state+ '_' +str(icase)] = calculate_MSE(states_of[:,ix],states_dfsm[:,ix],scaled = False)
+
+            if reqd_states[ix] == 'GenSpeed':
+                gs_mse[icase] = calculate_MSE(states_of[:,ix],states_dfsm[:,ix],scaled = False)
 
             mean_dict[state+'_of_'+ str(icase)] = np.mean(states_of[:,ix])
             mean_dict[state+'_dfsm_'+ str(icase)] = np.mean(states_dfsm[:,ix])
@@ -382,12 +448,13 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 xf,FFT_dfsm,_ = spectral.fft_wrap(time_dfsm,states_dfsm[:,ix],averaging = 'Welch',averaging_window= 'hamming')
 
                 fig1,ax1 = plt.subplots(1)
-                ax1.loglog(xf,np.sqrt(FFT_of),label = 'OpenFAST')
-                ax1.loglog(xf,np.sqrt(FFT_dfsm),label = 'DFSM')
+                ax1.loglog(xf,np.sqrt(FFT_of),color = color_of,label = 'OpenFAST')
+                ax1.loglog(xf,np.sqrt(FFT_dfsm),color = color_dfsm,label = 'DFSM')
                 ax1.set_xlabel('Freq [Hz]',fontsize = fontsize_axlabel)
-                ax1.set_title(state + '_PSD',fontsize = fontsize_axlabel)
+                ax1.tick_params(labelsize=fontsize_tick)
+                ax1.set_title(plt_title + ' PSD',fontsize = fontsize_axlabel)
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)
-                ax1.set_xlim([np.min(xf),np.max(xf)])
+                #ax1.set_xlim([np.min(xf),np.max(xf)])
 
                 if save_flag:       
                     fig1.savefig(PSD_path +os.sep+ state + '_' + str(icase) +'_comp' + format)
@@ -399,10 +466,10 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 PSD_dict[state + '_FFT_dfsm_'+str(icase)] = np.sqrt(FFT_dfsm)
                 
             fig,ax = plt.subplots(1)
-            ax.plot(time_of,states_of[:,ix],label = 'OpenFAST')
-            ax.plot(time_dfsm,states_dfsm[:,ix],label = 'DFSM')
+            ax.plot(time_of,states_of[:,ix],color = color_of,label = 'OpenFAST')
+            ax.plot(time_dfsm,states_dfsm[:,ix],color = color_dfsm,label = 'DFSM')
             
-            ax.set_title(state,fontsize = fontsize_axlabel)
+            ax.set_title(plt_title+unit,fontsize = fontsize_axlabel)
             ax.set_xlim(tspan)
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
@@ -419,7 +486,25 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         #------------------------------------------
         for iy,output in enumerate(reqd_outputs):
 
+            if output == 'GenPwr':
+                plt_title = 'Generator Power'
+                unit = ' [kW]'
+
+            elif output == 'TwrBsFxt':
+                plt_title = 'Tower-Base FA Force'
+                unit = ' [kN]'
+
+            elif output == 'TwrBsMyt':
+                plt_title = 'Tower-Base FA Moment'
+                unit = ' [kNm]'
+            else:
+                plt_title = output
+                unit = ''
+
             MSE_dict[output+ '_' +str(icase)] = calculate_MSE(outputs_of[:,iy],outputs_dfsm[:,iy],scaled = False)
+
+            if reqd_outputs[iy] == 'GenSpeed':
+                twrbsmyt_mse[icase] = calculate_MSE(outputs_of[:,iy],outputs_dfsm[:,iy],scaled = False)
 
             mean_dict[output+'_of_'+ str(icase)] = np.mean(outputs_of[:,iy])
             mean_dict[output+'_dfsm_'+ str(icase)] = np.mean(outputs_dfsm[:,iy])
@@ -464,12 +549,13 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 xf,FFT_dfsm,_ = spectral.fft_wrap(time_dfsm,outputs_dfsm[:,iy],averaging = 'Welch',averaging_window= 'hamming')
 
                 fig1,ax1 = plt.subplots(1)
-                ax1.loglog(xf,np.sqrt(FFT_of),label = 'OpenFAST')
-                ax1.loglog(xf,np.sqrt(FFT_dfsm),label = 'DFSM')
+                ax1.loglog(xf,np.sqrt(FFT_of),color = color_of,label = 'OpenFAST')
+                ax1.loglog(xf,np.sqrt(FFT_dfsm),color = color_dfsm,label = 'DFSM')
                 ax1.set_xlabel('Freq [Hz]',fontsize = fontsize_axlabel)
-                ax1.set_title(output + '_PSD',fontsize = fontsize_axlabel)
+                ax1.set_title(plt_title + ' PSD',fontsize = fontsize_axlabel)
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)
-                ax1.set_xlim([np.min(xf),np.max(xf)])
+                ax1.tick_params(labelsize=fontsize_tick)
+                #ax1.set_xlim([np.min(xf),np.max(xf)])
 
                 if save_flag:       
                     fig1.savefig(PSD_path +os.sep+ output + '_' + str(icase) +'_comp' + format)
@@ -481,11 +567,11 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 PSD_dict[output + '_FFT_dfsm_'+str(icase)] = np.sqrt(FFT_dfsm)
 
             fig,ax = plt.subplots(1)
-            ax.plot(time_of,outputs_of[:,iy],label = 'OpenFAST')
-            ax.plot(time_dfsm,outputs_dfsm[:,iy],label = 'DFSM')
+            ax.plot(time_of,outputs_of[:,iy],color = color_of,label = 'OpenFAST')
+            ax.plot(time_dfsm,outputs_dfsm[:,iy],color = color_dfsm,label = 'DFSM')
             
             
-            ax.set_title(output,fontsize = fontsize_axlabel)
+            ax.set_title(plt_title + unit,fontsize = fontsize_axlabel)
             ax.set_xlim(tspan)
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
@@ -497,6 +583,11 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
 
             plt.close(fig)
 
+    w_mean = np.array(w_mean)
+    n_cs = len(np.unique(w_mean))
+    n_seeds = int(len(w_mean)/n_cs)
+
+    print(w_mean)
     results_dict = {'MSE_dict':MSE_dict,
                     'mean_dict':mean_dict,
                     'std_dict':std_dict,
@@ -508,30 +599,36 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                     'GenPwr_array':GenPwr_array,
                     'TwrBsMyt_array':TwrBsMyt_array,
                     'PtfmPitch_array':PtfmPitch_array,
-                    'DEL_array':DEL_array}
+                    'DEL_array':DEL_array,
+                    'n_cs':n_cs,
+                    'n_seeds':n_seeds}
     
 
     results_file = plot_path +os.sep+ 'DFSM_validation_results.pkl'
     with open(results_file,'wb') as handle:
         pickle.dump(results_dict,handle)
+
+
+    results_dict = {'ws_array':currspeed_array,'wave_array':waveelev_array,'myt_array':TwrBsMyt_array}
+    #savemat('ts_dict.mat',results_dict)
+    
+    # with open('ts_dict_test_15s.pkl','wb') as handle:
+    #     pickle.dump(results_dict,handle)
                 
 
 if __name__ == '__main__':
 
     if MPI:
-        from wisdem.commonse.mpi_tools import map_comm_heirarchical,subprocessor_loop, subprocessor_stop
-    
-    test_inds = np.array([15,16,17,18,19,
-                          25,26,27,28,29,
-                          35,36,37,38,39,
-                          45,46,47,48,49,
-                          55,56,57,58,59,
-                          65,66,67,68,69,
-                          75,76,77,78,79,
-                          85,86,87,88,89,
-                          95,96,97,98,99,
-                          105,106,107,108,109])
+        from weis.glue_code.mpi_tools import map_comm_heirarchical,subprocessor_loop, subprocessor_stop
 
+    test = False
+    
+
+    test_inds = np.arange(0,70)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
+    test_inds = [23]
+
+    # path to this directory
+    this_dir = os.path.dirname(os.path.abspath(__file__))
 
     #---------------------------------------------------
     # Setup MPI stuff
@@ -553,7 +650,7 @@ if __name__ == '__main__':
         olaf = False
 
         # get mapping
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel, openmp=olaf)
+        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
 
         rank    = MPI.COMM_WORLD.Get_rank()
 
@@ -575,14 +672,11 @@ if __name__ == '__main__':
         # Load DFSM model
         #---------------------------------------------------
 
-        # path to this directory
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_1p6_python.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_fowt_1p6.pkl'
 
         format = '.pdf'
-        dt = 0.01;transition_time = 50
+        dt = 0.01;transition_time = 200
 
         # load dfsm model
         with open(pkl_name,'rb') as handle:
@@ -590,43 +684,41 @@ if __name__ == '__main__':
         dfsm.simulation_time = []
 
         # setup the interpolation of the matrices in the LPV model
-        # interp_type = 'nearest'
-        # dfsm.setup_LPV(interp_type)
+        interp_type = 'linear'
+        dfsm.setup_LPV(interp_type)
 
         #---------------------------------------------------
         # Load OpenFAST validation results
         #---------------------------------------------------
 
         # datapath
-        testpath = '/home/athulsun/DFSM/data' + os.sep + 'FOWT_1p6'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'fowt_test_1p62'
+        
 
         # get the path to all .outb files in the directory
         outfiles = [os.path.join(testpath,f) for f in os.listdir(testpath) if valid_extension(f)]
         outfiles = sorted(outfiles)
         
         # required states
-        reqd_states = ['PtfmPitch','TTDspFA','GenSpeed']
+        reqd_states = dfsm.reqd_states #['PtfmPitch','TTDspFA','GenSpeed']#
         
         # required controls
-        reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
+        reqd_controls =  dfsm.reqd_controls#['Wind1VelX','GenTq','BldPitch1','Wave1Elev']# 
         
         # required outputs
-        reqd_outputs = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] 
+        reqd_outputs = dfsm.reqd_outputs #['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] #
         
         # scaling parameters
-        scale_args = {'state_scaling_factor': np.array([1,1,1]),
-                    'control_scaling_factor': np.array([1,1,1,1]),
-                    'output_scaling_factor': np.array([1,1,1,1,1,1,1])
-                    }
+        scale_args = dfsm.scale_args#{'state_scaling_factor': np.array([1,1,1]),
+        #             'control_scaling_factor': np.array([1,1,1,1]),
+        #             'output_scaling_factor': np.array([1,1,1,1,1,1,1])
+        #             }
         
         # filter parameters
-        filter_args = {'state_filter_flag': [True,True,True],
-                    'state_filter_type': [['filtfilt'],['filtfilt'],['filtfilt']],
-                    'state_filter_tf': [[0.1],[0.1],[0.1]],
-                    'control_filter_flag': [False,False,False],
-                    'control_filter_tf': [0,0,0],
-                    'output_filter_flag': []
-                    }
+        filter_args = dfsm.filter_args #{'state_filter_flag': [True,True,True],
+                    # 'state_filter_type': [['filtfilt'],['filtfilt'],['filtfilt']],
+                    # 'state_filter_tf': [[0.1],[0.1],[0.1],[0.1]],
+                    # }
         
         # name of mat file that has the linearized models
         mat_file_name = None
@@ -651,7 +743,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = 'validation_results_1p6'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'test_1p6_2_JMD_og_23'
     
 
     if rank == 0 and not os.path.isdir(save_path):

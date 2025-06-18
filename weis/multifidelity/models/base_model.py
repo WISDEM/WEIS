@@ -26,7 +26,7 @@ class BaseModel:
         Parameters
         ----------
         desvars_init : dict of desvars
-            A dict containing keys with the names of desvars and the corresponding
+            A dict containing keys with the names of desvars and the correspondingwarm
             values are representative of the desvar size and shape. These values
             are not used; only their shape
         """
@@ -35,7 +35,7 @@ class BaseModel:
         self.saved_outputs = []
 
         self.warmstart_file = warmstart_file
-
+        
         # If warmstart_file is provided, read in saved results from before
         if warmstart_file is not None:
             if os.path.exists(warmstart_file):
@@ -93,12 +93,14 @@ class BaseModel:
         outputs : dict of outputs
             Keys and values for output values from `compute()` to save.
         """
+
         self.saved_desvars.append(copy.deepcopy(self.flatten_desvars(desvars)))
         self.saved_outputs.append(copy.deepcopy(outputs))  # unclear why this is needed for output arrays
-
+        
         # Only save to the pickle file if warmstart_file was provided
         if self.warmstart_file is not None:
             saved_data = {}
+            
             saved_data["desvars"] = self.saved_desvars
             saved_data["outputs"] = self.saved_outputs
             with open(self.warmstart_file, "wb") as f:

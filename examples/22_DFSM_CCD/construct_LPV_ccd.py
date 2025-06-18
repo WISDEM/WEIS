@@ -42,7 +42,7 @@ def ModelData():
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
     model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt'] 
 
-    model_data['datapath'] = outputs_dir+os.sep +'train_1p62'
+    model_data['datapath'] = outputs_dir+os.sep +'train_65_300'
 
     scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
@@ -55,13 +55,13 @@ def ModelData():
 
     model_data['n_var'] = n_var
 
-    model_data['w_start'] = 12.00
-    model_data['buff'] = 0.0000
+    model_data['w_start'] = 14.00
+    model_data['buff'] = 0.01000
     model_data['train_inds'] = np.arange(0,5)
     model_data['tmin'] = 200
 
     model_data['test_inds'] = np.array([5,11,17,23,29])
-    model_data['dfsm_file_name'] = 'dfsm_iea15_test4.pkl'
+    model_data['dfsm_file_name'] = 'dfsm_65_300.pkl'
      
     return model_data
 
@@ -148,16 +148,10 @@ if __name__ == '__main__':
 
     
     FAST_sim_array = np.array(FAST_sim)
-    sort_ind = np.argsort(w_array)
-
-    FAST_sim_array = FAST_sim_array[sort_ind]
-
     FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
-
-    
     print(FAST_sim.shape)
-
-    
+    # sort_ind = np.argsort(w_array)
+    # FAST_sim = FAST_sim[:,sort_ind]
 
     train_inds = model_data['train_inds']
     
@@ -180,6 +174,19 @@ if __name__ == '__main__':
     model_construct_time = np.zeros((nW,))
 
     test_inds = model_data['test_inds']
+
+    # base model
+    with open('dfsm_57_300.pkl','rb') as handle:
+        dfsm_start = pickle.load(handle)
+
+    A_start = dfsm_start.A_array[ind_start,:,:]
+    B_start = dfsm_start.B_array[ind_start,:,:]
+
+    AB = np.hstack([B_start,A_start])
+
+    x0 = AB[ns:ns*2,:]
+
+    x0 = np.reshape(x0,[n_var,],order = 'F')
 
     # Start the MATLAB Engine
     eng = matlab.engine.start_matlab()
@@ -217,7 +224,7 @@ if __name__ == '__main__':
         
         if W[iw] == w_start:
 
-            x0 = matlab.double([])
+            x0 = matlab.double([x0])
             
             t1 = timer.time()
             A,B,C,D,x = eng.construct_LPV(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,buff,nargout = 5)

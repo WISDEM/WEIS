@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
-    results_folder = 'outputs/CL_val_new_train'
+    results_folder = 'outputs/test_1p6'
     results_file = this_dir + os.sep +results_folder + os.sep + 'DFSM_validation_results.pkl'
 
     comp_fol = this_dir + os.sep +results_folder + os.sep + 'compiled_results'

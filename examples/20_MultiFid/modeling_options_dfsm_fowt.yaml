@@ -42,7 +42,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         TwFADOF2 : False 
         TwSSDOF1 : False 
         TwSSDOF2 : False 
-        PtfmSgDOF: False 
+        PtfmSgDOF: True 
         PtfmSwDOF: False 
         PtfmHvDOF: False 
         PtfmRDOF : False 
@@ -70,11 +70,11 @@ DFSM:
         save_results: True
         usecase: closed-loop-simulation
     model_options: 
-        reqd_states: [PtfmSurge,PtfmPitch,TTDspFA,GenSpeed]
+        reqd_states: ['PtfmSurge',PtfmPitch,TTDspFA,GenSpeed]
         reqd_controls: [RtVAvgxh,GenTq,BldPitch1,Wave1Elev]
-        reqd_outputs: [TwrBsFxt,TwrBsMyt,YawBrTAxp,NcIMURAys,GenPwr,RtFldCp,RtFldCt]
+        reqd_outputs: [TwrBsFxt,TwrBsMyt,GenPwr,YawBrTAxp,NcIMURAys,RtFldCp,RtFldCt]
         scale_args:
-            state_scaling_factor: [1,1,1,1]
+            state_scaling_factor: [1,1,1]
         filter_args:
             state_filter_flag: [True,True,True]
             state_filter_type: [[filtfilt],[filtfilt],[filtfilt]]
@@ -112,9 +112,9 @@ DLC_driver:
         # - DLC: "1.4"
         # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 1
-          wind_speed: [12]
-          analysis_time: 500.
+          n_seeds: 5
+          wind_speed: [10,12]
+          analysis_time: 800.
           transient_time: 0.
           turbulent_wind:
             HubHt: 150.0
