@@ -1,6 +1,5 @@
 import os
-from weis.ftw.weis_wrapper import ftw_training
-from wisdem.inputs.validation import load_yaml
+from weis.ftw.weis_wrapper import (ftw_doe, ftw_training)
 
 # TEST_RUN will reduce the number and duration of simulations
 TEST_RUN = False
@@ -14,8 +13,13 @@ geometry_override = {}
 modeling_override = {}
 analysis_override = {}
 
-wt_opt, modeling_options, opt_options = ftw_training(
+# Run DOE to prepare for the surrogate model training
+wt_opt, modeling_options, opt_options = ftw_doe(
     fname_wt_input, fname_modeling_options, fname_analysis_options,
     geometry_override, modeling_override, analysis_override, TEST_RUN)
+
+ftw_training(
+    fname_wt_input, fname_modeling_options, fname_analysis_options,
+    run_dir, geometry_override, modeling_override, analysis_override)
 
 
