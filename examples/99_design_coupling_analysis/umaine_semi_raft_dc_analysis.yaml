@@ -84,26 +84,28 @@ design_variables:
 
 constraints:
   control:
-    rotor_overspeed:
-      flag: True
-      min: 0.0
-      max: 0.25
     Max_PtfmPitch:
       flag: True
       max: 5.5
     Std_PtfmPitch:
-      flag: False
-      max: 2.
-  Max_Offset:
-    flag: True
-    max: 30.
+      flag: True
+      max: 2.0
+    nacelle_acceleration:
+      flag: True
+      max: 0.5
   floating:
+    metacentric_height:
+      flag: True
+      lower_bound: 5.0
+    Max_Offset:
+      flag: True
+      max: 25.0
     stress: 
-      flag: False
-    global_buckling: 
-      flag: False
-    shell_buckling: 
-      flag: False
+      flag: True
+    global_buckling:
+      flag: True
+    mooring_tension:
+      flag: True
 
 merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
@@ -114,7 +116,7 @@ driver:
     tol: 1.e-2            # Optimality tolerance
     max_iter: 50          # Maximum number of iterations (SLSQP)
   design_of_experiments:
-    flag: True            # Flag to enable design of experiments
+    flag: False            # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: LatinHypercube    # Type of input generator. (Uniform)
     num_samples: 600 # 350 # 750      # number of samples for (Uniform only)
@@ -122,4 +124,19 @@ driver:
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
-    includes: ['*raft*','*floating*','*platform*']
+    includes: ['*raft*','*floating*','*platform*','*financese*']
+    surrogate_model_outputs:
+      - 'raft.surge_period'   # Surge natural period
+      - 'raft.sway_period'    # Sway natural period
+      - 'raft.heave_period'   # Heave natural period
+      - 'raft.roll_period'    # Roll natural period
+      - 'raft.pitch_period'   # Pitch natural period
+      - 'raft.yaw_period'     # Yaw natural period
+      - 'raft.Max_Offset'     # Maximum distance in surge/sway direction
+      - 'raft.Max_PtfmPitch'  # Maximum platform pitch over all cases
+      - 'raft.max_nac_accel'  # Maximum nacelle accelleration over all cases
+      - 'raft.max_tower_base' # Maximum tower base moment over all cases
+      - 'floatingse.system_structural_mass'
+      - 'floatingse.platform_cost'
+      - 'financese.plant_aep'
+      - 'financese.lcoe'      # Levelized cost of energy (discounted to base year)

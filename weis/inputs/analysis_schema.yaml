@@ -499,7 +499,14 @@ properties:
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
 
-    
+    recorder:
+        type: object
+        default: {}
+        properties:
+            surrogate_model_outputs:
+                type: array
+                description: List of output variables to include in addition to model constraints.
+                default: []
 
     merit_figure:
         type: string
