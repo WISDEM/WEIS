@@ -119,7 +119,7 @@ driver:
     flag: False            # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: LatinHypercube    # Type of input generator. (Uniform)
-    num_samples: 600 # 350 # 750      # number of samples for (Uniform only)
+    num_samples: 20 # 600 # 350 # 750      # number of samples for (Uniform only)
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
@@ -138,5 +138,7 @@ recorder:
       - 'raft.max_tower_base' # Maximum tower base moment over all cases
       - 'floatingse.system_structural_mass'
       - 'floatingse.platform_cost'
+      - 'floatingse.platform_base_F'
+      - 'floatingse.platform_base_M'
       - 'financese.plant_aep'
       - 'financese.lcoe'      # Levelized cost of energy (discounted to base year)

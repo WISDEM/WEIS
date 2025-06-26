@@ -1,5 +1,5 @@
 import os
-from weis.ftw.weis_wrapper import (ftw_doe, ftw_training)
+from weis.ftw.weis_wrapper import (ftw_doe, ftw_extract_doe)
 
 # TEST_RUN will reduce the number and duration of simulations
 TEST_RUN = False
@@ -14,12 +14,13 @@ modeling_override = {}
 analysis_override = {}
 
 # Run DOE to prepare for the surrogate model training
-wt_opt, modeling_options, opt_options = ftw_doe(
+wt_opt_doe, modeling_options_doe, analysis_options_doe = ftw_doe(
     fname_wt_input, fname_modeling_options, fname_analysis_options,
     geometry_override, modeling_override, analysis_override, TEST_RUN)
 
-ftw_training(
-    fname_wt_input, fname_modeling_options, fname_analysis_options,
-    run_dir, geometry_override, modeling_override, analysis_override)
+# Extract data from recorded DOE database files
+input_vars, input_dataset, input_lens, input_vecs, output_vars, \
+output_dataset, output_lens, output_vecs = ftw_extract_doe(
+    wt_opt_doe, modeling_options_doe, analysis_options_doe)
 
 
