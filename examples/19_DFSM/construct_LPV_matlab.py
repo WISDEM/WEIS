@@ -55,8 +55,8 @@ def ModelData():
 
     model_data['n_var'] = n_var
 
-    model_data['w_start'] = 12.00
-    model_data['buff'] = 0.0000
+    model_data['w_start'] = 14.00
+    model_data['buff'] = 0.01000
     model_data['train_inds'] = np.arange(0,5)
     model_data['tmin'] = 200
 

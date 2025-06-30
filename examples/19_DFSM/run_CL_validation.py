@@ -263,7 +263,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
     
     elapsed = tf - transition_time
     tf = tf - transition_time
-    tspan = [200,500]
+    tspan = [t0,tf]
 
     model_sim_time = []
     n_test = len(outputs)
@@ -541,6 +541,11 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 DEL_array.append(dict)
 
             if output == 'GenPwr':
+
+                i_genspeed = reqd_states.index('GenSpeed')
+                i_gentq = reqd_controls.index('GenTq')
+                outputs_of[:,iy] = 0.95*0.1047*states_of[:,i_genspeed]*controls_of[:,i_gentq]
+                outputs_dfsm[:,iy] = 0.95*0.1047*states_dfsm[:,i_genspeed]*controls_dfsm[:,i_gentq]
                 dict = {'OpenFAST':outputs_of[:,iy],'DFSM':outputs_dfsm[:,iy]}
                 GenPwr_array.append(dict)
 
@@ -625,7 +630,7 @@ if __name__ == '__main__':
     
 
     test_inds = np.arange(0,70)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
-    test_inds = [23]
+    
 
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -673,7 +678,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_fowt_1p6.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_iea15_test.pkl'
 
         format = '.pdf'
         dt = 0.01;transition_time = 200
@@ -743,7 +748,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'test_1p6_2_JMD_og_23'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'test_1p6_2_JMD_test'
     
 
     if rank == 0 and not os.path.isdir(save_path):
