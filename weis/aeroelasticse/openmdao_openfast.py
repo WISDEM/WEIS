@@ -1545,18 +1545,33 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
+            if 'CylSimplCd' not in fst_vt['HydroDyn']:
+                for m in ['Cd', 'CdMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.6
+                for m in ['Ca', 'CaMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                
+            if 'RecSimplCdA' not in fst_vt['HydroDyn']:
+                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.6
+                for m in ['CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
+
             if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+                
             elif modopt["RAFT"]["potential_model_override"] == 2:
                 # BEM only, no strip theory
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
 
-                #if 'CylSimplCd' not in fst_vt['HydroDyn']:
                 for m in ['Cd', 'CdMG', 'Ca', 'CaMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
                     fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
                 
-                #if 'RecSimplCdA' not in fst_vt['HydroDyn']:
                 for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
                     fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
                 
