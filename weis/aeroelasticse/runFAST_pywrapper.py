@@ -182,7 +182,7 @@ class runFAST_pywrapper(object):
             os.chdir(FAST_directory)
         
             openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.basename(writer.FAST_InputFileOut)))
-            openfastlib.fast_run()
+            openfastlib.run()
 
             output_dict = {}
             for i, channel in enumerate(openfastlib.output_channel_names):
