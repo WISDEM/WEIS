@@ -145,13 +145,13 @@ def run_mpi(case_data_all,mpi_options):
 
 
 
-def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_path,PSD_path,format,test_inds,mpi_options):
+def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_flag,plot_path,PSD_path,format,test_inds,mpi_options):
 
     # path to DISCON library
     lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = '/home/athulsun/WEIS-AKS-DEV/examples/19_DFSM/outputs/fowt_test_1p62/DLC1.6_0_weis_job_00_DISCON.IN'
+    param_filename = testpath + os.sep +'DLC1.6_0_weis_job_00_DISCON.IN'
    
 
     T_of = []
@@ -263,7 +263,8 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
     
     elapsed = tf - transition_time
     tf = tf - transition_time
-    tspan = [200,500]
+    tspan = [0,600]
+    
 
     model_sim_time = []
     n_test = len(outputs)
@@ -625,7 +626,7 @@ if __name__ == '__main__':
     
 
     test_inds = np.arange(0,70)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
-    test_inds = [23]
+    
 
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -673,10 +674,10 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_fowt_1p6.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_iea15_42.pkl'
 
         format = '.pdf'
-        dt = 0.01;transition_time = 200
+        dt = 0.05;transition_time = 200
 
         # load dfsm model
         with open(pkl_name,'rb') as handle:
@@ -692,7 +693,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # datapath
-        testpath = this_dir + os.sep + 'outputs' + os.sep +'fowt_test_1p62'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'train_42_600'
         
 
         # get the path to all .outb files in the directory
@@ -743,7 +744,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'test_1p6_2_JMD_og_23'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_42'
     
 
     if rank == 0 and not os.path.isdir(save_path):
@@ -772,7 +773,7 @@ if __name__ == '__main__':
             mpi_options['mpi_comm_map_down'] = []
 
         # run the simulations
-        run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,save_path,PSD_path,format,test_inds,mpi_options)
+        run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_flag,save_path,PSD_path,format,test_inds,mpi_options)
 
     #---------------------------------------------------
     # More MPI stuff

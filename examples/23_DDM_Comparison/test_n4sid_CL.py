@@ -23,27 +23,33 @@ fontsize_legend = 16
 fontsize_axlabel = 18
 fontsize_tick = 15
 
-# path to this directory
-this_dir = os.path.dirname(os.path.abspath(__file__))
+
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+
+# get path to this directory
+this_dir = os.path.dirname(os.path.realpath(__file__))
+outputs_dir = this_dir + os.sep + 'outputs'
 
 def ModelData():
     
     model_data = {}
 
-    model_data['reqd_states'] = ['PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
+    model_data['reqd_states'] = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
-    model_data['reqd_outputs'] = ['TwrBsMyt','NcIMURAys','GenSpeed','PtfmPitch','TTDspFA'] 
+    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','NcIMURAys','GenPwr','GenSpeed','PtfmPitch','TTDspFA','PtfmSurge'] 
 
-    model_data['datapath'] = this_dir + os.sep + 'validation_test'
+    model_data['datapath'] = outputs_dir+os.sep +'fowt_test_1p62'
 
-    scale_args = {'state_scaling_factor': np.array([1,1,1]),
+
+    scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1000,1,1]),
-                  'output_scaling_factor': np.array([1,1,1,1,1])
+                  'output_scaling_factor': np.array([1,1,1,1,1,1,1,1])
                   }
     
     model_data['scale_args'] = scale_args
 
-    model_data['nx'] = 6
+    model_data['nx'] = 2
 
     # current speed to start the optimization
     model_data['w_test'] = 14
@@ -55,7 +61,7 @@ def ModelData():
     model_data['train_inds'] = np.arange(0,5)
 
     # pickle file to save the DFSM to
-    model_data['n4sid_model_file'] = 'fowt_1p6_n4sid.pkl'
+    model_data['n4sid_model_file'] = 'n4sid_model.pkl'
 
     # Use simulations from tmin seconds
     model_data['tmin'] = 00
@@ -63,6 +69,7 @@ def ModelData():
     model_data['dt_extract'] = 0.01
      
     return model_data
+
 
 
 if __name__ == '__main__':
@@ -73,7 +80,7 @@ if __name__ == '__main__':
 
     model_data = ModelData()
     datapath =  model_data['datapath'] #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
-    
+    param_filename = datapath + os.sep + 'DLC1.6_0_weis_job_00_DISCON.IN'
     # get the path to all .outb files in the directory
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
     outfiles = sorted(outfiles)
@@ -101,7 +108,7 @@ if __name__ == '__main__':
                    }
 
     # instantiate class
-    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
+    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=model_data['tmin']
                                    ,add_dx2 = True,linear_model_file = None,region = region,dt_extract = dt_extract)
     
     # load and process data
@@ -147,7 +154,7 @@ if __name__ == '__main__':
 
     model_sim_time = np.zeros((n_test,))
 
-    n4sid_model_file = this_dir + os.sep + 'sys_id_test'+os.sep + model_data['n4sid_model_file']
+    n4sid_model_file = this_dir + os.sep + 'sys_id_test/nx_10/w_14'+os.sep + model_data['n4sid_model_file']
 
     with open(n4sid_model_file,'rb') as handle:
         n4sid_model = pickle.load(handle)
@@ -170,12 +177,10 @@ if __name__ == '__main__':
     # path to DISCON library
     lib_name = discon_lib_path
 
-    # Write parameter input file
-    param_filename = datapath+os.sep+'weis_job_0_DISCON.IN'
-    
     save_flag = True
     plot_flag = True 
     ts_path = 'sys_id_test' + os.sep + 'CL_validation'
+    t_transition = 200
 
 
     for idx,ind in enumerate(test_inds):
@@ -192,7 +197,7 @@ if __name__ == '__main__':
 
         #time = results_mat['time']
         time = FAST_sim[ind,ind_w]['time']
-        t_ind = time>=100
+        
         tf = time[-1]
 
         nt = len(time)
@@ -275,15 +280,18 @@ if __name__ == '__main__':
         t2 = timer.time()
         model_sim_time[idx] = t2-t1
         print(t2-t1)
-        Y = Y[t_ind,:]
-        outputs_OF = outputs_OF[t_ind,:]
-        time = time-100
 
         if ctrl_type == 'CL':
             controller_interface.kill_discon()
 
-            U_n4sid = U_n4sid[t_ind,:]
-            U_of = U_of[t_ind,:]
+
+            t_ind = (time >= t_transition)
+            time = time[t_ind]; time = time - t_transition
+            #time_dfsm = time_dfsm[t_ind]; time_dfsm = time_dfsm - t_transition
+
+            Y = Y[t_ind,:];outputs_OF = outputs_OF[t_ind,:]
+            U_n4sid = U_n4sid[t_ind,:];U_of = U_of[t_ind,:]
+            
 
             gt_mse_w = calculate_MSE(U_of[:,blade_pitch_ind],U_n4sid[:,blade_pitch_ind])
             bp_mse_w = calculate_MSE(U_of[:,gen_tq_ind],U_n4sid[:,gen_tq_ind])
@@ -292,7 +300,7 @@ if __name__ == '__main__':
 
 
             fig,ax = plt.subplots(1)
-            ax.plot(time[t_ind],U_of[:,0])
+            ax.plot(time,U_of[:,0])
             ax.tick_params(labelsize=fontsize_tick)
             ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
             ax.set_title('RtVAvgxh',fontsize = fontsize_axlabel)
@@ -315,12 +323,16 @@ if __name__ == '__main__':
                         
                         bp_mse[idx] = calculate_MSE(bp_of,bp_n4sid)
 
+                        title = 'Blade Pitch [deg]'
+                    else:
+                        title = reqd_controls[iu]
+
                     fig,ax = plt.subplots(1)
-                    ax.plot(time[t_ind],U_of[:,iu],color = 'k',label = 'OpenFAST')
-                    ax.plot(time[t_ind],U_n4sid[:,iu],color = 'tab:orange',label = 'n4sid')
+                    ax.plot(time,U_of[:,iu],color = 'k',label = 'OpenFAST')
+                    ax.plot(time,U_n4sid[:,iu],color = 'tab:orange',label = 'n4sid')
                     ax.tick_params(labelsize=fontsize_tick)
                     ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                    ax.set_title(reqd_controls[iu],fontsize = fontsize_axlabel)
+                    ax.set_title(title,fontsize = fontsize_axlabel)
                     ax.legend(ncol = 2,fontsize = fontsize_legend)
                     ax.set_xlim([0,600])
 
@@ -339,18 +351,26 @@ if __name__ == '__main__':
                     
                     gs_mse[idx] = calculate_MSE(gs_of,gs_n4sid)
 
+                    title = 'Generator Speed [rpm]'
+                else:
+                    title = reqd_outputs[i]
+
                 if reqd_outputs[i] == 'TwrBsMyt':
                     M_of = outputs_OF[:,i]
                     M_n4sid = Y[:,i]
                     
                     twrbsmyt_mse[idx] = calculate_MSE(M_of,M_n4sid)
 
+                    title = 'Tower-Base Moment [kNm]'
+                else:
+                    title = reqd_outputs[i]
+
                 fig,ax1 = plt.subplots(1)
                 
-                ax1.plot(time[t_ind],outputs_OF[:,i],color = 'k',label = 'OpenFAST')
-                ax1.plot(time[t_ind],Y[:,i],color = 'tab:orange',label = 'n4sid')
+                ax1.plot(time,outputs_OF[:,i],color = 'k',label = 'OpenFAST')
+                ax1.plot(time,Y[:,i],color = 'tab:orange',label = 'n4sid')
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)
-                ax.set_xlim([0,600])
+                ax1.set_xlim([0,600])
                 
                 ax1.tick_params(labelsize=fontsize_tick)
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)

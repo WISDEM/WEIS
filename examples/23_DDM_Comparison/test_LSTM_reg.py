@@ -30,8 +30,20 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import tensorflow as tf
 from tqdm import tqdm
 
-# path to this directory
-this_dir = os.path.dirname(os.path.abspath(__file__))
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+
+# plot properties
+markersize = 10
+linewidth = 1.5
+fontsize_legend = 16
+fontsize_axlabel = 18
+fontsize_tick = 15
+
+
+# get path to this directory
+this_dir = os.path.dirname(os.path.realpath(__file__))
+outputs_dir = this_dir + os.sep + 'outputs'
 
 exp_name = 'LSTM_14_test'
 
@@ -44,7 +56,7 @@ def model_params():
 
     model_params = {}
 
-    model_params['w_list'] = [14]
+    model_params['w_list'] = [12,14,16]
     model_params['w_test'] = 14
 
     model_params['n_exp'] = 5
@@ -76,8 +88,9 @@ if __name__ == '__main__':
     lib_name = discon_lib_path
 
     # Write parameter input file
-    param_filename = '/home/athulsun/DEV/examples/19_DFSM/validation_test/weis_job_0_DISCON.IN'
-    testpath = '/home/athulsun/DEV/examples/19_DFSM/validation_test'
+    
+    testpath =  outputs_dir+os.sep +'fowt_test_1p62'
+    param_filename = testpath + os.sep + 'DLC1.6_0_weis_job_00_DISCON.IN'
     
 
     outfiles_test = [os.path.join(testpath,f) for f in os.listdir(testpath) if valid_extension(f)]
@@ -94,7 +107,7 @@ if __name__ == '__main__':
     control_units = ['[m/s]','[kNm]','[deg]','[m]']
     
     
-    reqd_outputs = ['GenSpeed','NcIMURAys','TwrBsMyt','PtfmPitch','TTDspFA'] 
+    reqd_outputs = ['TwrBsFxt','TwrBsMyt','NcIMURAys','GenPwr','GenSpeed','PtfmPitch','TTDspFA','PtfmSurge']
     
     output_props = {'units' : ['[kN]','[kNm]','[kW]'],
     'key_freq_name' : [['ptfm','2P'],['ptfm','2P'],['ptfm','2P']],
@@ -124,6 +137,7 @@ if __name__ == '__main__':
     sim_details.load_openfast_sim()
 
     FAST_sim,w_unique,n_unique = reorganize_data(sim_details.FAST_sim)
+    w_unique = np.round(w_unique)
     n_cases = FAST_sim.shape[0]
     
 
@@ -136,10 +150,14 @@ if __name__ == '__main__':
 
     nc = len(reqd_controls)
     ny = len(reqd_outputs)
-
+    
     if len(w_list) == 1:
 
-        FAST_sim_ind = FAST_sim
+        ind_w = w_unique == w_list[0]
+        
+        FAST_sim_ind = FAST_sim[:,ind_w]
+
+        iw = 0
 
     else:
 
@@ -248,7 +266,7 @@ if __name__ == '__main__':
     fontsize_legend = 16
     fontsize_axlabel = 18
     fontsize_tick = 15
-    t_transition = 100
+    t_transition = 00
 
     ylim_list = [[5,10],[-1,1],[-2e5,4e5],[-1,6],[-0.8,0.8]]
 
@@ -258,9 +276,8 @@ if __name__ == '__main__':
         controls_test = FAST_sim_ind[ind_test,w_test_ind]['controls']
         outputs_test = FAST_sim_ind[ind_test,w_test_ind]['outputs']
         time = FAST_sim_ind[ind_test,w_test_ind]['time']
-
-        t_ind = time >=t_transition
-
+        #time = time-200
+        
         t0 = time[0];tf = time[-1]
 
         genspeed_ind = reqd_outputs.index('GenSpeed')
@@ -290,6 +307,8 @@ if __name__ == '__main__':
             for idt,dt_ in enumerate(dt_list):
             
                 time_test = np.arange(t0,tf+dt_,dt_)
+                time_test2 = np.arange(200,tf+dt_,dt_)
+                
                 nt_ = len(time_test)
 
                 outputs_test_pred = np.zeros((nt_,ny))
@@ -362,39 +381,52 @@ if __name__ == '__main__':
                 model_sim_time[i_test] = t2-t1
                 print(t2-t1)
                 controller_interface.kill_discon()
-                time[t_ind] = time[t_ind]-100
-                #time_test[t_ind] = time_test[t_ind]-100
+
+                t_ind = time >= 200
+                
+
+                
+
+                
 
       
                 for i_out,output in enumerate(reqd_outputs):
 
                     fig,ax = plt.subplots(1)
 
-                    ax.plot(time[t_ind],outputs_test[t_ind,i_out],label = 'OpenFAST')
-                    ax.plot(time_test[t_ind]-100,outputs_test_pred[t_ind,i_out],label = 'LSTM')
+                    if output == 'GenPwr':
+                        title = 'Generator Power [kW]'
+                    elif output == 'GenSpeed':
+                        title = 'Generator Speed [rpm]'
+                    elif output == 'TwrBsMyt':
+                        title = 'Tower-Base Moment [kNm]'    
+                    else:
+                        title = output
 
-                    ax.set_title(output,fontsize = fontsize_axlabel)
-                    ax.set_ylim(ylim_list[i_out])
+                    ax.plot(time[t_ind]-200,outputs_test[t_ind,i_out],color = 'k',label = 'OpenFAST')
+                    ax.plot(time_test[t_ind]-200,outputs_test_pred[t_ind,i_out],color = 'b',label = 'LSTM')
+
+                    ax.set_title(title,fontsize = fontsize_axlabel)
                     ax.tick_params(labelsize=fontsize_tick)
                     ax.legend(ncol = 2,fontsize = fontsize_legend)
                     ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                    ax.set_xlim([0,tf-t_transition])
+                    ax.set_xlim([0,600])
 
 
                     if output == 'GenSpeed':
                         gs_of = outputs_test[t_ind,i_out]
                         gs_dfsm = CubicSpline(time_test,outputs_test_pred[:,i_out])
-                        gs_dfsm = gs_dfsm(time[t_ind])
+                        gs_dfsm = gs_dfsm(time_test2)
 
                         gs_mse[i_test] = calculate_mse(gs_of,gs_dfsm)
 
                     if output == 'TwrBsMyt':
                         M_of = outputs_test[t_ind,i_out]
                         M_dfsm = CubicSpline(time_test,outputs_test_pred[:,i_out])
-                        M_dfsm = M_dfsm(time[t_ind])
+                        M_dfsm = M_dfsm(time_test2)
 
                         twrbsmyt_mse[i_test] = calculate_mse(M_of,M_dfsm)
-
+                    
                     if save_flag:
                         if not os.path.exists(plot_path):
                             os.makedirs(plot_path)
@@ -408,21 +440,24 @@ if __name__ == '__main__':
 
                         fig,ax = plt.subplots(1)
 
-                        ax.plot(time[t_ind],controls_test[t_ind,i_out],color = 'k',label = 'OpenFAST')
-                        ax.plot(time_test[t_ind]-100,controls_test_pred[t_ind,i_out],color = 'b',label = 'LSTM')
-
-                        ax.set_title(control,fontsize = fontsize_axlabel)
+                        ax.plot(time[t_ind]-200,controls_test[t_ind,i_out],color = 'k',label = 'OpenFAST')
+                        ax.plot(time_test[t_ind]-200,controls_test_pred[t_ind,i_out],color = 'b',label = 'LSTM')
+                        if control == 'BldPitch1':
+                            title = 'Blade Pitch [deg]'
+                        else:
+                            title = control
+                        ax.set_title(title,fontsize = fontsize_axlabel)
                         ax.tick_params(labelsize=fontsize_tick)
                         ax.legend(ncol = 2,fontsize = fontsize_legend)
                         ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
 
-                        ax.set_xlim([0,tf-t_transition])
+                        ax.set_xlim([0,600])
  
 
                         if control == 'BldPitch1':
                             bp_of = controls_test[t_ind,i_out]
                             bp_dfsm = CubicSpline(time_test,controls_test_pred[:,i_out])
-                            bp_dfsm = bp_dfsm(time[t_ind])
+                            bp_dfsm = bp_dfsm(time_test2)
 
                             bp_mse[i_test] = calculate_mse(bp_of,bp_dfsm)
 

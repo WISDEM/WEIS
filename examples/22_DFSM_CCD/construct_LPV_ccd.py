@@ -42,7 +42,7 @@ def ModelData():
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
     model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt'] 
 
-    model_data['datapath'] = outputs_dir+os.sep +'train_65_300'
+    model_data['datapath'] = outputs_dir+os.sep +'train_35_300'
 
     scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
@@ -61,7 +61,7 @@ def ModelData():
     model_data['tmin'] = 200
 
     model_data['test_inds'] = np.array([5,11,17,23,29])
-    model_data['dfsm_file_name'] = 'dfsm_65_300.pkl'
+    model_data['dfsm_file_name'] = 'dfsm_iea15_35.pkl'
      
     return model_data
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     test_inds = model_data['test_inds']
 
     # base model
-    with open('dfsm_57_300.pkl','rb') as handle:
+    with open('dfsm_iea15_test3.pkl','rb') as handle:
         dfsm_start = pickle.load(handle)
 
     A_start = dfsm_start.A_array[ind_start,:,:]

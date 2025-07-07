@@ -17,26 +17,36 @@ from rosco import discon_lib_path
 
 import matlab.engine
 
+
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+
 # plot properties
 markersize = 10
 linewidth = 1.5
 fontsize_legend = 16
 fontsize_axlabel = 18
-fontsize_tick = 12
+fontsize_tick = 15
+
+# get path to this directory
+this_dir = os.path.dirname(os.path.realpath(__file__))
+outputs_dir = this_dir + os.sep + 'outputs'
 
 def ModelData():
     
     model_data = {}
 
-    model_data['reqd_states'] = ['PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
+    model_data['reqd_states'] = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
-    model_data['reqd_outputs'] = ['TwrBsMyt','NcIMURAys','GenSpeed','PtfmPitch','TTDspFA'] 
+    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','NcIMURAys','GenPwr','GenSpeed','PtfmPitch','TTDspFA','PtfmSurge'];ny = len(model_data['reqd_outputs']) 
 
-    model_data['datapath'] = '/home/athulsun/DFSM/data' + os.sep + 'FOWT_1p6'
+    model_data['datapath'] = outputs_dir+os.sep +'train_1p62'
+    model_data['test_datapath'] = outputs_dir+os.sep +'test_1p62'
 
-    scale_args = {'state_scaling_factor': np.array([1,1,1]),
+
+    scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1000,1,1]),
-                  'output_scaling_factor': np.array([1,1,1,1,1])
+                  'output_scaling_factor': np.ones((ny,))
                   }
     
     model_data['scale_args'] = scale_args
@@ -47,7 +57,7 @@ def ModelData():
     model_data['w_test'] = 18
 
     # indices to be used for training and testing
-    model_data['test_inds'] = np.arange(5,10)
+    model_data['test_inds'] = np.arange(0,10)
     
     # training indices
     model_data['train_inds'] = np.arange(0,5)
@@ -56,7 +66,7 @@ def ModelData():
     model_data['dfsm_file_name'] = 'fowt_1p6_n4sid.pkl'
 
     # Use simulations from tmin seconds
-    model_data['tmin'] = 00
+    model_data['tmin'] = 200
 
     model_data['dt_extract'] = 0.01
      
@@ -99,7 +109,8 @@ def call_matlab(inputs,outputs,nc,ny,outputs_max,n_tests,nx,nt,dt):
     C = np.array(C)
     x0 = np.array(x0)
 
-    return A,B,C,x0
+
+    return A,B,C,x0,model_construct_time
     
 
 
@@ -113,10 +124,15 @@ if __name__ == '__main__':
 
     model_data = ModelData()
     datapath =  model_data['datapath'] #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
+    test_datapath =  model_data['test_datapath']
     
     # get the path to all .outb files in the directory
-    outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
-    outfiles = sorted(outfiles)
+    outfiles_train = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
+    outfiles_train = sorted(outfiles_train)
+
+    # get the path to all .outb files in the directory
+    outfiles_test = [os.path.join(test_datapath,f) for f in os.listdir(test_datapath) if valid_extension(f)]
+    outfiles_test = sorted(outfiles_test)
 
     # required states
     reqd_states = model_data['reqd_states'] 
@@ -131,9 +147,11 @@ if __name__ == '__main__':
     faacc_ind = reqd_outputs.index('NcIMURAys')
     blade_pitch_ind = reqd_controls.index('BldPitch1')
     gen_tq_ind = reqd_controls.index('GenTq')
+    ty_ind = reqd_outputs.index('TwrBsMyt')
 
     nx = model_data['nx']
     dt_extract = model_data['dt_extract']
+    
     
     
     # scaling parameters
@@ -146,25 +164,23 @@ if __name__ == '__main__':
                    }
 
     # instantiate class
-    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
-                                   ,add_dx2 = True,linear_model_file = None,region = region,dt_extract = dt_extract)
+    tmin = model_data['tmin']
+    sim_detail_train = SimulationDetails(outfiles_train, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=tmin
+                                   ,add_dx2 = True,linear_model_file = None,region = region)
+    
+    sim_detail_test = SimulationDetails(outfiles_test, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=tmin
+                                   ,add_dx2 = True,linear_model_file = None,region = region)
     
     # load and process data
-    sim_detail.load_openfast_sim()
+    sim_detail_train.load_openfast_sim()
+    sim_detail_test.load_openfast_sim()
 
-    ctrl_type = 'CL'
-
-    # path to DISCON library
-    lib_name = discon_lib_path
-
-    # Write parameter input file
-    param_filename = '/home/athulsun/DFSM/data/FOWT_1p6/weis_job_00_DISCON.IN'
-    
-    
     # extract data
-    FAST_sim = sim_detail.FAST_sim
+    FAST_sim_train = sim_detail_train.FAST_sim
+    FAST_sim_array = np.array(FAST_sim_train)
 
-    FAST_sim_array = np.array(FAST_sim)
+    FAST_sim_test = sim_detail_test.FAST_sim
+    FAST_sim_test = np.array(FAST_sim_test)
 
 
     w_array = []
@@ -178,16 +194,28 @@ if __name__ == '__main__':
     nW = len(W)
     nseeds = int(len(w_array)/nW)
     
-    FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
+    FAST_sim_train = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
+    FAST_sim_test = np.reshape(FAST_sim_test,[10,nW],order = 'F')
+    
     w_array = np.reshape(w_array,[nseeds,nW],order = 'F')
 
     sort_ind = np.argsort(w_array[0,:])
-    FAST_sim = FAST_sim[:,sort_ind]
+    FAST_sim_train = FAST_sim_train[:,sort_ind]
+
+    ## Control type
+    ctrl_type = 'CL'
+
+    # path to DISCON library
+    lib_name = discon_lib_path
+
+    # Write parameter input file
+    param_filename = datapath + os.sep + 'DLC1.6_0_weis_job_00_DISCON.IN'
+    
 
     n_samples = 1
 
-    w_test_list = [12,14,16]
-    nx_list = np.arange(2,22,2)
+    w_test_list = [14]
+    nx_list = [10]#np.arange(8,14,2)
 
     n_nx = len(nx_list)
     n_w = len(w_test_list)
@@ -195,7 +223,7 @@ if __name__ == '__main__':
     train_inds = model_data['train_inds']
     test_inds = model_data['test_inds']
 
-    nt = len(FAST_sim[0,0]['controls'])
+    nt = len(FAST_sim_train[0,0]['controls'])
 
     n_tests = len(train_inds)
     GS_list = []
@@ -208,9 +236,9 @@ if __name__ == '__main__':
 
         GS_mse = np.zeros(n_w)
         BP_mse = np.zeros(n_w)
-        GT_mse = np.zeros(n_w)
+        TY_mse = np.zeros(n_w)
 
-        plot_path = 'sys_id_test2' + os.sep +'nx_'+str(int(nx))
+        plot_path = 'sys_id' + os.sep +'nx_'+str(int(nx))
 
         for iw,w_test in enumerate(w_test_list):
 
@@ -220,7 +248,7 @@ if __name__ == '__main__':
             ind_w = np.where(W == w_test)[0][0]
 
             # extract the corresponding inputs and outputs
-            _,_,_,inputs,state_dx,outputs = sample_data(FAST_sim[train_inds,ind_w],'KM',n_samples = 1)
+            _,_,_,inputs,state_dx,outputs = sample_data(FAST_sim_train[train_inds,ind_w],'KM',n_samples = 1)
             inputs = np.array(inputs[:,:nc])
 
             # get scaler for outputs
@@ -229,7 +257,7 @@ if __name__ == '__main__':
             outputs_max[max_ind] = 1 
 
             # get system matrices by calling matlab
-            A,B,C,x0 = call_matlab(inputs,outputs,nc,ny,outputs_max,n_tests,int(nx),nt,dt_extract)
+            A,B,C,x0,mc_time = call_matlab(inputs,outputs,nc,ny,outputs_max,n_tests,int(nx),nt,dt_extract)
 
             # load results from matlab
             save_flag = True;save_dict_flag = True;plot_flag = True
@@ -237,14 +265,14 @@ if __name__ == '__main__':
             ts_path = plot_path + os.sep + 'w_'+str(int(w_test))
 
             gs_mse_w = np.zeros(len(test_inds))
-            
-
             gt_mse_w = np.zeros(len(test_inds))
             bp_mse_w = np.zeros(len(test_inds))
+            ty_mse_w = np.zeros(len(test_inds))
+            me_time = np.zeros(len(test_inds))
 
             for idx,ind in enumerate(test_inds):
                 
-                FS = FAST_sim[ind,ind_w]
+                FS = FAST_sim_test[ind,ind_w]
 
                 
                 U_of = FS['controls']
@@ -255,8 +283,9 @@ if __name__ == '__main__':
                 U_n4sid[0,:] = U_of[0,:]
 
                 #time = results_mat['time']
-                time = FAST_sim[ind,ind_w]['time']
-                t_ind = time>=00
+                time = FAST_sim_test[ind,ind_w]['time']
+                time = time-200
+                
                 tf = time[-1]
 
                 nt = len(time)
@@ -266,7 +295,7 @@ if __name__ == '__main__':
                 Y = np.zeros((nt,ny))
                 
                 X[0,:] = x0[:,1]
-
+                t1 = timer.time()
                 if ctrl_type == 'CL':
                     # parameters for ROSCO
                     num_blade = int(3)
@@ -334,21 +363,20 @@ if __name__ == '__main__':
                     
                     Y[i,:] = np.dot(C,x)*outputs_max
                     X[i+1,:] = xi
-
-                Y = Y[t_ind,:]
-                outputs_OF = outputs_OF[t_ind,:]
+                t2 = timer.time()
+                
 
                 if ctrl_type == 'CL':
                     controller_interface.kill_discon()
 
-                    U_n4sid = U_n4sid[t_ind,:]
-                    U_of = U_of[t_ind,:]
 
-                    gt_mse_w = calculate_MSE(U_of[:,blade_pitch_ind],U_n4sid[:,blade_pitch_ind])
-                    bp_mse_w = calculate_MSE(U_of[:,gen_tq_ind],U_n4sid[:,gen_tq_ind])
-
+                    gt_mse_w[idx] = calculate_MSE(U_of[:,blade_pitch_ind],U_n4sid[:,blade_pitch_ind])
+                    bp_mse_w[idx] = calculate_MSE(U_of[:,gen_tq_ind],U_n4sid[:,gen_tq_ind])
+                print(t2-t1)
 
                 gs_mse_w[idx] = calculate_MSE(outputs_OF[:,gs_ind],Y[:,gs_ind])
+                ty_mse_w[idx] = calculate_MSE(outputs_OF[:,ty_ind],Y[:,ty_ind])
+                me_time[idx] = t2-t1
                 
 
 
@@ -357,7 +385,7 @@ if __name__ == '__main__':
 
 
                     fig,ax = plt.subplots(1)
-                    ax.plot(time[t_ind],U_of[:,0])
+                    ax.plot(time,U_of[:,0])
                     ax.tick_params(labelsize=fontsize_tick)
                     ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
                     ax.set_title('RtVAvgxh',fontsize = fontsize_axlabel)
@@ -373,12 +401,19 @@ if __name__ == '__main__':
 
                         for iu in [1,2]:
 
+                            if reqd_controls[iu] == 'BldPitch1':
+                                title = 'Blade Pitch [deg]'
+                            else:
+                                title = reqd_controls[iu]
+
+
                             fig,ax = plt.subplots(1)
-                            ax.plot(time[t_ind],U_of[:,iu],label = 'OpenFAST')
-                            ax.plot(time[t_ind],U_n4sid[:,iu],label = 'n4sid',alpha = 0.8)
+                            ax.plot(time,U_of[:,iu],color = 'k',label = 'OpenFAST')
+                            ax.plot(time,U_n4sid[:,iu],color = 'tab:orange',label = 'n4sid')
                             ax.tick_params(labelsize=fontsize_tick)
                             ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                            ax.set_title(reqd_controls[iu],fontsize = fontsize_axlabel)
+                            ax.set_title(title,fontsize = fontsize_axlabel)
+                            ax.set_xlim([0,600])
 
                             if save_flag:
                                 if not os.path.exists(ts_path):
@@ -389,16 +424,26 @@ if __name__ == '__main__':
 
                     for i in range(ny):
 
+                        if reqd_outputs[i] == 'GenSpeed':
+                            title = 'Generator Speed [rpm]'
+                        else:
+                            title = reqd_outputs[i]
+
+                        if reqd_outputs[i] == 'TwrBsMyt':
+                            title = 'Tower-Base Moment [kNm]'
+                        else:
+                            title = reqd_outputs[i]
+
                         fig,ax1 = plt.subplots(1)
                         
-                        ax1.plot(time[t_ind],outputs_OF[:,i],label = 'OpenFAST')
-                        ax1.plot(time[t_ind],Y[:,i],label = 'n4sid',alpha = 0.8)
-                        #ax1.set_xlim([100,700])
+                        ax1.plot(time,outputs_OF[:,i],color = 'k',label = 'OpenFAST')
+                        ax1.plot(time,Y[:,i],color = 'tab:orange',label = 'n4sid')
+                        ax1.set_xlim([0,600])
                         
                         ax1.tick_params(labelsize=fontsize_tick)
                         ax1.legend(ncol = 2,fontsize = fontsize_legend)
                         ax1.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                        ax1.set_title(reqd_outputs[i],fontsize = fontsize_axlabel)
+                        ax1.set_title(title,fontsize = fontsize_axlabel)
 
                         if save_flag:
                             if not os.path.exists(ts_path):
@@ -408,10 +453,19 @@ if __name__ == '__main__':
                         plt.close(fig)
 
             GS_mse[iw] = np.mean(gs_mse_w)
-            
-
-            GT_mse[iw] = np.mean(gt_mse_w)
+            TY_mse[iw] = np.mean(ty_mse_w)
             BP_mse[iw] = np.mean(bp_mse_w)
+
+            n4sid_model = {'A':A,'B':B,'C':C,'x0':x0,'mc_time':mc_time,'outputs_max':outputs_max}
+
+            with open(ts_path + os.sep +'n4sid_model.pkl','wb') as handle:
+                pickle.dump(n4sid_model,handle)
+
+            results_dict = {'bp_mse':bp_mse_w,'gs_mse':gs_mse_w,'twrbsmyt_mse':ty_mse_w,'model_sim_time':me_time}
+            results_file = ts_path+os.sep+'results_dict.pkl'
+
+            with open(results_file,'wb') as handle:
+                pickle.dump(results_dict,handle)
 
         fig,ax = plt.subplots(1)
 

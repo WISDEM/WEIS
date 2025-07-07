@@ -10,7 +10,7 @@ import pickle
 class SimulationDetails:
     
     def __init__(self,OF_output_files,reqd_states,reqd_controls,reqd_outputs,scale_args = {}
-                 ,filter_args = {},add_dx2 = True,tmin = 0,tmax = None,linear_model_file = None,region = None,OF_file_type = 'outb'):
+                 ,filter_args = {},add_dx2 = True,tmin = 0,tmax = None,linear_model_file = None,region = None,OF_file_type = 'outb',dt_extract = 0.01):
         
         # initialize
         self.OF_output_files = OF_output_files
@@ -25,6 +25,7 @@ class SimulationDetails:
         self.tmax = tmax 
         self.linear_model_file = linear_model_file
         self.region = region
+        self.dt_extract = dt_extract
         
         # get number of simulations
         self.n_sim = len(OF_output_files)
@@ -205,8 +206,8 @@ class SimulationDetails:
                 
                 outputs = []
 
-            if dt < 0.01:
-                dt_ = 0.01
+            if not(dt == self.dt_extract):
+                dt_ = self.dt_extract
                 t0 = time[0];tf = time[-1]
                 time_ = np.arange(t0,tf+dt_,dt_)
 

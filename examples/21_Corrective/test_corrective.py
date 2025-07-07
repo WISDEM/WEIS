@@ -51,8 +51,9 @@ if __name__ == '__main__':
 
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
+    outputs_folder = this_dir + os.sep + 'outputs'
 
-    results_file = this_dir + os.sep + 'ts_dict_test_15s.pkl'
+    results_file = outputs_folder+os.sep+'CL_val_iea22_18'+os.sep +'ts_dict.pkl'
 
     # load results file
     with open(results_file,'rb') as handle:
@@ -71,16 +72,17 @@ if __name__ == '__main__':
 
     RNN_type = 'LSTM'
 
-    save_folder = this_dir + os.sep +'corrective_fun_results_test_15s_test' + RNN_type
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    save_folder = outputs_folder + os.sep +'corrective_fun_results_iea22_18'
+    sf = save_folder + os.sep + 'test'
+    if not os.path.exists(sf):
+        os.mkdir(sf)
 
     # initialize storage arrays
     wind_array = np.zeros((nt,n_cases))
     wave_array = np.zeros((nt,n_cases))
     myt_of = np.zeros((nt,n_cases))
     myt_dfsm = np.zeros((nt,n_cases))
-
+    
     for i in range(n_cases):
 
         wind_array[:,i] = wind_list[i]['RtVAvgxh']
@@ -88,7 +90,7 @@ if __name__ == '__main__':
         myt_of[:,i] = myt_list[i]['OpenFAST']
         myt_dfsm[:,i] = myt_list[i]['DFSM']
 
-    nw = 7; ns = 15
+    nw = 1; ns = 10
 
     k = 2
     v_avg = 11.4
@@ -112,9 +114,9 @@ if __name__ == '__main__':
     fig,ax = plt.subplots(1);
     ax.plot(mean_wind,TI,'.',color = 'k',markersize = 10)
     ax.set_xlabel('Wind Speed [m/s]');ax.set_ylabel('TI')
-    fig.savefig(save_folder+os.sep + 'TI.png')
+    fig.savefig(sf+os.sep + 'TI.png')
     plt.close(fig)
-    #plt.show()
+    
 
     # remove fist intry
 
@@ -126,7 +128,9 @@ if __name__ == '__main__':
     nt = nt-1
     print(nt)
 
-    save_name = RNN_type + '_corrective_test.keras'
+    
+
+    save_name = save_folder + os.sep + RNN_type + '_corrective.keras'
     
     if os.path.exists(save_name):
 
@@ -138,7 +142,7 @@ if __name__ == '__main__':
 
     nt_train_list = [1000,60000]
 
-    xlim = [100,400]
+    xlim = [00,600]
     
 
     for i_nt,nt_train in enumerate(nt_train_list):
@@ -169,7 +173,7 @@ if __name__ == '__main__':
             fig,ax = plt.subplots(1)
 
             ax.plot(time,myt_of[:,i_case],label = 'OpenFAST', color = 'k')
-            ax.plot(time,test_output,label = 'DFSM + C',color = 'tab:orange')
+            ax.plot(time,test_output,label = 'DFSM + LSTM',color = 'tab:orange')
             ax.set_xlabel(['Time [s]'],fontsize = fontsize_axlabel)
             ax.set_ylabel('Norm. TwrBsMyt',fontsize = fontsize_axlabel)
             ax.set_xlim(xlim)
@@ -177,7 +181,7 @@ if __name__ == '__main__':
             ax.legend(ncol = 2,fontsize = fontsize_legend)
 
             #plt.show()
-            fig.savefig(save_folder + os.sep +'comp_corr'+str(i_case)+'.pdf')
+            fig.savefig(sf + os.sep +'comp_corr'+str(i_case)+'.pdf')
             plt.close(fig)
 
             fig,ax = plt.subplots(1)
@@ -190,7 +194,7 @@ if __name__ == '__main__':
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
 
-            fig.savefig(save_folder + os.sep +'comp_LPV'+str(i_case)+'.pdf')
+            fig.savefig(sf + os.sep +'comp_LPV'+str(i_case)+'.pdf')
             plt.close(fig)
 
             DEL[i_case,0] = calc_DEL(myt_of[:,i_case]*1e0,elapsed)
@@ -209,14 +213,14 @@ if __name__ == '__main__':
 
         ax.plot(mw,DEL_of,'ko-',label = 'OpenFAST')
         #ax.plot(mw,DEL_dfsm,'ro-',label = 'DFSM')
-        ax.plot(mw,DEL_corr,'o-',color = 'tab:orange', label = 'DFSM + Corr')
+        ax.plot(mw,DEL_corr,'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
         ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
         ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
         ax.tick_params(labelsize=fontsize_tick)
         ax.legend(ncol = 2,fontsize = fontsize_legend)
 
-        fig.savefig(save_folder + os.sep +'DEL_corr.pdf')
+        fig.savefig(sf + os.sep +'DEL_corr.pdf')
         plt.close(fig)
         #---------------------------------------------------
         fig,ax = plt.subplots(1)
@@ -229,7 +233,7 @@ if __name__ == '__main__':
         ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
         ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
 
-        fig.savefig(save_folder + os.sep +'DEL_lpv.pdf')
+        fig.savefig(sf + os.sep +'DEL_lpv.pdf')
         plt.close(fig)
         #--------------------------------------------------------------
         fig,ax = plt.subplots(1)
@@ -239,28 +243,28 @@ if __name__ == '__main__':
 
         ax.plot(DEL_of_,DEL_of[sort_ind],'ko-',label = 'OpenFAST')
         ax.plot(DEL_of_,DEL_dfsm[sort_ind],'ro-',label = 'DFSM')
-        ax.plot(DEL_of_,DEL_corr[sort_ind],'o-',color = 'tab:orange', label = 'DFSM + Corr')
+        ax.plot(DEL_of_,DEL_corr[sort_ind],'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
         ax.legend(ncol = 3,fontsize = fontsize_legend)
         ax.tick_params(labelsize=fontsize_tick)
         ax.set_xlabel('Actual DEL',fontsize = fontsize_axlabel)
         ax.set_ylabel('Predicted DEL',fontsize = fontsize_axlabel)
 
-        fig.savefig(save_folder + os.sep +'act-pred.pdf')
+        fig.savefig(sf + os.sep +'act-pred.pdf')
         plt.close(fig)
         #-------------------------------------------------
         fig,ax = plt.subplots(1)
 
         ax.plot(mw,reshape_mean(M_std[:,0],ns,nw),'ko-',label = 'OpenFAST')
         ax.plot(mw,reshape_mean(M_std[:,1],ns,nw),'ro-',label = 'DFSM')
-        ax.plot(mw,reshape_mean(M_std[:,2],ns,nw),'o-',color = 'tab:orange', label = 'DFSM + Corr')
+        ax.plot(mw,reshape_mean(M_std[:,2],ns,nw),'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
         ax.legend(ncol = 3)
 
         ax.set_xlabel('Wind Speed [m/s]')
         ax.set_ylabel('Myt std')
 
-        fig.savefig(save_folder + os.sep +'STD.pdf')
+        fig.savefig(sf + os.sep +'STD.pdf')
         plt.close(fig)
 
         print('---------------------------------------')

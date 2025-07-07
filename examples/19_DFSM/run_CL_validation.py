@@ -145,13 +145,13 @@ def run_mpi(case_data_all,mpi_options):
 
 
 
-def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_path,PSD_path,format,test_inds,mpi_options):
+def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_flag,plot_path,PSD_path,format,test_inds,mpi_options):
 
     # path to DISCON library
     lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = '/home/athulsun/WEIS-AKS-DEV/examples/19_DFSM/outputs/fowt_test_1p62/DLC1.6_0_weis_job_00_DISCON.IN'
+    param_filename = testpath + os.sep + 'DLC1.6_0_IEA_22_Semi_00_DISCON.IN'
    
 
     T_of = []
@@ -201,7 +201,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
         # hardcoded for now
         param = {'VS_GenEff':95.75,
                     'WE_GearboxRatio':1.0,
-                    'VS_RtPwr':15000000.00000,
+                    'VS_RtPwr':22000000.00000,
                     'time':[t0],
                     'dt':[dt],
                     'blade_pitch':[bp0],
@@ -412,7 +412,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                 unit = ' [rpm]'
 
             elif state == 'PtfmPitch':
-                plt_title = 'Platfrom Pitch'
+                plt_title = 'Platform Pitch'
                 unit = ' [deg]'
 
             elif state == 'PtfmSurge':
@@ -615,10 +615,9 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
 
 
     results_dict = {'ws_array':currspeed_array,'wave_array':waveelev_array,'myt_array':TwrBsMyt_array}
-    #savemat('ts_dict.mat',results_dict)
-    
-    # with open('ts_dict_test_15s.pkl','wb') as handle:
-    #     pickle.dump(results_dict,handle)
+
+    with open(plot_path +os.sep +'ts_dict.pkl','wb') as handle:
+        pickle.dump(results_dict,handle)
                 
 
 if __name__ == '__main__':
@@ -629,7 +628,7 @@ if __name__ == '__main__':
     test = False
     
 
-    test_inds = np.arange(0,70)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
+    test_inds = np.arange(60,70) #np.array([10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44,50,51,52,53,54,60,61,62,63,64])
     
 
     # path to this directory
@@ -678,10 +677,10 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_iea15_test.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_iea22.pkl'
 
         format = '.pdf'
-        dt = 0.01;transition_time = 200
+        dt = 0.01;transition_time = 210
 
         # load dfsm model
         with open(pkl_name,'rb') as handle:
@@ -697,7 +696,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # datapath
-        testpath = this_dir + os.sep + 'outputs' + os.sep +'fowt_test_1p62'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'IEA22_test'
         
 
         # get the path to all .outb files in the directory
@@ -748,7 +747,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'test_1p6_2_JMD_test'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_iea15'
     
 
     if rank == 0 and not os.path.isdir(save_path):
@@ -777,7 +776,7 @@ if __name__ == '__main__':
             mpi_options['mpi_comm_map_down'] = []
 
         # run the simulations
-        run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,save_path,PSD_path,format,test_inds,mpi_options)
+        run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_flag,save_path,PSD_path,format,test_inds,mpi_options)
 
     #---------------------------------------------------
     # More MPI stuff
