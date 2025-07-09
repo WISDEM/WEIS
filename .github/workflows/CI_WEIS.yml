@@ -44,7 +44,7 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           conda install -y petsc4py=3.22.2 mpi4py pyoptsparse
-          apt-get install -y libglu1-mesa
+          sudo apt install -y libglu1-mesa
           pip install pygmsh==7.1.17
           pip install https://github.com/LHEEA/meshmagick/archive/refs/tags/3.4.zip
           pip install trimesh        
