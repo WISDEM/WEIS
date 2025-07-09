@@ -1126,6 +1126,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['blade:edge_mode_shapes'][0,i] / sum(inputs['blade:edge_mode_shapes'][0,:])
 
         # Update BeamDyn Main
+        fst_vt['BeamDyn']['DTBeam'] = "Default"
         fst_vt['BeamDyn']['member_total'] = 1
         fst_vt['BeamDyn']['kp_total'] = len(inputs['ref_axis_blade'][:,0])
         fst_vt['BeamDyn']['members'] = [{}]
