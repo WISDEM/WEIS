@@ -3,7 +3,7 @@ import os
 from weis import weis_main
 
 # TEST_RUN will reduce the number and duration of simulations
-TEST_RUN = False
+TEST_RUN = True
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )

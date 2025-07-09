@@ -653,7 +653,6 @@ class FASTLoadCases(ExplicitComponent):
 
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
-            fst_vt['MoorDyn']['TmaxIC'] = 1.0
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
@@ -1525,11 +1524,14 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
+            
+            # Only cylindrical member supported for now
             fst_vt['HydroDyn']['NPropSetsCyl'] = n_joints      # each joint has a cross section
             fst_vt['HydroDyn']['CylPropSetID'] = ijoints
             fst_vt['HydroDyn']['CylPropD'] = d_coarse
             fst_vt['HydroDyn']['CylPropThck'] = t_coarse
-            fst_vt['HydroDyn']['NPropSetsRec'] = 0
+            fst_vt['HydroDyn']['NPropSetsRec'] = 0   # placeholder for now
+            
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
@@ -1697,6 +1699,10 @@ class FASTLoadCases(ExplicitComponent):
 
             for option in fst_vt['MoorDyn']['option_names']:
                 fst_vt['MoorDyn']['option_values'].append(fst_vt['MoorDyn'][option])
+
+            if modopt['General']['test_mode']:      # speed up test mode
+                tmax_ind = fst_vt['MoorDyn']['option_names'].index('TmaxIC')
+                fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
 
             # MoorDyn output channels: could pull these from schema, but co-pilot will do for now
             fst_vt['MoorDyn']['option_descriptions'] = [
