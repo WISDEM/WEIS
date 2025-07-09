@@ -1,6 +1,7 @@
 import os
 from weis import weis_main
 import unittest
+import shutil
 
 
 class TestFrequency(unittest.TestCase):
@@ -30,6 +31,10 @@ class TestFrequency(unittest.TestCase):
         analysis_override = {}
         analysis_override["general"] = {}
         analysis_override["general"]["folder_output"] = run_dir
+        
+        # remove old openfast_runs folder for consistency
+        if os.path.exists(os.path.join(run_dir, "openfast_runs")):
+            shutil.rmtree(os.path.join(run_dir, "openfast_runs"))
                                 
 
         wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
