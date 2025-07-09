@@ -653,6 +653,9 @@ class FASTLoadCases(ExplicitComponent):
 
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
+            if 'TmaxIC'.upper() in fst_vt['MoorDyn']['option_names']:
+                tmax_ind = fst_vt['MoorDyn']['option_names'].index('TmaxIC'.upper())
+                fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
@@ -1692,17 +1695,6 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn Control - Optional
             fst_vt['MoorDyn']['ChannelID'] = []
-
-            # MoorDyn options
-            fst_vt['MoorDyn']['option_names'] = ['dtM','kbot','cbot','dtIC','TmaxIC','CdScaleIC','threshIC']
-            fst_vt['MoorDyn']['option_values'] = []
-
-            for option in fst_vt['MoorDyn']['option_names']:
-                fst_vt['MoorDyn']['option_values'].append(fst_vt['MoorDyn'][option])
-
-            if modopt['General']['test_mode']:      # speed up test mode
-                tmax_ind = fst_vt['MoorDyn']['option_names'].index('TmaxIC')
-                fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
 
             # MoorDyn output channels: could pull these from schema, but co-pilot will do for now
             fst_vt['MoorDyn']['option_descriptions'] = [
