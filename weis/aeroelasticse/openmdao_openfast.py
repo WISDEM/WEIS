@@ -826,6 +826,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['SeaState'] = {}
         fst_vt['HydroDyn'] = {}
         fst_vt['MoorDyn'] = {}
+        fst_vt['WaterKin'] = {}
         fst_vt['MAP'] = {}
         fst_vt['BeamDyn'] = {}
         fst_vt['BeamDynBlade'] = {}
@@ -1524,37 +1525,57 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
-            fst_vt['HydroDyn']['PropSetID'] = ijoints
-            fst_vt['HydroDyn']['PropD'] = d_coarse
-            fst_vt['HydroDyn']['PropThck'] = t_coarse
+            fst_vt['HydroDyn']['NPropSetsCyl'] = n_joints      # each joint has a cross section
+            fst_vt['HydroDyn']['CylPropSetID'] = ijoints
+            fst_vt['HydroDyn']['CylPropD'] = d_coarse
+            fst_vt['HydroDyn']['CylPropThck'] = t_coarse
+            fst_vt['HydroDyn']['NPropSetsRec'] = 0
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
             fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
+            fst_vt['HydroDyn']['MSecGeom'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['MSpinOrient'] = np.zeros( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['MHstLMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['NCoefDpth'] = 0
-            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NCoefDpthCyl'] = fst_vt['HydroDyn']['NCoefMembersCyl'] = 0
+            fst_vt['HydroDyn']['NCoefDpthRec'] = fst_vt['HydroDyn']['NCoefMembersRec'] = 0
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            if 'CylSimplCd' not in fst_vt['HydroDyn']:
+                for m in ['Cd', 'CdMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.6
+                for m in ['Ca', 'CaMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                
+            if 'RecSimplCdA' not in fst_vt['HydroDyn']:
+                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.6
+                for m in ['CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
 
             if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+                
             elif modopt["RAFT"]["potential_model_override"] == 2:
                 # BEM only, no strip theory
-                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCb'] = fst_vt['HydroDyn']['SimplCbMG'] = 0.0
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
+
+                for m in ['Cd', 'CdMG', 'Ca', 'CaMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                
+                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
+                
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
@@ -1563,7 +1584,7 @@ class FASTLoadCases(ExplicitComponent):
                         idx = modopt['floating']['members']['platform_elem_memid'][k]
                         PropPotBool[k] = modopt["RAFT"]["model_potential"][idx]    
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
-
+                
             if fst_vt['HydroDyn']['NBody'] > 1:
                 raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')
 
@@ -1574,12 +1595,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PtfmRefztRot']  = [0]
 
             # If we're using the potential model, need these settings that aren't default
-            if fst_vt['HydroDyn']['PotMod'] == 1:
+            if fst_vt['HydroDyn']['PotMod'] or fst_vt['HydroDyn']['PotMod'] == 1:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
-            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['OpenFAST_Linear']['flag'] and modopt['RAFT']['runPyHAMS']:
+            if (fst_vt['HydroDyn']['PotMod'] or fst_vt['HydroDyn']['PotMod'] == 1) and modopt['OpenFAST_Linear']['flag'] and modopt['RAFT']['runPyHAMS']:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
@@ -1621,6 +1642,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
             fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Cl'] = n_lines * [None]
+            fst_vt['MoorDyn']['dF'] = n_lines * [None]
+            fst_vt['MoorDyn']['cF'] = n_lines * [None]
             fst_vt['MoorDyn']['NonLinearEA'] = n_lines * [None]
 
             # Connection properties - Points
@@ -1975,11 +1999,11 @@ class FASTLoadCases(ExplicitComponent):
                 if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
                     dlc_generator.cases[i_case].HubHt = hub_height
 
-                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridHeight =  2. * hub_height - 1.e-3
+                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use 2*hub_height if not set
+                    dlc_generator.cases[i_case].GridHeight =  2.0 * hub_height - 1.e-3
 
-                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
+                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use 2.2*hub_height if not set
+                    dlc_generator.cases[i_case].GridWidth =  2.2 * hub_height - 1.e-3
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
