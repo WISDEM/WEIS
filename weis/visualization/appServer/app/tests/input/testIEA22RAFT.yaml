@@ -1,0 +1,70 @@
+outputDirStructure:
+  dirs:
+    04_iea22_raft_opt:
+      dirs:
+        raft_designs:
+          dirs: {}
+          files:
+          - raft_design_0.yaml
+          - raft_design_1.yaml
+          - raft_design_0.pkl
+          - raft_design_1.pkl
+        raft_plots:
+          dirs: {}
+          files: []
+      files:
+      - IEA-22-280-RWT-modeling.yaml
+      - problem_vars.yaml
+      - IEA-22-280-RWT.yaml
+      - IEA-22-280-RWT.npz
+      - IEA-22-280-RWT.pkl
+      - log_opt.sql
+      - IEA-22-280-RWT.xlsx
+      - IEA-22-280-RWT-analysis.yaml
+      - IEA-22-280-RWT.csv
+  files: []
+userOptions:
+  deisgn_of_experiments: false
+  inverse_design: false
+  optimization:
+    status: true
+    type: 1
+  output_fileName: IEA-22-280-RWT
+  output_folder: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
+  sql_recorder: true
+  sql_recorder_file: log_opt.sql
+userPreferences:
+  openfast:
+    file_path:
+      file1: None
+    graph:
+      xaxis: Time
+      yaxis:
+      - Wind1VelX
+      - GenPwr
+      - BldPitch1
+      - GenSpeed
+      - PtfmPitch
+  optimization:
+    convergence:
+      channels:
+      - floating.jointdv_0
+      - floating.jointdv_1
+      - floating.memgrp1.outer_diameter_in
+      - raft.Max_PtfmPitch
+      - floatingse.system_structural_mass
+  wisdem:
+    blade:
+      shape_yaxis:
+      - rotorse.rc.chord_m
+      - rotorse.re.pitch_axis
+      - rotorse.theta_deg
+      struct_yaxis:
+      - rotorse.rhoA_kg/m
+      struct_yaxis_log:
+      - rotorse.EA_N
+      - rotorse.EIxx_N*m**2
+      - rotorse.EIyy_N*m**2
+      - rotorse.GJ_N*m**2
+      xaxis: rotorse.rc.s
+    output_path: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt

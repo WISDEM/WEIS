@@ -1,0 +1,132 @@
+general:
+    folder_output: outputs/03_iea22_ptfm_opt
+    fname_output: IEA-22-280-RWT
+
+design_variables:
+    # tower:
+    #     outer_diameter:
+    #         flag: False
+    #         lower_bound: 4.0
+    #         upper_bound: 10.0
+    #     layer_thickness:
+    #         flag: False
+    #         lower_bound: 4.e-3
+    #         upper_bound: 2.e-1
+    floating:
+        joints:
+            flag: True
+            z_coordinate:       # draft
+                - names: [main_keel, col1_keel, col2_keel, col3_keel]
+                  lower_bound: -30.0
+                  upper_bound: -12.0
+                # - names: [col1_freeboard, col2_freeboard, col3_freeboard]
+                #   lower_bound: 10.0
+                #   upper_bound: 20.0
+            r_coordinate:
+                - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
+                  lower_bound: 35.0
+                  upper_bound: 75.0
+        members:
+            flag: True
+            groups:
+                - names: [column1, column2, column3]
+                  diameter:
+                      lower_bound: 12.0
+                      upper_bound: 16.0
+                      constant: True
+                #   ballast:
+                #       lower_bound: 0
+                #       upper_bound: 1000
+                # - names: [main_column]
+                #   ballast:
+                #       lower_bound: 0
+                #       upper_bound: 1000
+                # - names: [Y_pontoon_lower1, Y_pontoon_lower2, Y_pontoon_lower3]
+                #   diameter:
+                #       lower_bound: 10.0
+                #       upper_bound: 10.8
+                #       constant: True
+constraints:
+    tower:
+        height_constraint:
+            flag: False
+            lower_bound: 1.e-2
+            upper_bound: 1.e-2
+        stress:
+            flag: False
+        global_buckling:
+            flag: False
+        shell_buckling:
+            flag: False
+        d_to_t:
+            flag: False
+            lower_bound: 120.0
+            upper_bound: 2000.0
+        taper:
+            flag: False
+            lower_bound: 0.2
+        slope:
+            flag: False
+        frequency_1:
+            flag: False
+            lower_bound: 0.37
+    floating:
+        survival_heel:
+            upper_bound: 0.17453292519943295 # 10 deg
+        metacentric_height:
+            flag: False
+            lower_bound: 15.0
+        pitch_period:
+            flag: True
+            lower_bound: 20. # +/- 10%
+            upper_bound: 80.
+        heave_period:
+            flag: True
+            lower_bound: 16. # +/- 10%
+            upper_bound: 80.
+        fixed_ballast_capacity:
+            flag: True
+        variable_ballast_capacity:
+            flag: True
+        buoyancy:
+            flag: False
+        stress:
+            flag: False
+        global_buckling:
+            flag: False
+        shell_buckling:
+            flag: False
+        mooring_heel:
+            flag: False
+        freeboard_margin:   # keep freeboard from being submerged below water during survival_heel, largest wave
+            flag: True
+        draft_margin:   # keep draft from raising above water line during survival_heel, largest wave
+            flag: True
+        fairlead_depth: # keep fairlead above bottom trough of largest wave
+            flag: True
+    control:
+        Max_PtfmPitch:
+            flag: True
+            max: 6.0
+        Std_PtfmPitch:
+            flag: True
+            max: 1.25  # Same as IEA-15MW with same DLCs
+        nacelle_acceleration:
+            flag: True
+            max: 2.0
+
+merit_figure: structural_mass
+
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-3         # Optimality tolerance
+        max_iter: 50         # Maximum number of iterations
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        penalty_exponent: 2.0     # constraint penalty exponent
+        # penalty_parameter: 2.0    # constraint penalty exponent
+        run_parallel: True
+
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

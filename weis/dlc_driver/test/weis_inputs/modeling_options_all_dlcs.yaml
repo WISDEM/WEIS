@@ -20,9 +20,9 @@ WISDEM:
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
-    regulation_trajectory: ../../../../examples/02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    regulation_trajectory: ../../../../examples/00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT/IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../../../../examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    openfast_dir: ../../../../examples/00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     MoorDyn:
       TmaxIC: 1.0
     SeaState:
@@ -35,8 +35,7 @@ ROSCO:
     omega_pc:   [0.2]
     zeta_vs: 1.0
     omega_vs: 0.2
-    tuning_yaml: ../../../../examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
-
+    tuning_yaml: ../../../../examples/00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
 
     
 DLC_driver:
@@ -72,8 +71,8 @@ DLC_driver:
           wind_speed: [9., 11.]
         - DLC: "1.6"
           user_group:
-            - mean_sea_level: [1.0, 2.0]
-              current_speed: [.25, .5]
+            - current_speed: [.25, .5]
+            # - mean_sea_level: [1.0, 2.0]   # skip this one because it needs to be run with strip-theory only, no WAMIT
             - current_model: 1
         - DLC: "1.5"
         - DLC: "5.1"

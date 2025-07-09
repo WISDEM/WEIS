@@ -8,7 +8,7 @@ Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
 from numpy.matlib import repmat
-from weis.dtqpy.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.classes.DTQPy_CLASS_SETUP import LQ_objective
 
 def DTQPy_extact_order_subsets(Otemp):
     

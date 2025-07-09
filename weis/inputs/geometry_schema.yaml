@@ -853,7 +853,7 @@ definitions:
         description: Actuator used as control output
         enum:
             - pitch
-            - torque   #called generator above, keep consistent?
+            - torque   #called generator above, keep consistent
             - tower_TMD
             - hull_TMD
             - active_tension
@@ -887,7 +887,7 @@ definitions:
             - YawBrMzn
             - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
             - NcIMURAzs
-            # No platform info from avrSWAP, will they be added?
+            # No platform info from avrSWAP, will they be added
     filter:
         type: object
         description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined
@@ -992,7 +992,7 @@ definitions:
 
     timeseries:
         type: object
-        description: Array of time, value pairs  # DZ: can we check that the number of elements are equal?
+        description: Array of time, value pairs  # DZ: can we check that the number of elements are equal
         required:
             - time
             - value
@@ -1005,7 +1005,7 @@ definitions:
                 type: number
                 unit: seconds
                 minItems: 1
-                uniqueItems: true   # probably?
+                uniqueItems: true   # probably
         value:
             type: array
             description: Value in timeseries
@@ -1014,7 +1014,7 @@ definitions:
                 unit: none  #any
                 minItems: 1
                 uniqueItems: false
-                # can we check that number of elements are equal?
+                # can we check that number of elements are equal
         filename:
             type: string
             description: Name of file with timeseries data

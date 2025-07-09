@@ -9,6 +9,9 @@ import logging
 import argparse
 from weis.visualization.utils import checkPort, parse_yaml
 
+this_dir = os.path.dirname( os.path.realpath(__file__) )
+weis_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( this_dir ) ) ) )
+
 # Parse necessary arguments for running the app
 parser = argparse.ArgumentParser(description='WEIS Visualization App')
 parser.add_argument('--port', 
@@ -31,7 +34,7 @@ parser.add_argument('--debug',
 
 parser.add_argument('--input', 
                     type=str, 
-                    default='weis/visualization/appServer/app/tests/input/test.yaml',    #'tests/input/test.yaml', # From apps (while locally running..) # lets point to an example where viz input could potentially exist.
+                    default=os.path.join(weis_dir, 'weis','visualization','appServer','app','tests','input','test.yaml'),    #'tests/input/test.yaml', # From apps (while locally running..) # lets point to an example where viz input could potentially exist.
                     help='Path to the WEIS visualization input yaml file'
                     )
 
@@ -72,7 +75,7 @@ navbar = dbc.NavbarSimple(
 
 # Wrap app with loading component
 # Whenever it needs some time for loading data, small progress bar would be appear in the middle of the screen.
-
+print(args.input)
 app.layout = html.Div(
             [   # Variable Settings to share over pages
                 dcc.Store(id='input-dict', data=parse_yaml(args.input)),
