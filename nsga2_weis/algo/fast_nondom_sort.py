@@ -1,0 +1,79 @@
+import numpy as np
+import numba
+
+
+@numba.njit
+def fast_nondom_sort_ranks(P):
+    """
+    Perform fast non-dominated sorting on population P.
+
+    Args:
+      P (list or np.ndarray): Population, each element is a list/array of objectives.
+
+    Returns:
+        ranks (list): List of front ranks for each solution in P.
+    """
+    N = len(P)
+    M = len(P[0])
+    # Use lists of lists instead of sets for numba compatibility
+    S = [numba.typed.List.empty_list(numba.types.int64) for _ in range(N)]
+    n = np.zeros(N, dtype=np.int64)
+    ranks = -1 * np.ones(N, dtype=np.int64)
+    fronts = [numba.typed.List.empty_list(numba.types.int64)]
+    fronts[0].clear()
+
+    for p in range(N):
+        for q in range(N):
+            if p == q:
+                continue
+            p_better = False
+            q_better = False
+            for m in range(M):
+                if P[p][m] < P[q][m]:
+                    p_better = True
+                elif P[q][m] < P[p][m]:
+                    q_better = True
+            if (not q_better) and p_better:
+                S[p].append(q)
+            elif (not p_better) and q_better:
+                n[p] += 1
+        if n[p] == 0:
+            ranks[p] = 0
+            fronts[0].append(p)
+
+    i = 0
+    while len(fronts[i]) > 0:
+        next_front = numba.typed.List.empty_list(numba.types.int64)
+        for idx in range(len(fronts[i])):
+            p = fronts[i][idx]
+            for j in range(len(S[p])):
+                q = S[p][j]
+                n[q] -= 1
+                if n[q] == 0:
+                    ranks[q] = i + 1
+                    next_front.append(q)
+        fronts.append(next_front)
+        i += 1
+
+    # Convert -1 to None for compatibility with original code
+    result = [None if ranks[i] == -1 else int(ranks[i]) for i in range(N)]
+    return result
+
+
+def fast_nondom_sort(P):
+    """
+    Wrapper for fast_nondom_sort_ranks that returns the list-of-lists of indices for each front.
+
+    Args:
+      P (list or np.ndarray): Population, each element is a list/array of objectives.
+
+    Returns:
+        fronts (list of lists): Each sublist contains indices of solutions in that front.
+    """
+    ranks = fast_nondom_sort_ranks(P)
+    max_rank = max(r for r in ranks if r is not None)
+    fronts = [[] for _ in range(max_rank + 1)]
+    for idx, rank in enumerate(ranks):
+        if rank is not None:
+            fronts[rank].append(idx)
+    return fronts
