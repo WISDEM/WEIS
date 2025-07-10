@@ -653,9 +653,18 @@ class FASTLoadCases(ExplicitComponent):
 
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
-            if 'TmaxIC'.upper() in fst_vt['MoorDyn']['option_names']:
-                tmax_ind = fst_vt['MoorDyn']['option_names'].index('TmaxIC'.upper())
-                fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
+            if 'option_names' in fst_vt['MoorDyn']:  # MoorDyn is special, and option_names is only present if 
+                if 'TmaxIC' in fst_vt['MoorDyn']['option_names']:
+                    tmax_name = 'TmaxIC'
+                elif 'TMAXIC' in fst_vt['MoorDyn']['option_names']:     # if input is read from openfast-io, it's upper-ed
+                    tmax_name = 'TMAXIC'
+                else:
+                    tmax_name = None
+
+                if tmax_name is not None:
+                    tmax_ind = fst_vt['MoorDyn']['option_names'].index(tmax_name)
+                    fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
+            
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
@@ -1326,6 +1335,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
+            
+            # Circular cross-section properties
             fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
             fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
             fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
@@ -1406,8 +1417,15 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MType'] = np.ones( n_members, dtype=np.int_ )
             fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
-            fst_vt['SubDyn']['NPropSets'] = n_members
+            fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
+            
+            # Circular beam cross-section properties
+            fst_vt['SubDyn']['NBCPropSets'] = n_members
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
+            
+            # Rectangular beam cross-section properties (not yet supported)
+            fst_vt['SubDyn']['NBRPropSets'] = 0
+            
             fst_vt['SubDyn']['NCablePropSets'] = 0
             fst_vt['SubDyn']['NRigidPropSets'] = 0
             fst_vt['SubDyn']['NSpringPropSets'] = 0
@@ -1695,6 +1713,13 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn Control - Optional
             fst_vt['MoorDyn']['ChannelID'] = []
+
+            # MoorDyn options
+            fst_vt['MoorDyn']['option_names'] = ['dtM','kbot','cbot','dtIC','TmaxIC','CdScaleIC','threshIC']
+            fst_vt['MoorDyn']['option_values'] = []
+
+            for option in fst_vt['MoorDyn']['option_names']:
+                fst_vt['MoorDyn']['option_values'].append(fst_vt['MoorDyn'][option])
 
             # MoorDyn output channels: could pull these from schema, but co-pilot will do for now
             fst_vt['MoorDyn']['option_descriptions'] = [
