@@ -1335,6 +1335,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
+            
+            # Circular cross-section properties
             fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
             fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
             fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
@@ -1415,8 +1417,15 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MType'] = np.ones( n_members, dtype=np.int_ )
             fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
-            fst_vt['SubDyn']['NPropSets'] = n_members
+            fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
+            
+            # Circular beam cross-section properties
+            fst_vt['SubDyn']['NBCPropSets'] = n_members
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
+            
+            # Rectangular beam cross-section properties (not yet supported)
+            fst_vt['SubDyn']['NBRPropSets'] = 0
+            
             fst_vt['SubDyn']['NCablePropSets'] = 0
             fst_vt['SubDyn']['NRigidPropSets'] = 0
             fst_vt['SubDyn']['NSpringPropSets'] = 0
