@@ -653,16 +653,18 @@ class FASTLoadCases(ExplicitComponent):
 
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
-            if 'TmaxIC' in fst_vt['MoorDyn']['option_names']:
-                tmax_name = 'TmaxIC'
-            elif 'TMAXIC' in fst_vt['MoorDyn']['option_names']:     # if input is read from openfast-io, it's upper-ed
-                tmax_name = 'TMAXIC'
-            else:
-                tmax_name = None
+            if 'option_names' in fst_vt['MoorDyn']:  # MoorDyn is special, and option_names is only present if 
+                if 'TmaxIC' in fst_vt['MoorDyn']['option_names']:
+                    tmax_name = 'TmaxIC'
+                elif 'TMAXIC' in fst_vt['MoorDyn']['option_names']:     # if input is read from openfast-io, it's upper-ed
+                    tmax_name = 'TMAXIC'
+                else:
+                    tmax_name = None
 
-            if tmax_name is not None:
-                tmax_ind = fst_vt['MoorDyn']['option_names'].index(tmax_name)
-                fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
+                if tmax_name is not None:
+                    tmax_ind = fst_vt['MoorDyn']['option_names'].index(tmax_name)
+                    fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
+            
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
