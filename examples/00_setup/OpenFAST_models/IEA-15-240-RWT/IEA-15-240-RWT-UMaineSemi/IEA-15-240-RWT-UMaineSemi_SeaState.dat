@@ -4,7 +4,7 @@ False            Echo           - Echo the input file data (flag)
 ---------------------- ENVIRONMENTAL CONDITIONS -------------------------------- 
         "default"     WtrDens        - Water density (kg/m^3) 
         "default"     WtrDpth        - Water depth (meters) 
-        0             MSL2SWL        - Offset between still-water level and mean sea level (meters) [positive upward; unused when WaveMod = 6; must be zero if PotMod=1 or 2] 
+        "default"     MSL2SWL        - Offset between still-water level and mean sea level (meters) [positive upward; unused when WaveMod = 6; must be zero if PotMod=1 or 2] 
 ---------------------- SPATIAL DISCRETIZATION ---------------------------------------------------
              5   X_HalfWidth    – Half-width of the domain in the X direction (m) [>0, NOTE: X[nX] = nX*dX, where nX = {-NX+1,-NX+2,…,NX-1} and dX = X_HalfWidth/(NX-1)]
              5   Y_HalfWidth    – Half-width of the domain in the Y direction (m) [>0, NOTE: Y[nY] = nY*dY, where nY = {-NY+1,-NY+2,…,NY-1} and dY = Y_HalfWidth/(NY-1)]
@@ -68,5 +68,17 @@ False            SeaStSum       - Output a summary file [flag]
              5,            -5    WaveKinyi - List of yi-coordinates for points where the wave kinematics can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
            -10,           -15    WaveKinzi - List of zi-coordinates for points where the wave kinematics can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
 ---------------------- OUTPUT CHANNELS -----------------------------------------
-"Wave1Elev"               - Wave elevation at the WAMIT reference point (0,0)
+"Wave1Elev"               - Wave elevation at the platform reference point (  0,  0)
+"WavesF1xi" 
+"WavesF1zi" 
+"WavesM1yi" 
+"WavesF2xi" 
+"WavesF2zi" 
+"WavesM2yi"      
+"WavesF2xi"
+"WavesF2yi"
+"WavesF2zi"
+"WavesM2xi"
+"WavesM2yi"
+"WavesM2zi" 
 END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)   
