@@ -1,8 +1,10 @@
 import numpy as np
 
-compile_numba = True
-if compile_numba:
+try:
     import numba
+    compile_numba = True
+except ImportError:
+    compile_numba = False
 
 
 def binary_tournament_selection_python(
@@ -29,9 +31,11 @@ def binary_tournament_selection_python(
 if compile_numba:
     binary_tournament_selection = numba.njit(binary_tournament_selection_python)
     binary_tournament_selection.is_numba = True
+    binary_tournament_selection.python_exec = binary_tournament_selection_python
 else:
     binary_tournament_selection = binary_tournament_selection_python
     binary_tournament_selection.is_numba = False
+    binary_tournament_selection.python_exec = binary_tournament_selection_python
 
 
 def unit_simulated_binary_crossover_python(
@@ -123,9 +127,11 @@ def unit_simulated_binary_crossover_python(
 if compile_numba:
     unit_simulated_binary_crossover = numba.njit(unit_simulated_binary_crossover_python)
     unit_simulated_binary_crossover.is_numba = True
+    unit_simulated_binary_crossover.python_exec = unit_simulated_binary_crossover_python
 else:
     unit_simulated_binary_crossover = unit_simulated_binary_crossover_python
     unit_simulated_binary_crossover.is_numba = False
+    unit_simulated_binary_crossover.python_exec = unit_simulated_binary_crossover_python
 
 
 def simulated_binary_crossover_python(
@@ -166,11 +172,13 @@ def simulated_binary_crossover_python(
 
 
 if compile_numba:
-    simulated_binary_crossover = numba.njit(simulated_binary_crossover_python, parallel=True)
+    simulated_binary_crossover = numba.njit(simulated_binary_crossover_python)
     simulated_binary_crossover.is_numba = True
+    simulated_binary_crossover.python_exec = simulated_binary_crossover_python
 else:
     simulated_binary_crossover = simulated_binary_crossover_python
     simulated_binary_crossover.is_numba = False
+    simulated_binary_crossover.python_exec = simulated_binary_crossover_python
 
 
 def unit_polynomial_mutation_python(
@@ -249,9 +257,11 @@ def unit_polynomial_mutation_python(
 if compile_numba:
     unit_polynomial_mutation = numba.njit(unit_polynomial_mutation_python)
     unit_polynomial_mutation.is_numba = True
+    unit_polynomial_mutation.python_exec = unit_polynomial_mutation_python
 else:
     unit_polynomial_mutation = unit_polynomial_mutation_python
     unit_polynomial_mutation.is_numba = False
+    unit_polynomial_mutation.python_exec = unit_polynomial_mutation_python
 
 
 # @numba.njit(parallel=True)
@@ -280,8 +290,10 @@ def polynomial_mutation_python(
 
 
 if compile_numba:
-    polynomial_mutation = numba.njit(polynomial_mutation_python, parallel=True)
+    polynomial_mutation = numba.njit(polynomial_mutation_python)
     polynomial_mutation.is_numba = True
+    polynomial_mutation.python_exec = polynomial_mutation_python
 else:
     polynomial_mutation = polynomial_mutation_python
     polynomial_mutation.is_numba = False
+    polynomial_mutation.python_exec = polynomial_mutation_python

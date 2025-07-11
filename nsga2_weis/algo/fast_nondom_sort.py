@@ -1,9 +1,10 @@
 import numpy as np
 
-compile_numba = True
-if compile_numba:
+try:
     import numba
-
+    compile_numba = True
+except ImportError:
+    compile_numba = False
 
 def fast_nondom_sort_ranks_python(P):
     """
@@ -65,9 +66,11 @@ def fast_nondom_sort_ranks_python(P):
 if compile_numba:
     fast_nondom_sort_ranks = numba.njit(fast_nondom_sort_ranks_python)
     fast_nondom_sort_ranks.is_numba = True
+    fast_nondom_sort_ranks.python_exec = fast_nondom_sort_ranks_python
 else:
     fast_nondom_sort_ranks = fast_nondom_sort_ranks_python
     fast_nondom_sort_ranks.is_numba = False
+    fast_nondom_sort_ranks.python_exec = fast_nondom_sort_ranks_python
 
 
 def fast_nondom_sort(P):

@@ -1,8 +1,10 @@
 import numpy as np
 
-compile_numba = True
-if compile_numba:
+try:
     import numba
+    compile_numba = True
+except ImportError:
+    compile_numba = False
 
 
 def crowding_distance_assignment_python(I):
@@ -37,6 +39,8 @@ def crowding_distance_assignment_python(I):
 if compile_numba:
     crowding_distance_assignment = numba.njit(crowding_distance_assignment_python)
     crowding_distance_assignment.is_numba = True
+    crowding_distance_assignment.python_exec = crowding_distance_assignment_python
 else:
     crowding_distance_assignment = crowding_distance_assignment_python
     crowding_distance_assignment.is_numba = False
+    crowding_distance_assignment.python_exec = crowding_distance_assignment_python
