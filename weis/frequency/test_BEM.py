@@ -6,7 +6,7 @@ import shutil
 
 class TestFrequency(unittest.TestCase):
 
-    # @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
+    @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
     def test_BEM(self):
         ## File management
         run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -30,11 +30,11 @@ class TestFrequency(unittest.TestCase):
 
         analysis_override = {}
         analysis_override["general"] = {}
-        analysis_override["general"]["folder_output"] = run_dir
+        analysis_override["general"]["folder_output"] = os.path.join(run_dir, 'test_BEM_output')
         
         # remove old openfast_runs folder for consistency
-        if os.path.exists(os.path.join(run_dir, "openfast_runs")):
-            shutil.rmtree(os.path.join(run_dir, "openfast_runs"))
+        if os.path.exists(analysis_override["general"]["folder_output"]):
+            shutil.rmtree(analysis_override["general"]["folder_output"])
                                 
 
         wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
