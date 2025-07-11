@@ -639,6 +639,7 @@ class NSGA2:
         # get the fronts and unpack
         rv = self.get_fronts(
             feasibility_dominates=self.feasibility_dominates,
+            compute_constrs=True if self.N_constr else False,
         )
         design_vars_fronts = rv[1]
         objs_fronts = rv[2]
@@ -765,7 +766,7 @@ class NSGA2:
         rv = self.get_fronts_external(
             design_vars_combo, objs_combo, changed_combo,
             constrs_in=constrs_combo if self.N_constr else None,
-            compute_constrs=True,
+            compute_constrs=True if self.N_constr else False,
             feasibility_dominates=self.feasibility_dominates,
         )
         idx_fronts = rv[0]

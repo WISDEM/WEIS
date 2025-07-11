@@ -48,7 +48,7 @@ class NSGA2Driver(Driver):
 
     def __init__(self, **kwargs):
         """
-        Initialize the NSGA2 driver.
+        initialize the NSGA2 driver.
         """
 
         # TODO: is this necessary???
@@ -62,14 +62,14 @@ class NSGA2Driver(Driver):
 
         super().__init__(**kwargs)
 
-        # What we support
+        # what we support
         self.supports["optimization"] = True
-        self.supports["integer_design_vars"] = False  # TODO: implement
-        self.supports["inequality_constraints"] = False
-        self.supports["equality_constraints"] = False
+        self.supports["inequality_constraints"] = True
         self.supports["multiple_objectives"] = True
 
-        # What we don't support yet
+        # what we don't support yet
+        self.supports["integer_design_vars"] = False  # TODO: implement
+        self.supports["equality_constraints"] = False
         self.supports["two_sided_constraints"] = False
         self.supports["linear_constraints"] = False
         self.supports["simultaneous_derivatives"] = False
@@ -100,7 +100,8 @@ class NSGA2Driver(Driver):
         self.options.declare(
             "pop_size",
             default=0,
-            desc="Number of points in the GA. Set to 0 and it will be computed " "as four times the number of bits.",
+            desc="Number of points in the GA. Set to 0 and it will be computed "
+            "as four times the number of bits.",
         )
         self.options.declare(
             "run_parallel",
@@ -120,7 +121,9 @@ class NSGA2Driver(Driver):
             lower=0.0,
             desc="Penalty function parameter.",
         )
-        self.options.declare("penalty_exponent", default=1.0, desc="Penalty function exponent.")
+        self.options.declare(
+            "penalty_exponent", default=1.0, desc="Penalty function exponent."
+        )
         self.options.declare(
             "Pc",
             default=0.9,
@@ -370,35 +373,43 @@ class NSGA2Driver(Driver):
             pop_size,
             "center",
         )
-        self.population_init = design_vars_init  # save the initial population for inspection
+        self.population_init = (
+            design_vars_init  # save the initial population for inspection
+        )
 
         # create a new NSGA2 instance
         self.icase = 0
-        optimizer_nsga2 = NSGA2_implementation(
+        self.optimizer_nsga2 = NSGA2_implementation(
             design_vars_init,
             lambda XYq: self.objective_callback(XYq),
+            len(self._objs), len(self._cons),
             design_vars_l=lower_bound,
             design_vars_u=upper_bound,
             params_override=(Pc, eta_c, Pm, eta_m),
-            comm_mpi=(self.config_mpi[0] if MPI and self.options["run_parallel"] else None),
+            comm_mpi=(
+                self.config_mpi[0] if MPI and self.options["run_parallel"] else None
+            ),
             model_mpi=self.config_mpi[1],
             # verbose=True,
             verbose=False,
         )
-        optimizer_nsga2.get_fronts()  # evaluate the initial fronts
+        self.optimizer_nsga2.get_fronts()  # evaluate the initial fronts
 
         # iterate over the specified generations
         for generation in range(max_gen + 1):
-            print(f"DEBUG!!!!! generation: {generation}")
             # iterate the population
-            optimizer_nsga2.iterate_population()
+            self.optimizer_nsga2.iterate_population()
 
-        if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2
+        if (
+            compute_pareto
+        ):  # by default we should be doing Pareto fronts -> the whole point of NSGA2
             # save the non-dominated points
-            optimizer_nsga2.sort_data()  # re-sort the data
+            self.optimizer_nsga2.sort_data()  # re-sort the data
 
             # get the fronts and save the first for the driver
-            _, design_vars_fronts, objs_fronts = optimizer_nsga2.get_fronts()
+            rv = self.optimizer_nsga2.get_fronts(compute_constrs=False)
+            design_vars_fronts = rv[1]
+            objs_fronts = rv[2]
             self.desvar_nd = copy.deepcopy(design_vars_fronts[0])
             self.obj_nd = copy.deepcopy(objs_fronts[0])
 
@@ -440,6 +451,9 @@ class NSGA2Driver(Driver):
         objs = self.get_objective_values()  # extract the objectives
         nr_objectives = len(objs)  # count 'em
 
+        constrs = self.get_constraint_values()  # extract the constraints
+        nr_constraits = len(constrs)  # count 'em
+
         # verify if this is single-objective use
         if nr_objectives > 1:
             is_single_objective = False
@@ -468,19 +482,22 @@ class NSGA2Driver(Driver):
 
             # get the objective values
             obj_values = self.get_objective_values()
+            constr_values = self.get_constraint_values()
             if is_single_objective:  # single objective optimization
-                for i in obj_values.values():
-                    obj = i  # first and only key in the dict
+                for i in obj_values.values(): obj = i  # first and only key in the dict
             elif self.options["compute_pareto"]:
                 obj = np.array([val for val in obj_values.values()]).flatten()
             else:  # multi-objective
-                raise NotImplementedError("weight-based multi-objective optimization not implemented yet.")
+                raise NotImplementedError(
+                    "weight-based multi-objective optimization not implemented yet."
+                )
                 obj = []
                 for name, val in obj_values.items():
                     obj.append(val)
                 obj = np.array(obj)
+            constr = np.atleast_1d(np.array([val for val in constr_values.values()]).squeeze())
 
         if self.options["penalty_parameter"] != 0:
             raise NotImplementedError("penalty-driven constraints not implemented.")
 
-        return obj
+        return np.array(obj.tolist() + constr.tolist())
