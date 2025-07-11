@@ -8,6 +8,9 @@ from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from openfast_io.FileTools import remove_numpy
 from weis.aeroelasticse.utils import OLAFParams
 
+from packaging.version import parse as parse_version
+from rosco.toolbox import __version__ as rosco_version
+
 logger = logging.getLogger("wisdem/weis")
 
 # TODO: not sure where this should live, so it's a global for now
@@ -370,12 +373,17 @@ class DLCGenerator(object):
         known_dlcs = self.dlc_schema['DLC']['enum']
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
+        su_sd_cases = ['3.1', '3.2', '3.3', '4.1', '4.2']  # these cases require ROSCO v2.10 or greater
+
         # Get extreme wind speeds
         self.IECwind()
 
         found = False
         for ilab in known_dlcs:
             func_name = 'generate_'+str(ilab).replace('.','p')
+
+            if str(ilab) in su_sd_cases and parse_version(rosco_version) < parse_version('2.10.0'):
+                logger.warning(f'DLC {ilab} requires ROSCO v2.10 or greater. The case will run, but the startup or shutdown will not occur.')
 
             if label in [ilab, str(ilab)]: # Match either 1.1 or '1.1'
                 found = True
