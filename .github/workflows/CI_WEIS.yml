@@ -41,7 +41,7 @@ jobs:
       #    conda install -y -c intel intel-openmp mkl
       
       - name: Add dependencies ubuntu specific
-        if: false == contains( matrix.os, 'windows')
+        if: contains( matrix.os, 'ubuntu')
         run: |
           conda install -y petsc4py=3.22.2 mpi4py pyoptsparse
           sudo apt install -y libglu1-mesa
