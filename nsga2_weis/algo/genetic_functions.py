@@ -2,6 +2,7 @@ import numpy as np
 
 try:
     import numba
+
     compile_numba = True
 except ImportError:
     compile_numba = False
@@ -264,7 +265,6 @@ else:
     unit_polynomial_mutation.python_exec = unit_polynomial_mutation_python
 
 
-# @numba.njit(parallel=True)
 def polynomial_mutation_python(
     P_in: np.array,  # population to mutate
     design_vars_l: np.array,  # DV lower limits

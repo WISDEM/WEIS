@@ -2,6 +2,7 @@ import numpy as np
 
 try:
     import numba
+
     compile_numba = True
 except ImportError:
     compile_numba = False

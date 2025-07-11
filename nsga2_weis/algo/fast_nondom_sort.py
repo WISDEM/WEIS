@@ -2,9 +2,11 @@ import numpy as np
 
 try:
     import numba
+
     compile_numba = True
 except ImportError:
     compile_numba = False
+
 
 def fast_nondom_sort_ranks_python(P):
     """
