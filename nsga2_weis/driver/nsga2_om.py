@@ -100,8 +100,7 @@ class NSGA2Driver(Driver):
         self.options.declare(
             "pop_size",
             default=0,
-            desc="Number of points in the GA. Set to 0 and it will be computed "
-            "as four times the number of bits.",
+            desc="Number of points in the GA. Set to 0 and it will be computed " "as four times the number of bits.",
         )
         self.options.declare(
             "run_parallel",
@@ -121,9 +120,7 @@ class NSGA2Driver(Driver):
             lower=0.0,
             desc="Penalty function parameter.",
         )
-        self.options.declare(
-            "penalty_exponent", default=1.0, desc="Penalty function exponent."
-        )
+        self.options.declare("penalty_exponent", default=1.0, desc="Penalty function exponent.")
         self.options.declare(
             "Pc",
             default=0.9,
@@ -373,22 +370,19 @@ class NSGA2Driver(Driver):
             pop_size,
             "center",
         )
-        self.population_init = (
-            design_vars_init  # save the initial population for inspection
-        )
+        self.population_init = design_vars_init  # save the initial population for inspection
 
         # create a new NSGA2 instance
         self.icase = 0
         self.optimizer_nsga2 = NSGA2_implementation(
             design_vars_init,
             lambda XYq: self.objective_callback(XYq),
-            len(self._objs), len(self._cons),
+            len(self._objs),
+            len(self._cons),
             design_vars_l=lower_bound,
             design_vars_u=upper_bound,
             params_override=(Pc, eta_c, Pm, eta_m),
-            comm_mpi=(
-                self.config_mpi[0] if MPI and self.options["run_parallel"] else None
-            ),
+            comm_mpi=(self.config_mpi[0] if MPI and self.options["run_parallel"] else None),
             model_mpi=self.config_mpi[1],
             # verbose=True,
             verbose=False,
@@ -400,9 +394,7 @@ class NSGA2Driver(Driver):
             # iterate the population
             self.optimizer_nsga2.iterate_population()
 
-        if (
-            compute_pareto
-        ):  # by default we should be doing Pareto fronts -> the whole point of NSGA2
+        if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2
             # save the non-dominated points
             self.optimizer_nsga2.sort_data()  # re-sort the data
 
@@ -484,13 +476,12 @@ class NSGA2Driver(Driver):
             obj_values = self.get_objective_values()
             constr_values = self.get_constraint_values()
             if is_single_objective:  # single objective optimization
-                for i in obj_values.values(): obj = i  # first and only key in the dict
+                for i in obj_values.values():
+                    obj = i  # first and only key in the dict
             elif self.options["compute_pareto"]:
                 obj = np.array([val for val in obj_values.values()]).flatten()
             else:  # multi-objective
-                raise NotImplementedError(
-                    "weight-based multi-objective optimization not implemented yet."
-                )
+                raise NotImplementedError("weight-based multi-objective optimization not implemented yet.")
                 obj = []
                 for name, val in obj_values.items():
                     obj.append(val)

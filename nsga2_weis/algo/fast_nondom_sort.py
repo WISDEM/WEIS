@@ -1,9 +1,11 @@
 import numpy as np
-import numba
+
+compile_numba = True
+if compile_numba:
+    import numba
 
 
-@numba.njit
-def fast_nondom_sort_ranks(P):
+def fast_nondom_sort_ranks_python(P):
     """
     Perform fast non-dominated sorting on population P.
 
@@ -16,10 +18,10 @@ def fast_nondom_sort_ranks(P):
     N = len(P)
     M = len(P[0])
     # Use lists of lists instead of sets for numba compatibility
-    S = [numba.typed.List.empty_list(numba.types.int64) for _ in range(N)]
+    S = [numba.typed.List.empty_list(numba.types.int64) for _ in range(N)] if compile_numba else [[] for _ in range(N)]
     n = np.zeros(N, dtype=np.int64)
     ranks = -1 * np.ones(N, dtype=np.int64)
-    fronts = [numba.typed.List.empty_list(numba.types.int64)]
+    fronts = [numba.typed.List.empty_list(numba.types.int64)] if compile_numba else [[]]
     fronts[0].clear()
 
     for p in range(N):
@@ -43,7 +45,7 @@ def fast_nondom_sort_ranks(P):
 
     i = 0
     while len(fronts[i]) > 0:
-        next_front = numba.typed.List.empty_list(numba.types.int64)
+        next_front = numba.typed.List.empty_list(numba.types.int64) if compile_numba else []
         for idx in range(len(fronts[i])):
             p = fronts[i][idx]
             for j in range(len(S[p])):
@@ -58,6 +60,14 @@ def fast_nondom_sort_ranks(P):
     # Convert -1 to None for compatibility with original code
     result = [None if ranks[i] == -1 else int(ranks[i]) for i in range(N)]
     return result
+
+
+if compile_numba:
+    fast_nondom_sort_ranks = numba.njit(fast_nondom_sort_ranks_python)
+    fast_nondom_sort_ranks.is_numba = True
+else:
+    fast_nondom_sort_ranks = fast_nondom_sort_ranks_python
+    fast_nondom_sort_ranks.is_numba = False
 
 
 def fast_nondom_sort(P):

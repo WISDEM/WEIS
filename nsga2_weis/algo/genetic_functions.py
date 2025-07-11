@@ -1,9 +1,11 @@
 import numpy as np
-import numba
+
+compile_numba = True
+if compile_numba:
+    import numba
 
 
-@numba.njit
-def binary_tournament_selection(
+def binary_tournament_selection_python(
     fitness,
     ratio_keep=0.5,
 ):
@@ -24,8 +26,15 @@ def binary_tournament_selection(
     return indices_selected
 
 
-@numba.njit
-def unit_simulated_binary_crossover(
+if compile_numba:
+    binary_tournament_selection = numba.njit(binary_tournament_selection_python)
+    binary_tournament_selection.is_numba = True
+else:
+    binary_tournament_selection = binary_tournament_selection_python
+    binary_tournament_selection.is_numba = False
+
+
+def unit_simulated_binary_crossover_python(
     design_vars_1: np.array,
     design_vars_2: np.array,
     design_vars_l: np.array,
@@ -111,8 +120,15 @@ def unit_simulated_binary_crossover(
     return design_vars_a, design_vars_b, is_changed
 
 
-@numba.njit(parallel=True)
-def simulated_binary_crossover(
+if compile_numba:
+    unit_simulated_binary_crossover = numba.njit(unit_simulated_binary_crossover_python)
+    unit_simulated_binary_crossover.is_numba = True
+else:
+    unit_simulated_binary_crossover = unit_simulated_binary_crossover_python
+    unit_simulated_binary_crossover.is_numba = False
+
+
+def simulated_binary_crossover_python(
     P_in: np.array,  # population to cross over
     design_vars_l: np.array,  # DV lower limits
     design_vars_u: np.array,  # DV upper limits
@@ -122,15 +138,15 @@ def simulated_binary_crossover(
     N = len(P_in)
     N_pairs = N // 2
     indices = np.empty((N_pairs, 2), dtype=np.int64)
-    for i in numba.prange(N_pairs):
+    for i in numba.prange(N_pairs) if compile_numba else range(N_pairs):
         indices[i, 0] = np.random.randint(0, N)
         indices[i, 1] = np.random.randint(0, N)
 
     N_DV = P_in.shape[1]
     Q_out = np.empty((N_pairs * 2, N_DV), dtype=P_in.dtype)
-    changed_out = np.empty(N_pairs * 2, dtype=numba.boolean)
+    changed_out = np.empty(N_pairs * 2, dtype=numba.boolean if compile_numba else bool)
 
-    for i in numba.prange(N_pairs):
+    for i in numba.prange(N_pairs) if compile_numba else range(N_pairs):
         idx0 = indices[i, 0]
         idx1 = indices[i, 1]
         c0, c1, is_changed = unit_simulated_binary_crossover(
@@ -149,8 +165,15 @@ def simulated_binary_crossover(
     return Q_out, changed_out
 
 
-@numba.njit
-def unit_polynomial_mutation(
+if compile_numba:
+    simulated_binary_crossover = numba.njit(simulated_binary_crossover_python, parallel=True)
+    simulated_binary_crossover.is_numba = True
+else:
+    simulated_binary_crossover = simulated_binary_crossover_python
+    simulated_binary_crossover.is_numba = False
+
+
+def unit_polynomial_mutation_python(
     design_vars_1: np.array,
     design_vars_l: np.array,
     design_vars_u: np.array,
@@ -223,8 +246,16 @@ def unit_polynomial_mutation(
     return design_vars_a, is_changed
 
 
-@numba.njit(parallel=True)
-def polynomial_mutation(
+if compile_numba:
+    unit_polynomial_mutation = numba.njit(unit_polynomial_mutation_python)
+    unit_polynomial_mutation.is_numba = True
+else:
+    unit_polynomial_mutation = unit_polynomial_mutation_python
+    unit_polynomial_mutation.is_numba = False
+
+
+# @numba.njit(parallel=True)
+def polynomial_mutation_python(
     P_in: np.array,  # population to mutate
     design_vars_l: np.array,  # DV lower limits
     design_vars_u: np.array,  # DV upper limits
@@ -234,8 +265,8 @@ def polynomial_mutation(
     N = P_in.shape[0]
     N_DV = P_in.shape[1]
     Q_out = np.empty_like(P_in)
-    changed_out = np.empty(N, dtype=numba.boolean)
-    for i in numba.prange(N):
+    changed_out = np.empty(N, dtype=numba.boolean if compile_numba else bool)
+    for i in numba.prange(N) if compile_numba else range(N):
         xPi, is_changed = unit_polynomial_mutation(
             P_in[i],
             design_vars_l=design_vars_l,
@@ -246,3 +277,11 @@ def polynomial_mutation(
         Q_out[i] = xPi
         changed_out[i] = is_changed
     return Q_out, changed_out
+
+
+if compile_numba:
+    polynomial_mutation = numba.njit(polynomial_mutation_python, parallel=True)
+    polynomial_mutation.is_numba = True
+else:
+    polynomial_mutation = polynomial_mutation_python
+    polynomial_mutation.is_numba = False

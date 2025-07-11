@@ -643,7 +643,8 @@ class NSGA2:
         )
         design_vars_fronts = rv[1]
         objs_fronts = rv[2]
-        if self.N_constr: constrs_fronts = rv[3]
+        if self.N_constr:
+            constrs_fronts = rv[3]
 
         D_fronts = self.get_crowding_distance_data(self.objs_fronts)  # crowding distances
         idx_argsort_D = [np.argsort(Df)[::-1] for Df in D_fronts]  # get argsort in the front
@@ -706,7 +707,8 @@ class NSGA2:
         # create new proposed populations
         design_vars_proposal = self.design_vars_population[idx_selection, :].copy()
         objs_proposal = self.objs_population[idx_selection, :].copy()
-        if self.N_constr: constrs_proposal = self.constrs_population[idx_selection, :].copy()
+        if self.N_constr:
+            constrs_proposal = self.constrs_population[idx_selection, :].copy()
 
         # array of changes
         changed = np.array([False for _ in design_vars_proposal])
@@ -743,28 +745,37 @@ class NSGA2:
 
         # return the results
         rv = [design_vars_proposal, objs_proposal, changed]
-        if self.N_constr: rv.append(constrs_proposal)
+        if self.N_constr:
+            rv.append(constrs_proposal)
         return rv
 
     def iterate_population(self):
 
         # get previous, proposed next populations
-        design_vars_prev, objs_prev, constrs_prev = self.design_vars_population, self.objs_population, self.constrs_population
+        design_vars_prev, objs_prev, constrs_prev = (
+            self.design_vars_population,
+            self.objs_population,
+            self.constrs_population,
+        )
         rv = self.propose_new_generation()
         design_vars_next = rv[0]
         objs_next = rv[1]
         changed_next = rv[2]
-        if self.N_constr: constrs_next = rv[3]
+        if self.N_constr:
+            constrs_next = rv[3]
 
         # combine the populations and compute the fronts
         design_vars_combo = np.vstack([design_vars_prev, design_vars_next])
         objs_combo = np.vstack([objs_prev, objs_next])
         changed_combo = np.hstack([self.needs_recompute, changed_next])
-        if self.N_constr: constrs_combo = np.vstack([constrs_prev, constrs_next])
+        if self.N_constr:
+            constrs_combo = np.vstack([constrs_prev, constrs_next])
 
         # compute the fronts of the combined dataset
         rv = self.get_fronts_external(
-            design_vars_combo, objs_combo, changed_combo,
+            design_vars_combo,
+            objs_combo,
+            changed_combo,
             constrs_in=constrs_combo if self.N_constr else None,
             compute_constrs=True if self.N_constr else False,
             feasibility_dominates=self.feasibility_dominates,
@@ -772,7 +783,8 @@ class NSGA2:
         idx_fronts = rv[0]
         design_vars_fronts = rv[1]
         objs_fronts = rv[2]
-        if self.N_constr: constrs_fronts = rv[3]
+        if self.N_constr:
+            constrs_fronts = rv[3]
         R_fronts = self.get_rank_data(objs_fronts, local=True)
 
         # new data
@@ -787,10 +799,12 @@ class NSGA2:
                 break
             self.idx_fronts.append([])  # add a new front to the map
             for idx_v in f:  # for each index in the front
-                if idx_counter >= self.N_population: break
+                if idx_counter >= self.N_population:
+                    break
                 self.design_vars_population.append(design_vars_fronts[idx_f][idx_v])  # add to the re-sort
                 self.objs_population.append(objs_fronts[idx_f][idx_v])  # add to the re-sort
-                if self.N_constr: self.constrs_population.append(constrs_fronts[idx_f][idx_v])  # add to the re-sort
+                if self.N_constr:
+                    self.constrs_population.append(constrs_fronts[idx_f][idx_v])  # add to the re-sort
                 self.idx_fronts[idx_f].append(idx_counter)  # put the new index in the map
                 idx_counter += 1  # increment counter
 
@@ -801,4 +815,5 @@ class NSGA2:
 
         self.design_vars_population = np.array(self.design_vars_population)
         self.objs_population = np.array(self.objs_population)
-        if self.N_constr: self.constrs_population = np.array(self.constrs_population)
+        if self.N_constr:
+            self.constrs_population = np.array(self.constrs_population)

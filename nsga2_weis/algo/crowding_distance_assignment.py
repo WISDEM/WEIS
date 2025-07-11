@@ -1,7 +1,11 @@
 import numpy as np
 
+compile_numba = True
+if compile_numba:
+    import numba
 
-def crowding_distance_assignment(I):
+
+def crowding_distance_assignment_python(I):
 
     ### algorithm 3 from Deb et al. (2002)
 
@@ -18,9 +22,21 @@ def crowding_distance_assignment(I):
         # I = sorted(I, key=lambda x: x[m])  # sort the solutions to obj. m
         d[idx_m[0]] += np.inf  # set first and ...
         d[idx_m[-1]] += np.inf  # ... last solution to infinity
+        # if N_obj < 3: continue
         for i in range(1, l - 1):
-            d[idx_m[i]] += (I[idx_m[i + 1]][m] - I[idx_m[i - 1]][m]) / (
-                I[idx_m[l - 1]][m] - I[idx_m[0]][m]
-            )  # compute the crowding distance
+            if np.isclose(I[idx_m[l - 1]][m], I[idx_m[0]][m]):
+                d[idx_m[i]] = 0.0
+            else:
+                d[idx_m[i]] += (I[idx_m[i + 1]][m] - I[idx_m[i - 1]][m]) / (
+                    I[idx_m[l - 1]][m] - I[idx_m[0]][m]
+                )  # compute the crowding distance
 
     return d  # return the crowding distance of each solution
+
+
+if compile_numba:
+    crowding_distance_assignment = numba.njit(crowding_distance_assignment_python)
+    crowding_distance_assignment.is_numba = True
+else:
+    crowding_distance_assignment = crowding_distance_assignment_python
+    crowding_distance_assignment.is_numba = False
