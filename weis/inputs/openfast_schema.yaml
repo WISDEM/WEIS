@@ -3089,31 +3089,40 @@ properties:
             outlist: &ofoutlist
                 type: object
                 default: {}
+                description: Add additional OpenFAST channels to the output files
                 properties:
                     InflowWind:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     AeroDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     ElastoDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     BeamDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     HydroDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     SubDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     MoorDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     ServoDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
             from_openfast:
                 type: boolean
                 default: False

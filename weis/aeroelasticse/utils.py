@@ -571,6 +571,10 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
 
         # Pass data to CaseGen_General to call OpenFAST
         wind_file_type = 3
+        
+        # If IEC_WindType is Turbulent-<Gust>, switch IEC_WindType variable back to original wind type
+        if Turbulent_Gust:
+            dlc_generator.cases[i_case].IEC_WindType = actualwindtype
 
     if not dlc_generator.cases[i_case].turbulent_wind or dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
         if dlc_generator.cases[i_case].IEC_WindType.split('-')[-1] in ('NWP','Steady'):

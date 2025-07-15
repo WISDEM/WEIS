@@ -71,8 +71,8 @@ DLC_driver:
           wind_speed: [9., 11.]
         - DLC: "1.6"
           user_group:
-            - mean_sea_level: [1.0, 2.0]
-              current_speed: [.25, .5]
+            - current_speed: [.25, .5]
+            # - mean_sea_level: [1.0, 2.0]   # skip this one because it needs to be run with strip-theory only, no WAMIT
             - current_model: 1
         - DLC: "1.5"
         - DLC: "1.6"
