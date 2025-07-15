@@ -335,6 +335,12 @@ class WindPark(om.Group):
                         self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"raft.member{k}:Cay")
                         self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"raft.member{k}:Cdy")
 
+                # Rigid bodies
+                for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
+                    self.connect(f"floating.rigid_body_{k}_node",f"raft.rigid_body_{k}_node")
+                    self.connect(f"floating.rigid_body_{k}_mass",f"raft.rigid_body_{k}_mass")
+                    self.connect(f"floating.rigid_body_{k}_inertia",f"raft.rigid_body_{k}_inertia")
+
                 self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
                 self.connect("mooring.unstretched_length", 'raft.unstretched_length')
                 for var in ['diameter','mass_density','stiffness','breaking_load','cost_rate',
