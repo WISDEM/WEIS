@@ -39,8 +39,6 @@ from wisdem.inputs import load_yaml, write_yaml
 
 logger = logging.getLogger("wisdem/weis")
 
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
 def make_coarse_grid(s_grid, diam):
 
     s_coarse = [s_grid[0]]
@@ -2713,6 +2711,14 @@ class FASTLoadCases(ExplicitComponent):
 
         # determine which dlc will be used for the powercurve calculations, allows using dlc 1.1 if specific power curve calculations were not run
         sum_stats = self.cruncher.summary_stats
+
+        modopts = self.options['modeling_options']
+        DLCs = [i_dlc['DLC'] for i_dlc in modopts['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
+        else:
+            DLC_label_for_AEP = '1.1'
+            logger.warning('WARNING: DLC 1.1 is being used for AEP calculations.  Use the AEP DLC for more accurate wind modeling with constant TI.')
 
         modopts = self.options['modeling_options']
         DLCs = [i_dlc['DLC'] for i_dlc in modopts['DLC_driver']['DLCs']]

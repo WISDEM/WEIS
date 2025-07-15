@@ -498,9 +498,9 @@ properties:
                                 minItems: 1
                                 minimum: 0.0
                                 maximum: 10.0
-                        probabilities:
+                        probability:
                             type: array
-                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed.
+                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed_fatigue.
                             default: [1.]
                             items:
                                 type: number
@@ -844,6 +844,15 @@ properties:
                             minimum: 0.0
                             maximum: 50.0
                             uniqueItems: true
+                    wind_speed_fatigue:
+                        type: array
+                        description: Array of wind speeds to calculate fatigue
+                        default: []
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 0
+                            minimum: 0.0
                     wave_height_NSS:
                         type: array
                         description: Array of Hs for NSS conditional to wind speed
@@ -879,12 +888,34 @@ properties:
                             uniqueItems: false
                     wave_period_fatigue:
                         type: array
-                        description: Array of Tp for fatigue computations conditional to wind speed
-                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        description: Array of Tp for fatigue computations
+                        default: []
                         items:
                             type: number
                             unit: s
                             minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_direction_fatigue:
+                        type: array
+                        description: Array of wave direction for fatigue computations
+                        default: []
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 0
+                            minimum: 0.0
+                            maximum: 1000.0  # TODO: check wrapping of these *_direction_fatigue inputs
+                            uniqueItems: false
+                    wind_direction_fatigue:
+                        type: array
+                        description: Array of wind direction for fatigue computations
+                        default: []
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 0
                             minimum: 0.0
                             maximum: 1000.0
                             uniqueItems: false

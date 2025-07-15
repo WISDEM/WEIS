@@ -172,6 +172,19 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             # If running MPI, RAFT won't be able to save designs in parallel
             self.modeling_options["RAFT"]['save_designs'] = False
         
+        # BEM dir, all levels
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = osp.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        if MPI:
+            # If running MPI, RAFT won't be able to save designs in parallel
+            self.modeling_options["Level1"]['save_designs'] = False
+        
         # RAFT
         if self.modeling_options["flags"]["floating"]:
             bool_init = True if self.modeling_options["RAFT"]["potential_model_override"]==2 else False
