@@ -52,15 +52,14 @@ def get_modeling_schema():
     merged_rosco_schema = jsonmerge.merge(rosco_schema['properties']['controller_params'], weis_schema['properties']['ROSCO'])
     merged_rosco_schema['properties']['linmodel_tuning'] = rosco_schema['properties']['linmodel_tuning']
     weis_schema['properties']['ROSCO'].update(merged_rosco_schema)
-    
-    # Update WEIS schema with WISDEM schema
-    weis_schema['properties']['WISDEM'].update( wisdem_schema['properties']['WISDEM'] )
 
     # Update WEIS schema with OpenFAST schema
     weis_schema['properties']['OpenFAST'].update( openfast_schema['properties']['OpenFAST'] )
+    
+    # Update WEIS schema with WISDEM schema
+    merged_schema = jsonmerge.merge(weis_schema, wisdem_schema)
 
-
-    return weis_schema
+    return merged_schema
 
 def load_modeling_yaml(finput):
     weis_schema = get_modeling_schema()

@@ -4,115 +4,6 @@ title: WEIS geometry ontology add-ons beyond WISDEM ontology
 description: Ontology definition for wind turbines as defined in WP1 of IEA Wind Task 37 - Phase II
 type: object
 properties:
-    environment:
-        type: object
-        required:
-            - air_density
-            - air_dyn_viscosity
-            - air_speed_sound
-            - shear_exp
-        optional:
-            - gravity
-            - weib_shape_parameter
-            - water_density
-            - water_dyn_viscosity
-            - water_depth
-            - soil_shear_modulus
-            - soil_poisson
-            - air_pressure
-            - air_vapor_pressure
-        properties:
-            gravity:
-                type: number
-                description: Gravitational acceleration
-                unit: m/s/s
-                minimum: 0
-                maximum: 100.0
-                default: 9.80665
-            air_density:
-                type: number
-                description: Density of air.
-                unit: kg/m3
-                minimum: 0
-                maximum: 1.5
-                default: 1.225
-            air_dyn_viscosity:
-                type: number
-                description: Dynamic viscosity of air.
-                unit: kg/(ms)
-                minimum: 0
-                maximum: 2.e-5
-                default: 1.81e-5
-            air_pressure:
-                type: number
-                description: Atmospheric pressure of air
-                unit: kg/(ms^2)
-                minimum: 0
-                maximum: 1.e+6
-                default: 1.035e+5
-            air_vapor_pressure:
-                type: number
-                description: Vapor pressure of fluid
-                unit: kg/(ms^2)
-                minimum: 0
-                maximum: 1.e+6
-                default: 1.7e+3
-            weib_shape_parameter:
-                type: number
-                description: Shape factor of the Weibull wind distribution.
-                unit: none
-                minimum: 1
-                maximum: 3
-                default: 2.
-            air_speed_sound:
-                type: number
-                description: Speed of sound in air.
-                unit: m/s
-                minimum: 330.
-                maximum: 350.
-                default: 340.
-            shear_exp:
-                type: number
-                description: Shear exponent of the atmospheric boundary layer.
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.2
-            water_density:
-                type: number
-                description: Density of water.
-                unit: kg/m3
-                minimum: 950
-                maximum: 1100
-                default: 1025.0
-            water_dyn_viscosity:
-                type: number
-                description: Dynamic viscosity of water.
-                unit: kg/(ms)
-                minimum: 1.e-3
-                maximum: 2.e-3
-                default: 1.3351e-3
-            water_depth:
-                type: number
-                description: Water depth for offshore environment.
-                unit: m
-                minimum: 0.0
-                maximum: 1.e+4
-                default: 0.0
-            soil_shear_modulus:
-                type: number
-                description: Shear modulus of the soil.
-                unit: Pa
-                minimum: 100.e+6
-                maximum: 200.e+6
-                default: 140.e+6
-            soil_poisson:
-                type: number
-                description: Poisson ratio of the soil.
-                unit: none
-                minimum: 0
-                maximum: 0.6
-                default: 0.4
     TMDs:
         type: array
         description: Ontology definition for TMDs
@@ -184,9 +75,9 @@ properties:
                     type: boolean
                     default: True
 
-                
 
-        
+
+
 definitions:
     distributed_data:
         grid_nd:
