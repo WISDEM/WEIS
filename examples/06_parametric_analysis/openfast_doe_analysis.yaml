@@ -1,0 +1,24 @@
+general:
+    folder_output: outputs/06_openfast_doe
+    fname_output: OpenFAST_DOE
+design_variables:
+  blade:
+    aero_shape:
+      chord:
+        flag: True     # Flag to optimize the chord
+        n_opt: 8        # Number of control points along blade span
+        max_decrease: 0.9   # Nondimensional max decrease of chord at the n_opt locations
+        max_increase: 1.1   # Nondimensional max increase of chord at the n_opt locations
+
+merit_figure: 'AEP'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+driver:
+  design_of_experiments:
+    flag: True            # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator. (Uniform)
+    num_samples: 2        # number of samples for (Uniform only)
+    
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

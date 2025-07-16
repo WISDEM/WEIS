@@ -1,15 +1,36 @@
+.. _section-optimization:
+
 Optimization in WEIS
 ====================
 
-WEIS is platform for multidisciplinary analysis and optimization (MDAO),
-based on the OpenMDAO toolset. WEIS leverages the `optimization
-capabilities of
-OpenMDAO <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`_
-and `extensions in
-WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`_
-to perform multidisciplinary and multifidelity wind turbine analyses
-including controls.
+WEIS is a platform for multidisciplinary analysis and optimization (MDAO),
+based on the OpenMDAO toolset. WEIS leverages the `optimization capabilities of OpenMDAO <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`_
+and `extensions in WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`_
+to perform multidisciplinary and multifidelity wind turbine analyses including controls.
 
+
+General Setup
+------------------------------
+Based on your turbine configuration, prepare the geometry input or start from the geometry input from existing examples and adapt it to your needs. Go through the modeling options in modeling schema and specify the ones needed for your analysis. Set up design variables, constraints, objectives, and optimizer in analysis options. Available optimizers are listed in :ref:`optimization_solvers`. 
+
+Design Variables, Constraints, and Merit Figures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In WEIS, the optimization problem is formulated by setting design variables, constraints, and merit figures. Design variables represent the tunable parameters of the system. Available design variables in WEIS span across the rotor, controller, hub, drivetrain, tower, platforms, and mooring. To set constraints, users toggle the constraints in the analysis options and set the upper and lower bounds based on the problem. The merit figure determines the objective of the optimization. Several merit figures are available in WEIS, with common examples including LCOE, AEP, and turbine cost. For a complete list of supported design variables, constraints, and merit figures, refer to the ``analysis_options.yaml`` file in the WISDEM and WEIS repositories. WEIS also allows users to set design variables. constraints, and merit figures beyond those listed in the schema file. To do so, users need to be familiar with the inputs and outputs of relevant components within WEIS and WISDEM.
+
+User-defined design variables, constraints, and merit figures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WEIS leverages the WISDEM framework for many of it features. WISDEM (and therefore WEIS) is built on top of the OpenMDAO library released by NASA. OpenMDAO allows to define any input as a design variable and any output as either a figure of merit that should be minimized or as a constraint. Please refer to the OpenMDAO tutorials to know more.
+
+WISDEM allows users to set design variables, figure of merit, and constraints from the ``analysis_options.yaml`` file that users populate. The full list of WISDEM predefined options is specified in the `modeling_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/modeling_options.yaml>`. 
+
+In addition, WISDEM and WEIS now offer the option to build your own optimization problem by setting any available input as a design variable and any available output as either a constraint or a figure of merit. The WISDEM example #11 shows how to build your customized ``analysis_options.yaml``.
+
+The example is available in the WISDEM repo at https://github.com/WISDEM/WISDEM/tree/develop/examples/11_user_custom
+The example is explained at https://wisdem.readthedocs.io/en/latest/examples/11_user_custom/tutorial.html
+
+Users should not need to change anything in the inputs to run the example within WEIS. Simply activate your Conda environment and launch the python file.
+
+.. _optimization_solvers:
 Available Optimization Solvers
 ------------------------------
 
@@ -51,7 +72,7 @@ scipy minimization toolbox:
    -  local quadratic subproblems
    -  constraints by linear approximation
    -  implements system sparsity for efficiency on high-dimensional problems
-   -  linesearch on subproblem for performance
+   -  line search on subproblem for performance
    -  *(requires inclusion of proprietary SNOPT software in pyoptsparse install)*
 
 -  “CONMIN”
@@ -110,7 +131,7 @@ optimizers.
 
    -  `Method of Moving
       Asymptotes <https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#mma-method-of-moving-asymptotes-and-ccsa>`__
-   -  penalized local approximation method with fast appoximation solves
+   -  penalized local approximation method with fast approximation solves
    -  conservative convex separable approximation (CCSA) method using
       MMA approximation as inner loop optimizer
 
@@ -178,28 +199,28 @@ Key
 Optimization and parallel performance
 -------------------------------------
 
-In general, industral use of optimization is a straightfoward two-step process:
+In general, industrial use of optimization is a straightfoward two-step process:
 
 1) take a certain amount of resources (time, labor hours, computational resources, etc.)
 2) use them to arrive at the best possible design
 
 A goal of the WEIS project is to enable wider use of system-level optimization
-by industrial offshore wind practicioners.
+by industrial offshore wind practitioners.
 Towards this end, we can quantify two metrics of cost that are of key interest
-to practicioners, in order to better understand the tradeoffs implicit in
+to practitioners, in order to better understand the tradeoffs implicit in
 running optimizations:
 
 1) the total cost of a simulation: quantifies amount of energy used or billable computer use-hours
 2) the wall-clock time necessary to run a simulation: "get me an answer by Friday"
 
 We start by assuming that the driving computational cost is a system simulation
-that requires :math:`T_{\mathrm{case}}` of irreducable simulation time (i.e., it
-can not be reduced by parallelization or saavy computational efforts),
+that requires :math:`T_{\mathrm{case}}` of irreducible simulation time (i.e., it
+can not be reduced by parallelization or savvy computational efforts),
 representing one period of simulation time for one realization of metocean
 conditions.
 We also assume that a user is interested in :math:`M_{\mathrm{case}}` cases,
 totaled across the specifications within any given DLC and across all DLCs;
-these can be run multiple times for a statisically representative result, with
+these can be run multiple times for a statistically representative result, with
 the :math:`m`-th case being run :math:`N_{\mathrm{seed}}^{(m)}` times.
 
 The progression of any optimization method will require some algorithm-dependent
@@ -209,7 +230,8 @@ parallelized:
 - :math:`P=1` for gradient-free methods
 - :math:`P=2 N_{\mathrm{DV}}` for gradient-based methods with centered finite differences approximation
   - :math:`P \sim N_{\mathrm{DV}}` for gradient-based methods with generic gradient approximation
-  - :math:`P \sim 1` for gradient-based methods with analytical or adjoint-based gradients
+  - :math:`P \sim 1` for gradient-based methods with analytical or adjoint-based gradients. For adjoint-based
+    methods, this depends on the number of adjoint equations (i.e. the number of functions of interets).
 - :math:`P=p_{\mathrm{evo}} N_{\mathrm{DV}}` for evolutionary methods
   - in practice, :math:`P` can be varied arbitrarily, but :math:`P \sim N_{\mathrm{DV}}` gives more consistent performance across problem size
   - optimal choice of :math:`p_{\mathrm{evo}}` can vary based on problem and method
@@ -240,7 +262,7 @@ arrive at a total cost:
    \end{aligned}
 
 In practice, this total cost is not equivalent to the wall-clock time to a
-solution because within an interation, :math:`M_{\mathrm{iter}}` can be divided
+solution because within an interaction, :math:`M_{\mathrm{iter}}` can be divided
 across the number of parallel computing cores available in a machine
 :math:`N_{\mathrm{cores}}`:
 
@@ -275,7 +297,7 @@ Thus, when there's work to spread out across a computer, we get strong scaling,
 approaching a best-case performance where the cost of an optimization is
 :math:`T_{\mathrm{case}}` times the number of iterations.
 
-With this dual perspective, we can see the intereactions between the problem to
+With this dual perspective, we can see the interactions between the problem to
 be solved, which impacts the parallelizability and both costs; the choice of
 algorithm, which impacts parallelizability, total work, the amount of iterations
 necessary to achieve a sufficiently optimal result, and both cost metrics;
@@ -429,5 +451,15 @@ For the other solvers, the number of cases per iteration is less than the number
 ..    :width: 45%
 
 
+Troubleshooting
+------------------------------------------
 
+Here are some common problems when running optimization in WEIS and how to troubleshoot them.
 
+1. **Problem**: Constraints are violated and do not seem to improve.
+
+   **Solution**: Check the design variables have proper bounds and constraints are reasonable. Starting from a feasible design point is important for the optimization to converge. Check your initial design point that it does not aggressively violate the constraints. If you are using OpenFAST, check your simulations are converging and not failing. If you have failed solutions, some outputs will be capped to the maximum or minimum values.
+
+2. **Problem**: The optimizer takes crazy steps and does not converge.
+
+   **Solution**: Check the design variables have proper bounds. If you are using gradient-based optimization, check the gradients are correct and do a step-size study.

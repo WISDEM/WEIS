@@ -1,0 +1,68 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
+
+RAFT: # Options for WEIS fidelity level 1 = frequency domain
+    flag: False
+OpenFAST_Linear: # Options for WEIS fidelity level 2 = linear time domain
+    flag: False
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: False
+
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+
+    openfast_input_map:
+        final_blade_pitch12:
+            - [ServoDyn,BlPitchF(1)]
+            - [ServoDyn,BlPitchF(2)]
+        mean_sea_level: [Fst,MSL2SWL]
+        wave_dir: [HydroDyn,WaveDir]
+        current_model: [HydroDyn,CurrMod]
+        current_speed: [HydroDyn,CurrDIV]
+
+    DLCs:
+        - DLC: "1.6"
+          wind_speed: [8,15]
+          transient_time: 0.
+          analysis_time: 0.5
+

@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
-        python-version: ["3.10","3.11","3.12"]
+        python-version: ["3.11","3.12"]
         
     steps:
       - uses: actions/checkout@v4
@@ -81,19 +81,16 @@ jobs:
       #  run: |
       #    pytest --collect-only weis 
 
-      # Test walkthrough notebook
-      - name: Test postprocessing notebooks
-        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
-        env:
-            RUN_EXHAUSTIVE: 1
+      - name: Change examples to test mode
         run: |
-          cd examples/16_postprocessing
-          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
-          unzip outputs
-          treon plot_FAST.ipynb
-          treon rev_DLCs_WEIS.ipynb
-          treon rev_Opt.ipynb
-          treon rev_WEIS_CSV.ipynb
+          cd examples
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            find . -type f -name "*.py" -exec sed -i '' 's/TEST_RUN = False/TEST_RUN = True/g' {} +
+          else
+            find . -type f -name "*.py" -exec sed -i 's/TEST_RUN = False/TEST_RUN = True/g' {} +
+          fi
+          head -n 5 02_generate_openfast_model_for_dlcs/iea15_semi_driver.py   # check that the sed command worked       
+
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
@@ -109,24 +106,35 @@ jobs:
         run: |
             pytest  -p no:warnings -s --disable-warnings  weis
 
+        # Test walkthrough notebook
+      - name: Test postprocessing notebooks
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        env:
+            RUN_EXHAUSTIVE: 1
+        run: |
+          cd examples/07_postprocessing_notebooks
+          cp -r ../03_design_with_openfast/outputs/03_iea22_ptfm_opt/ outputs/
+          treon plot_FAST.ipynb
+          treon rev_DLCs_WEIS.ipynb
+          treon rev_Opt.ipynb
+          treon rev_WEIS_CSV.ipynb
+
       # Run parallel script calling OpenFAST
       - name: Run parallel cases
         if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
         env:
             RUN_EXHAUSTIVE: 1
         run: |
-          cd examples/02_run_openfast_cases
-          mpiexec -np 2 python weis_driver_loads.py
-          cd ../03_NREL5MW_OC3_spar
-          mpiexec -np 2 python weis_driver.py
-          cd ../05_IEA-3.4-130-RWT
-          mpiexec -np 2 python weis_driver.py
-          cd ../09_design_of_experiments
-          mpiexec -n 2 python DOE_raft.py
-          mpiexec -n 2 --bind-to core python DOE_openfast.py
+          cd examples/01_simulate_own_openfast_model
+          mpiexec -np 2 python dlc_sim_driver.py
+          cd ../06_parametric_analysis
+          mpiexec -n 2 python raft_doe_driver.py
+          mpiexec -n 2 --bind-to core python openfast_doe_driver.py
           python postprocess_results.py
-          cd ../17_IEA22_Optimization
-          mpiexec -n 2 python driver_weis_raft_opt.py
+
+      # Skip these until we figure out MPI and overrides
+      # cd ../03_design_with_openfast
+      # mpiexec -n 2 python iea22_ptfm_opt_driver.py
           
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
