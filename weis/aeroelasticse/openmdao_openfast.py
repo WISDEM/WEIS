@@ -841,6 +841,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['MAP'] = {}
         fst_vt['BeamDyn'] = {}
         fst_vt['BeamDynBlade'] = {}
+        fst_vt['WaterKin'] = {}
         
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
@@ -2001,6 +2002,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
+        WindFile_plexp = PLExp * np.ones(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
 
         self.TMax = np.zeros(dlc_generator.n_cases)
@@ -2056,10 +2058,10 @@ class FASTLoadCases(ExplicitComponent):
 
                 for idx, i_case in enumerate(np.arange(idx_s, idx_e)):
                     rank_j = sub_ranks[idx]
-                    WindFile_type[i_case] , WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
+                    WindFile_type[i_case], WindFile_plexp[i_case], WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
         else:
             for i_case in range(dlc_generator.n_cases):
-                WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
+                WindFile_type[i_case], WindFile_plexp[i_case], WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
 
 
@@ -2082,8 +2084,9 @@ class FASTLoadCases(ExplicitComponent):
             case_name.extend(case_name_i)
 
         # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
-        for case_i, wt, wf in zip(case_list,WindFile_type,WindFile_name):
+        for case_i, wt, wa, wf in zip(case_list,WindFile_type,WindFile_plexp,WindFile_name):
             case_i[('InflowWind','WindType')] = wt
+            case_i[('InflowWind','PLExp')] = wa
             case_i[('InflowWind','FileName_Uni')] = wf
             case_i[('InflowWind','FileName_BTS')] = wf
 
