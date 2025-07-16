@@ -7,18 +7,24 @@ try:
 except ImportError:
     compile_numba = False
 
+compile_numba = False  # DEBUG!!!!!
+
 
 def binary_tournament_selection_python(
     fitness,
     ratio_keep=0.5,
+    rng_seed: int = None,  # rng seed
 ):
+    rng = np.random  # default to numpy random
+    if rng_seed is not None:
+        rng.seed(rng_seed)
 
     indices_selected = []
 
     for i in range(int(len(fitness) // (1 / ratio_keep))):
         # select two random individuals
-        idx1 = np.random.randint(0, len(fitness))
-        idx2 = np.random.randint(0, len(fitness))
+        idx1 = rng.randint(0, len(fitness))
+        idx2 = rng.randint(0, len(fitness))
 
         # compare their fitness
         if fitness[idx1] < fitness[idx2]:
@@ -32,11 +38,11 @@ def binary_tournament_selection_python(
 if compile_numba:
     binary_tournament_selection = numba.njit(binary_tournament_selection_python)
     binary_tournament_selection.is_numba = True
-    binary_tournament_selection.python_exec = binary_tournament_selection_python
+    binary_tournament_selection.function_nojit = binary_tournament_selection_python
 else:
     binary_tournament_selection = binary_tournament_selection_python
     binary_tournament_selection.is_numba = False
-    binary_tournament_selection.python_exec = binary_tournament_selection_python
+    binary_tournament_selection.function_nojit = binary_tournament_selection_python
 
 
 def unit_simulated_binary_crossover_python(
@@ -46,7 +52,11 @@ def unit_simulated_binary_crossover_python(
     design_vars_u: np.array,
     rate_crossover: float = 0.9,  # crossover probability
     eta_c: float = 20,  # distribution index
+    rng_seed: int = None,  # rng seed
 ):
+    rng = np.random  # default to numpy random
+    if rng_seed is not None:
+        rng.seed(rng_seed)
 
     is_changed = False
 
@@ -55,7 +65,7 @@ def unit_simulated_binary_crossover_python(
     assert N_DV == len(design_vars_2)  # should be the same number of entries in both
 
     # should we crossover? if not, return parents
-    if np.random.rand() >= rate_crossover:
+    if rng.rand() >= rate_crossover:
         return design_vars_1.copy(), design_vars_2.copy(), is_changed
 
     # if we get this far... apply the crossover
@@ -65,7 +75,7 @@ def unit_simulated_binary_crossover_python(
 
     for i_DV in range(N_DV):  # loop over the design variables
 
-        if np.random.rand() > 0.5:  # coinflip to see if this DV gets touched
+        if rng.rand() > 0.5:  # coinflip to see if this DV gets touched
 
             if np.isclose(design_vars_1[i_DV], design_vars_2[i_DV]):
                 # when they're effectively the same, don't overcomplicate it
@@ -76,14 +86,14 @@ def unit_simulated_binary_crossover_python(
                 V1 = design_vars_1[i_DV] if design_vars_1[i_DV] <= design_vars_2[i_DV] else design_vars_2[i_DV]
                 V2 = design_vars_1[i_DV] if design_vars_1[i_DV] > design_vars_2[i_DV] else design_vars_2[i_DV]
 
-                rv = np.random.rand()  # a random uniform real
+                rv = rng.rand()  # a random uniform real
 
                 # do the calculations of the child candidate 1
                 beta = 1.0 + 2.0 * (V1 - design_vars_l[i_DV]) / (V2 - V1)
                 alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
                 beta_q = (
                     np.power(rv * alpha, 1.0 / (eta_c + 1.0))
-                    if np.random.rand() <= 1 / alpha
+                    if rng.rand() <= 1 / alpha
                     else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
                 )
                 c1 = 0.5 * (V1 + V2 - beta_q * (V2 - V1))
@@ -93,7 +103,7 @@ def unit_simulated_binary_crossover_python(
                 alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
                 beta_q = (
                     np.power(rv * alpha, 1.0 / (eta_c + 1.0))
-                    if np.random.rand() < 1.0 / alpha
+                    if rng.rand() < 1.0 / alpha
                     else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
                 )
                 c2 = 0.5 * (V1 + V2 + beta_q * (V2 - V1))
@@ -111,7 +121,7 @@ def unit_simulated_binary_crossover_python(
                 is_changed = True
 
                 # coinflip to determine who gets which kid... the only fair way
-                if np.random.rand() > 0.5:
+                if rng.rand() > 0.5:
                     design_vars_a[i_DV] = c2
                     design_vars_b[i_DV] = c1
                 else:
@@ -128,11 +138,11 @@ def unit_simulated_binary_crossover_python(
 if compile_numba:
     unit_simulated_binary_crossover = numba.njit(unit_simulated_binary_crossover_python)
     unit_simulated_binary_crossover.is_numba = True
-    unit_simulated_binary_crossover.python_exec = unit_simulated_binary_crossover_python
+    unit_simulated_binary_crossover.function_nojit = unit_simulated_binary_crossover_python
 else:
     unit_simulated_binary_crossover = unit_simulated_binary_crossover_python
     unit_simulated_binary_crossover.is_numba = False
-    unit_simulated_binary_crossover.python_exec = unit_simulated_binary_crossover_python
+    unit_simulated_binary_crossover.function_nojit = unit_simulated_binary_crossover_python
 
 
 def simulated_binary_crossover_python(
@@ -141,13 +151,18 @@ def simulated_binary_crossover_python(
     design_vars_u: np.array,  # DV upper limits
     rate_crossover: float = 0.9,  # crossover probability
     eta_c: float = 20,  # distribution index
+    rng_seed: int = None,  # rng seed
 ):
+    rng = np.random  # default to numpy random
+    if rng_seed is not None:
+        rng.seed(rng_seed)
+
     N = len(P_in)
     N_pairs = N // 2
     indices = np.empty((N_pairs, 2), dtype=np.int64)
     for i in numba.prange(N_pairs) if compile_numba else range(N_pairs):
-        indices[i, 0] = np.random.randint(0, N)
-        indices[i, 1] = np.random.randint(0, N)
+        indices[i, 0] = rng.randint(0, N)
+        indices[i, 1] = rng.randint(0, N)
 
     N_DV = P_in.shape[1]
     Q_out = np.empty((N_pairs * 2, N_DV), dtype=P_in.dtype)
@@ -163,6 +178,7 @@ def simulated_binary_crossover_python(
             design_vars_u=design_vars_u,
             rate_crossover=rate_crossover,
             eta_c=eta_c,
+            rng_seed=None if rng_seed is None else rng_seed + i,
         )
         Q_out[2 * i] = c0
         Q_out[2 * i + 1] = c1
@@ -173,13 +189,13 @@ def simulated_binary_crossover_python(
 
 
 if compile_numba:
-    simulated_binary_crossover = numba.njit(simulated_binary_crossover_python)
+    simulated_binary_crossover = numba.njit(simulated_binary_crossover_python, parallel=True)
     simulated_binary_crossover.is_numba = True
-    simulated_binary_crossover.python_exec = simulated_binary_crossover_python
+    simulated_binary_crossover.function_nojit = simulated_binary_crossover_python
 else:
     simulated_binary_crossover = simulated_binary_crossover_python
     simulated_binary_crossover.is_numba = False
-    simulated_binary_crossover.python_exec = simulated_binary_crossover_python
+    simulated_binary_crossover.function_nojit = simulated_binary_crossover_python
 
 
 def unit_polynomial_mutation_python(
@@ -188,7 +204,11 @@ def unit_polynomial_mutation_python(
     design_vars_u: np.array,
     rate_mutation: float = 0.1,  # mutation probability
     eta_m: float = 20,  # distribution index
+    rng_seed: int = None,  # rng seed
 ):
+    rng = np.random  # default to numpy random
+    if rng_seed is not None:
+        rng.seed(rng_seed)
 
     is_changed = False
 
@@ -200,7 +220,7 @@ def unit_polynomial_mutation_python(
     for i_DV in range(N_DV):  # loop over the design variables
 
         # determine if mutation should occur
-        if np.random.rand() >= rate_mutation:
+        if rng.rand() >= rate_mutation:
             continue  # to next DV index
 
         is_changed = True
@@ -224,7 +244,7 @@ def unit_polynomial_mutation_python(
             DELTA1 = (Y - YL) / (YU - YL)
             DELTA2 = (YU - Y) / (YU - YL)
 
-        RAND = np.random.rand()  # unit random
+        RAND = rng.rand()  # unit random
         MUT_POW = 1.0 / (eta_m + 1.0)  # utility variable
 
         # relative mutation value
@@ -236,7 +256,7 @@ def unit_polynomial_mutation_python(
                 )
                 - 1.0
             )
-            if np.random.rand() <= 0.5  # if coinflip is heads
+            if rng.rand() <= 0.5  # if coinflip is heads
             else (
                 1.0
                 - np.power(
@@ -258,11 +278,11 @@ def unit_polynomial_mutation_python(
 if compile_numba:
     unit_polynomial_mutation = numba.njit(unit_polynomial_mutation_python)
     unit_polynomial_mutation.is_numba = True
-    unit_polynomial_mutation.python_exec = unit_polynomial_mutation_python
+    unit_polynomial_mutation.function_nojit = unit_polynomial_mutation_python
 else:
     unit_polynomial_mutation = unit_polynomial_mutation_python
     unit_polynomial_mutation.is_numba = False
-    unit_polynomial_mutation.python_exec = unit_polynomial_mutation_python
+    unit_polynomial_mutation.function_nojit = unit_polynomial_mutation_python
 
 
 def polynomial_mutation_python(
@@ -271,7 +291,12 @@ def polynomial_mutation_python(
     design_vars_u: np.array,  # DV upper limits
     rate_mutation: float = 0.1,  # mutation probability
     eta_m: float = 20,  # distribution index
+    rng_seed: int = None,  # rng seed
 ):
+    rng = np.random  # default to numpy random
+    if rng_seed is not None:
+        rng.seed(rng_seed)
+
     N = P_in.shape[0]
     N_DV = P_in.shape[1]
     Q_out = np.empty_like(P_in)
@@ -283,6 +308,7 @@ def polynomial_mutation_python(
             design_vars_u=design_vars_u,
             rate_mutation=rate_mutation,
             eta_m=eta_m,
+            rng_seed=None if rng_seed is None else rng_seed + i,
         )
         Q_out[i] = xPi
         changed_out[i] = is_changed
@@ -290,10 +316,10 @@ def polynomial_mutation_python(
 
 
 if compile_numba:
-    polynomial_mutation = numba.njit(polynomial_mutation_python)
+    polynomial_mutation = numba.njit(polynomial_mutation_python, parallel=True)
     polynomial_mutation.is_numba = True
-    polynomial_mutation.python_exec = polynomial_mutation_python
+    polynomial_mutation.function_nojit = polynomial_mutation_python
 else:
     polynomial_mutation = polynomial_mutation_python
     polynomial_mutation.is_numba = False
-    polynomial_mutation.python_exec = polynomial_mutation_python
+    polynomial_mutation.function_nojit = polynomial_mutation_python

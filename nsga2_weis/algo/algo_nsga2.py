@@ -2,11 +2,6 @@ from threading import local
 import time
 from itertools import chain, islice
 
-from nsga2_weis.algo.genetic_functions import (
-    binary_tournament_selection,
-    polynomial_mutation,
-    simulated_binary_crossover,
-)
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -14,6 +9,11 @@ from mpi4py import MPI
 
 from nsga2_weis.algo.fast_nondom_sort import fast_nondom_sort
 from nsga2_weis.algo.crowding_distance_assignment import crowding_distance_assignment
+from nsga2_weis.algo.genetic_functions import (
+    binary_tournament_selection,
+    polynomial_mutation,
+    simulated_binary_crossover,
+)
 
 
 class NSGA2:
@@ -47,6 +47,9 @@ class NSGA2:
     model_mpi: tuple[int, int] = None  # parallelization model: size, color
     # follows the format used by openmdao/openmdao/utils/concurrent_utils.py
 
+    rng_seed: int = None  # a random number generator seed
+    accelerated: bool = True  # should we use numba acceleration
+
     verbose: bool = False  # verbosity switch
 
     def __init__(
@@ -61,6 +64,7 @@ class NSGA2:
         comm_mpi: MPI.Comm = None,  # communicator for parallel implementation
         model_mpi: tuple[int, int] = None,  # model for spreading work across processes
         verbose: bool = False,  # verbose outputs
+        rng_seed: int = None,  # rng seed
     ):
         """
         initialize NSGA2 optimizer and its population
@@ -124,6 +128,17 @@ class NSGA2:
             raise ValueError(f"Upper bounds size mismatch: expected {self.N_DV}, got {design_vars_u.size}.")
         self.design_vars_l = design_vars_l  # save the lower bounds on design variables
         self.design_vars_u = design_vars_u  # save the upper bounds on design variables
+
+        # set numpy random number generator if specified
+        if rng_seed is not None:
+            self.rng_seed = rng_seed
+        self._rng_seed_generator = np.random.default_rng(self.rng_seed)
+
+    def next_seed(self):
+        """
+        Returns repeatable pseudo-random integers to use as seed using the class RNG
+        """
+        return self._rng_seed_generator.integers(1000000)
 
     def update_feasibility(self):
         """
@@ -348,7 +363,8 @@ class NSGA2:
             print("COMPUTING THE PARETO FRONTS...", end="", flush=True)
             tm_st = time.time()
         # do the fast, non-dominated sort algorithm to sort
-        idx_fronts = fast_nondom_sort(objs_tosort)  # indices of the fronts
+        fns_function = fast_nondom_sort if self.accelerated else fast_nondom_sort.function_nojit
+        idx_fronts = fns_function(objs_tosort)  # indices of the fronts
         if self.verbose:  # if verbose, stop timer and print
             tm_end = time.time()
             print(f" DONE. TIME: {tm_end-tm_st:.4f}s", flush=True)
@@ -574,7 +590,8 @@ class NSGA2:
         if self.verbose:
             print("COMPUTING CROWDING DISTANCE...", end="", flush=True)
             tm_st = time.time()
-        D_front = [crowding_distance_assignment(f) for f in objs_front_in]
+        cda_function = crowding_distance_assignment if self.accelerated else crowding_distance_assignment.function_nojit
+        D_front = [cda_function(f) for f in objs_front_in]
         if self.verbose:
             tm_end = time.time()
             print(f" DONE. TIME: {tm_end-tm_st:.4f}s", flush=True)
@@ -684,7 +701,16 @@ class NSGA2:
 
         rank = np.hstack(self.get_rank())  # get the overall ranking
         # run, return binary tournament selection on ranking
-        idx_select = binary_tournament_selection(rank, ratio_keep=ratio_keep)
+        bts_function = (
+            binary_tournament_selection
+            if self.accelerated and (self.rng_seed is None)
+            else binary_tournament_selection.function_nojit
+        )
+        idx_select = bts_function(
+            rank,
+            ratio_keep=ratio_keep,
+            rng_seed=self.next_seed(),
+        )
         return idx_select
 
     def _get_default_limits(self):
@@ -714,23 +740,33 @@ class NSGA2:
         changed = np.array([False for _ in design_vars_proposal])
 
         # now, try a crossover
-        design_vars_proposal, changed_crossover = simulated_binary_crossover(
+        sbx_function = (
+            simulated_binary_crossover
+            if self.accelerated and (self.rng_seed is None)
+            else simulated_binary_crossover.function_nojit
+        )
+        design_vars_proposal, changed_crossover = sbx_function(
             design_vars_proposal,
             design_vars_l=design_vars_l,
             design_vars_u=design_vars_u,
             rate_crossover=self.rate_crossover,
             eta_c=self.eta_c,
+            rng_seed=self.next_seed(),
         )
         assert len(design_vars_proposal) == self.N_population
         changed = np.logical_or(changed, changed_crossover)
 
         # now, do a mutation
-        design_vars_proposal, changed_mutation = polynomial_mutation(
+        pm_function = (
+            polynomial_mutation if self.accelerated and (self.rng_seed is None) else polynomial_mutation.function_nojit
+        )
+        design_vars_proposal, changed_mutation = pm_function(
             design_vars_proposal,
             design_vars_l=design_vars_l,
             design_vars_u=design_vars_u,
             rate_mutation=self.rate_mutation,
             eta_m=self.eta_m,
+            rng_seed=self.next_seed(),
         )
         assert len(design_vars_proposal) == self.N_population
         changed = np.logical_or(changed, changed_mutation)
