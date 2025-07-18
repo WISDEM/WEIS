@@ -105,10 +105,10 @@ definitions:
             description: Grid of angles of attack to describe polars
             items:
                 type: number
-                unit: radians
+                unit: degrees
                 minItems: 2
-                minimum: -3.14159265359
-                maximum:  3.14159265359
+                minimum: -180.0
+                maximum:  180.0
                 uniqueItems: true
         polar_coeff:
             type: array
@@ -145,7 +145,7 @@ definitions:
             description: Angle quantity along a beam, expressed in radians
             items:
                 type: number
-                unit: radians
+                unit: degrees
                 minItems: 2
                 uniqueItems: false
         mass_length:
