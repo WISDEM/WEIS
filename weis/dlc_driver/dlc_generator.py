@@ -209,11 +209,11 @@ class DLCGenerator(object):
         self.mo_Tp_SSS = metocean['wave_period_SSS']
         if len(self.mo_ws)!=len(self.mo_Hs_NSS):
             raise Exception('The vector of metocean conditions wave_height_NSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.metocean['wind_speed'])!=len(self.metocean['wave_period_NSS']):
+        if len(metocean['wind_speed'])!=len(metocean['wave_period_NSS']):
             raise Exception('The vector of metocean conditions wave_period_NSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.metocean['wind_speed'])!=len(self.metocean['wave_height_SSS']):
+        if len(metocean['wind_speed'])!=len(metocean['wave_height_SSS']):
             raise Exception('The vector of metocean conditions wave_height_SSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.metocean['wind_speed'])!=len(self.metocean['wave_period_SSS']):
+        if len(metocean['wind_speed'])!=len(metocean['wave_period_SSS']):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
 
         # Load extreme wave heights and periods
@@ -323,7 +323,7 @@ class DLCGenerator(object):
         wind_speeds_indiv = self.get_wind_speeds(options)
         wind_speed, wind_seed = self.get_wind_seeds(options, wind_speeds_indiv)
         wave_seed = self.get_wave_seeds(options, wind_speed)
-        wind_heading = self.get_wind_heading(options)
+        # wind_heading = self.get_wind_heading(options)
         wave_height = self.get_wave_height(options)
         wave_period = self.get_wave_period(options)
         wave_gamma = self.get_wave_gamma(options)
@@ -332,8 +332,8 @@ class DLCGenerator(object):
 
         if len(wind_seed) > 1 and len(wind_seed) != len(wind_speed):
             raise Exception("The vector of wind_seed must have either length=1 or the same length of wind speeds")
-        if len(wind_heading) > 1 and len(wind_heading) != len(wind_speed):
-            raise Exception("The vector of wind_heading must have either length=1 or the same length of wind speeds")
+        # if len(wind_heading) > 1 and len(wind_heading) != len(wind_speed):
+        #     raise Exception("The vector of wind_heading must have either length=1 or the same length of wind speeds")
         if len(wave_seed) > 1 and len(wave_seed) != len(wind_speed):
             raise Exception("The vector of wave seeds must have the same length of wind speeds or not defined")
         if len(wave_height) > 1 and len(wave_height) != len(wind_speed):
@@ -354,7 +354,7 @@ class DLCGenerator(object):
         metocean_case_info['wind_speed'] = wind_speed
         metocean_case_info['wind_seed'] = wind_seed
         metocean_case_info['wave_seed'] = wave_seed
-        metocean_case_info['wind_heading'] = wind_heading
+        # metocean_case_info['wind_heading'] = wind_heading
         metocean_case_info['wave_height'] = wave_height
         metocean_case_info['wave_period'] = wave_period
         # metocean_case_info['current_speeds'] = current_speeds
@@ -372,6 +372,8 @@ class DLCGenerator(object):
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
         su_sd_cases = ['3.1', '3.2', '3.3', '4.1', '4.2']  # these cases require ROSCO v2.10 or greater
+        if str(label) in su_sd_cases and parse_version(rosco_version) < parse_version('2.10.0'):
+            logger.warning(f'DLC {label} requires ROSCO v2.10 or greater. The case will run, but the startup or shutdown will not occur.')
 
         # Get extreme wind speeds
         self.IECwind()
@@ -379,9 +381,6 @@ class DLCGenerator(object):
         found = False
         for ilab in known_dlcs:
             func_name = 'generate_'+str(ilab).replace('.','p')
-
-            if str(ilab) in su_sd_cases and parse_version(rosco_version) < parse_version('2.10.0'):
-                logger.warning(f'DLC {ilab} requires ROSCO v2.10 or greater. The case will run, but the startup or shutdown will not occur.')
 
             if label in [ilab, str(ilab)]: # Match either 1.1 or '1.1'
                 found = True

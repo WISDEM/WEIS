@@ -1614,28 +1614,30 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
-                fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
-                fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
-                fst_vt['HydroDyn']['MemberID_HydC'] = imembers
-                fst_vt['HydroDyn']['MemberCd1']    = fst_vt['HydroDyn']['MemberCdMG1']   = Cd_coarse[N1-1]
-                fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = Ca_coarse[N1-1]
-                fst_vt['HydroDyn']['MemberCd2']    = fst_vt['HydroDyn']['MemberCdMG2']   = Cd_coarse[N2-1]
-                fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = Ca_coarse[N2-1]
-                fst_vt['HydroDyn']['MemberCb1']    = fst_vt['HydroDyn']['MemberCbMG1']   = np.ones(np.shape(N1))
-                fst_vt['HydroDyn']['MemberCb2']    = fst_vt['HydroDyn']['MemberCbMG2']   = np.ones(np.shape(N1))
+                fst_vt['HydroDyn']['MCoefMod']          = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
+                fst_vt['HydroDyn']['NCoefMembersCyl']   = len(imembers)
+                fst_vt['HydroDyn']['MemberID_HydCCyl']  = imembers
+                fst_vt['HydroDyn']['CylMemberCd1']    = fst_vt['HydroDyn']['CylMemberCdMG1']   = Cd_coarse[N1-1]
+                fst_vt['HydroDyn']['CylMemberCa1']    = fst_vt['HydroDyn']['CylMemberCaMG1']   = Ca_coarse[N1-1]
+                fst_vt['HydroDyn']['CylMemberCd2']    = fst_vt['HydroDyn']['CylMemberCdMG2']   = Cd_coarse[N2-1]
+                fst_vt['HydroDyn']['CylMemberCa2']    = fst_vt['HydroDyn']['CylMemberCaMG2']   = Ca_coarse[N2-1]
+                fst_vt['HydroDyn']['CylMemberCb1']    = fst_vt['HydroDyn']['CylMemberCbMG1']   = np.ones(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberCb2']    = fst_vt['HydroDyn']['CylMemberCbMG2']   = np.ones(np.shape(N1))
 
                 # pass through Cp, Axial Coeffs later, zeros for now
-                fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberCp2']    = fst_vt['HydroDyn']['MemberCpMG2']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberCp1']    = fst_vt['HydroDyn']['CylMemberCpMG1']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberCp2']    = fst_vt['HydroDyn']['CylMemberCpMG2']   = np.zeros(np.shape(N1))
 
-                fst_vt['HydroDyn']['MemberAxCd1']  = fst_vt['HydroDyn']['MemberAxCdMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberAxCa1']  = fst_vt['HydroDyn']['MemberAxCaMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberAxCd2']  = fst_vt['HydroDyn']['MemberAxCdMG2'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCd1']  = fst_vt['HydroDyn']['CylMemberAxCdMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCa1']  = fst_vt['HydroDyn']['CylMemberAxCaMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCd2']  = fst_vt['HydroDyn']['CylMemberAxCdMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCa2']  = fst_vt['HydroDyn']['CylMemberAxCaMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCp1']  = fst_vt['HydroDyn']['CylMemberAxCpMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCp2']  = fst_vt['HydroDyn']['CylMemberAxCpMG2'] = np.zeros(np.shape(N1))
+
+                # TODO: member-based coefficients for rectangular members
             
-            # TODO: check if this is needed
+            # Simple Cylindrical and rectangular member coefficients
             if 'CylSimplCd' not in fst_vt['HydroDyn']:
                 for m in ['Cd', 'CdMG']:
                     fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.6
@@ -1665,6 +1667,29 @@ class FASTLoadCases(ExplicitComponent):
                 
                 for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
                     fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
+
+            elif modopt["RAFT"]["potential_model_override"] == 3:
+                # Potential model for inviscid forces (radiation, excitation) only
+                
+                # Avoid double counting of buoyancy force in WAMIT, using OpenFAST nonlinear buoyancy, hydrostatics.  .hst file should be zeros
+                fst_vt['HydroDyn']['PtfmVol0'] = [0.0]  
+
+                # If True, the volume will be ignored.  We want OpenFAST to compute volume at each time step
+                fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+
+                # Zero out all non-drag coefficients
+                for m in ['Ca', 'CaMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                    fst_vt['HydroDyn'][f'Member{m}1'] = fst_vt['HydroDyn'][f'Member{m}MG1'] = np.zeros(np.shape(N1))
+                    fst_vt['HydroDyn'][f'Member{m}2'] = fst_vt['HydroDyn'][f'Member{m}MG2'] = np.zeros(np.shape(N2))
+
+                for m in ['CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
+                    fst_vt['HydroDyn'][f'Member{m}1'] = fst_vt['HydroDyn'][f'Member{m}MG1'] = np.zeros(np.shape(N1))
+                    fst_vt['HydroDyn'][f'Member{m}2'] = fst_vt['HydroDyn'][f'Member{m}MG2'] = np.zeros(np.shape(N2))
+
+                # Axial coefficients
+                fst_vt['HydroDyn']['AxCp'][:] = 0
                 
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
