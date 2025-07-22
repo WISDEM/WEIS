@@ -79,8 +79,9 @@ def unit_simulated_binary_crossover_python(
 
             if np.isclose(design_vars_1[i_DV], design_vars_2[i_DV]):
                 # when they're effectively the same, don't overcomplicate it
-                V1 = design_vars_1[i_DV]
-                V2 = design_vars_2[i_DV]
+                design_vars_a[i_DV] = design_vars_1[i_DV]
+                design_vars_b[i_DV] = design_vars_2[i_DV]
+                continue
             else:
                 # child A gets greater of 1 and 2, vice versa
                 V1 = design_vars_1[i_DV] if design_vars_1[i_DV] <= design_vars_2[i_DV] else design_vars_2[i_DV]
