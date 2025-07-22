@@ -115,7 +115,7 @@ constraints:
             flag: False
             max: 0.4
 
-merit_figure: structural_mass
+merit_figure: [structural_mass, AEP]
 
 driver:
     optimization:
@@ -124,7 +124,7 @@ driver:
         max_iter: 50      # Maximum number of iterations (SLSQP)
         maxgen: 2        # Maximum number of generations (DE)
         # maxtime: 3420
-        solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: NSGA2  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder
