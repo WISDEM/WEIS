@@ -49,9 +49,6 @@ class PoseOptimizationWEIS(PoseOptimization):
                 coeff = -1.0 if merit_figure_user["max_flag"] else 1.0
                 wt_opt.model.add_objective(merit_figure_user["name"],
                                         ref=coeff*np.abs(merit_figure_user["ref"]))   
-
-            else:
-                super(PoseOptimizationWEIS, self).set_merit_figure_user(wt_opt, merit_figure_user)
         
 
         for merit_figure in self.opt['merit_figure']:       
