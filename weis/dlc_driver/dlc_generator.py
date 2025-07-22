@@ -8,6 +8,9 @@ from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from openfast_io.FileTools import remove_numpy
 from weis.aeroelasticse.utils import OLAFParams
 
+from packaging.version import parse as parse_version
+from rosco.toolbox import __version__ as rosco_version
+
 logger = logging.getLogger("wisdem/weis")
 
 # TODO: not sure where this should live, so it's a global for now
@@ -94,12 +97,6 @@ openfast_input_map = {
     'wake_mod': ("AeroDyn","Wake_Mod"),
     'tau1_const': ("AeroDyn","tau1_const"),
 
-    'stc_number': ("ServoDyn", "NumSStC"),
-    'stc_filenames': ("ServoDyn","SStCfiles"),
-    'excursion_load': ("SStC","StaticLoad"),
-
-    'pitch_control_mode': ("ServoDyn","PCMode"),
-    'torque_control_mode': ("ServoDyn","VSContrl"),
 
     'mooring_failureid': ("MoorDyn","Failure_ID"),
     'mooring_failurepoint': ("MoorDyn","Failure_Point"),
@@ -212,15 +209,11 @@ class DLCGenerator(object):
         self.mo_Tp_SSS = metocean['wave_period_SSS']
         if len(self.mo_ws)!=len(self.mo_Hs_NSS):
             raise Exception('The vector of metocean conditions wave_height_NSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.mo_ws)!=len(self.mo_Tp_NSS):
+        if len(metocean['wind_speed'])!=len(metocean['wave_period_NSS']):
             raise Exception('The vector of metocean conditions wave_period_NSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.mo_ws)!=len(self.mo_Hs_F):
-            raise Exception('The vector of metocean conditions wave_height_fatigue in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.mo_ws)!=len(self.mo_Tp_F):
-            raise Exception('The vector of metocean conditions wave_period_fatigue in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.mo_ws)!=len(self.mo_Hs_SSS):
+        if len(metocean['wind_speed'])!=len(metocean['wave_height_SSS']):
             raise Exception('The vector of metocean conditions wave_height_SSS in the modeling options must have the same length of the tabulated wind speeds')
-        if len(self.mo_ws)!=len(self.mo_Tp_SSS):
+        if len(metocean['wind_speed'])!=len(metocean['wave_period_SSS']):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
 
         # Load extreme wave heights and periods
@@ -319,12 +312,12 @@ class DLCGenerator(object):
             wave_heading = np.array([])
         return wave_heading
 
-    def get_probabilities(self, options):
-        if len(options['probabilities']) > 0:
-            probabilities = np.array( [float(m) for m in options['probabilities']] )
+    def get_probability(self, options):
+        if len(options['probability']) > 0:
+            probability = np.array( [float(m) for m in options['probability']] )
         else:
-            probabilities = np.array([])
-        return probabilities
+            probability = np.array([])
+        return probability
 
     def get_metocean(self, options):
         wind_speeds_indiv = self.get_wind_speeds(options)
@@ -335,7 +328,7 @@ class DLCGenerator(object):
         wave_period = self.get_wave_period(options)
         wave_gamma = self.get_wave_gamma(options)
         wave_heading = self.get_wave_heading(options)
-        probabilities = self.get_probabilities(options)
+        probability = self.get_probability(options)
 
         if len(wind_seed) > 1 and len(wind_seed) != len(wind_speed):
             raise Exception("The vector of wind_seed must have either length=1 or the same length of wind speeds")
@@ -351,10 +344,11 @@ class DLCGenerator(object):
             raise Exception("The vector of wave_gamma must have either length=1 or the same length of wind speeds")
         if len(wave_heading) > 1 and len(wave_heading) != len(wind_speed):
             raise Exception("The vector of wave heading must have either length=1 or the same length of wind speeds")
-        if len(probabilities) > 1 and len(probabilities) != len(wind_speed):
-            raise Exception("The vector of probabilities must have either length=1 or the same length of wind speeds")
-        if abs(sum(probabilities) - 1.) > 1.e-3:
-            raise Exception("The vector of probabilities must sum to 1")
+        if len(probability) > 1 and len(probability) != len(wind_speed):
+            raise Exception("The vector of probability must have either length=1 or the same length of wind speeds")
+        if abs(sum(probability) - 1.) > 1.e-3:
+            logger.warning(f'Re-normalizing modeling_options.DLC_driver.metocean.probability because it does not sum to 1.  Cases only sum to {sum(probability):.3f}')
+            probability /= sum(probability)
         
         metocean_case_info = {}
         metocean_case_info['wind_speed'] = wind_speed
@@ -366,7 +360,7 @@ class DLCGenerator(object):
         # metocean_case_info['current_speeds'] = current_speeds
         metocean_case_info['wave_gamma'] = wave_gamma
         metocean_case_info['wave_heading'] = wave_heading
-        metocean_case_info['probabilities'] = probabilities       
+        metocean_case_info['probability'] = probability       
         # metocean_case_info['current_std'] = self.mo_current_std       
         
         return metocean_case_info
@@ -376,6 +370,10 @@ class DLCGenerator(object):
         # Use schema to determine known_dlcs (weis/inputs/modeling_schema.yaml)
         known_dlcs = self.dlc_schema['DLC']['enum']
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
+
+        su_sd_cases = ['3.1', '3.2', '3.3', '4.1', '4.2']  # these cases require ROSCO v2.10 or greater
+        if str(label) in su_sd_cases and parse_version(rosco_version) < parse_version('2.10.0'):
+            logger.warning(f'DLC {label} requires ROSCO v2.10 or greater. The case will run, but the startup or shutdown will not occur.')
 
         # Get extreme wind speeds
         self.IECwind()
@@ -486,7 +484,7 @@ class DLCGenerator(object):
                 setattr(idlc,key,case[key])
 
             #if dlc_options['label'] == '1.2':
-            #    idlc.probability = probabilities[i_WaH]
+            #    idlc.probability = probability[i_WaH]
             self.cases.append(idlc)
 
             # AEP DLC: set constant turbulence intensity
@@ -727,10 +725,41 @@ class DLCGenerator(object):
         
         # Get default options
         dlc_options.update(self.default_options)   
+
+        # Error catching
+        entries = [
+            'wave_height_fatigue',
+            'wave_period_fatigue',
+            'wind_direction_fatigue',
+            'wave_direction_fatigue',
+            'probability',
+        ]
+
+        # Check for required inputs
+        for input in entries + ['wind_speed_fatigue']:
+            if len(self.metocean[input]) == 0:
+                raise Exception(f'DLC 1.2 is selected, but the input {input} is required and missing from modeling.DLC_Driver.metocean')
+
+        
+        
+        # Arrays should be the same length
+        n_ws_fatigue = len(self.metocean['wind_speed_fatigue'])
+
+        for input in entries:
+            if len(self.metocean[input]) != n_ws_fatigue:
+                raise Exception(f'Error in modeling.DLC_Driver.metocean fatigue inputs: The length of {input} ({len(self.metocean[input])}) does not match the length of wind_speed_fatigue ({n_ws_fatigue})')
+
         
         # Handle DLC Specific options:
         dlc_options['label'] = '1.2'
         dlc_options['sea_state'] = 'normal'
+
+        dlc_options['wind_speed'] = self.metocean['wind_speed_fatigue']
+        dlc_options['wave_height'] = self.metocean['wave_height_fatigue']
+        dlc_options['wave_period'] = self.metocean['wave_period_fatigue']
+        dlc_options['wind_direction'] = wrap_180(self.metocean['wind_direction_fatigue'])
+        dlc_options['wave_direction'] = wrap_180(self.metocean['wave_direction_fatigue'])
+        dlc_options['probability'] = self.metocean['probability'] 
         dlc_options['PSF'] = 1.0
         dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
@@ -743,9 +772,18 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        generic_case_inputs.append(['yaw_misalign']) # group 2
+        generic_case_inputs.append(['total_time','transient_time','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append([
+            'wind_speed',
+            'wave_height',
+            'wave_period',
+            'wind_seed',
+            'wave_seed',
+            'wind_direction',
+            'wave_direction',
+            'probability',
+            ]) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        # generic_case_inputs.append(['yaw_misalign']) # group 2   # Disabling for now
 
         self.generate_cases(generic_case_inputs,dlc_options)
 
@@ -1151,7 +1189,6 @@ class DLCGenerator(object):
         dlc_options['direction'] = ['n', 'p']
         dlc_options['pitch_initial'] = 90.
         dlc_options['turbine_status'] = 'parked-idling'     # initial turbine status is what matters here
-        dlc_options['wave_model'] = dlc_options.get('wave_model',2)
 
         # Specify startup time for this case
 

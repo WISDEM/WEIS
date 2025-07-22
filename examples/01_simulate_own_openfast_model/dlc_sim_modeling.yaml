@@ -25,9 +25,6 @@ OpenFAST:
     regulation_trajectory: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT/IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
-    AeroDyn:
-        Wake_Mod: 1
-        DBEMT_Mod: 2
 
 
 ROSCO:
@@ -53,6 +50,6 @@ DLC_driver:
         wave_period50: 13.6
 
     DLCs:
-        - DLC: "1.6"
-          wind_speed: [8,15]
+        - DLC: "1.1"
+          wind_speed: [12]
 
