@@ -36,42 +36,55 @@ class PoseOptimizationWEIS(PoseOptimization):
     
     def set_objective(self, wt_opt):
         # Set merit figure. Each objective has its own scaling.  Check first for user override
-        if self.opt["merit_figure_user"]["name"] != "":
-            coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
-            wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
-                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
-            
-        elif self.opt['merit_figure'] == 'blade_tip_deflection':
-            wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
-            
-        elif self.opt['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
-            wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
-            
-        elif self.opt['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
-            wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
-            
-        elif self.opt['merit_figure'] == 'rotor_overspeed':
-            if not any(self.level_flags):
-                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
-            wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
         
-        elif self.opt['merit_figure'] == 'Std_PtfmPitch':
-            wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
-        
-        elif self.opt['merit_figure'] == 'Max_PtfmPitch':
-            wt_opt.model.add_objective('aeroelastic.Max_PtfmPitch')
+        # make merit figure a list if it is not already
+        if isinstance(self.opt['merit_figure'], str):
+            self.opt['merit_figure'] = [self.opt['merit_figure']]
 
-        elif self.opt['merit_figure'] == 'Cp':
-            wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
+        # # Check that merit_figure and merit_figure_user are not both set
+        # if self.opt['merit_figure_user']['name'] != "" and len(self.opt['merit_figure']) > 0:
+        #     raise Exception('Please set either merit_figure or merit_figure_user, not both.')
+
+        assert(self.opt["merit_figure_user"]["name"] == "")
         
-        elif self.opt['merit_figure'] == 'weis_lcoe' or self.opt['merit_figure'].lower() == 'lcoe':
-            wt_opt.model.add_objective('financese_post.lcoe')
         
-        elif self.opt['merit_figure'] == 'OL2CL_pitch':
-            wt_opt.model.add_objective('aeroelastic.OL2CL_pitch')
-        
-        else:
-            super(PoseOptimizationWEIS, self).set_objective(wt_opt)
+        # if self.opt["merit_figure_user"]["name"] != "":
+        #     coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
+        #     wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
+        #                                ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))    
+
+        for merit_figure in self.opt['merit_figure']:       
+            if merit_figure == 'blade_tip_deflection':
+                wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
+                
+            elif merit_figure == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
+                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
+                
+            elif merit_figure == 'DEL_TwrBsMyt':   # for pitch controller optimization
+                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
+                
+            elif merit_figure == 'rotor_overspeed':
+                if not any(self.level_flags):
+                    raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+                wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
+            
+            elif merit_figure == 'Std_PtfmPitch':
+                wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
+            
+            elif merit_figure == 'Max_PtfmPitch':
+                wt_opt.model.add_objective('aeroelastic.Max_PtfmPitch')
+
+            elif merit_figure == 'Cp':
+                wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
+            
+            elif merit_figure == 'weis_lcoe' or merit_figure.lower() == 'lcoe':
+                wt_opt.model.add_objective('financese_post.lcoe')
+            
+            elif merit_figure == 'OL2CL_pitch':
+                wt_opt.model.add_objective('aeroelastic.OL2CL_pitch')
+            
+            else:
+                super(PoseOptimizationWEIS, self).set_merit_figure(wt_opt, merit_figure)
                 
         return wt_opt
 
