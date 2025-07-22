@@ -410,7 +410,7 @@ class NSGA2Driver(Driver):
             desvar_new = design_vars_fronts[0][median_idx, :]
             obj_new = objs_fronts[0][median_idx, :]
             for name in desvars:
-                i, j in self._desvar_idx[name]
+                i, j = self._desvar_idx[name]
                 val = desvar_new[i:j]
                 self.set_design_var(name, val)
             # run the nonlinear solve with debugging stdio capture
