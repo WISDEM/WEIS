@@ -86,47 +86,47 @@ def unit_simulated_binary_crossover_python(
                 V1 = design_vars_1[i_DV] if design_vars_1[i_DV] <= design_vars_2[i_DV] else design_vars_2[i_DV]
                 V2 = design_vars_1[i_DV] if design_vars_1[i_DV] > design_vars_2[i_DV] else design_vars_2[i_DV]
 
-                rv = rng.rand()  # a random uniform real
+            rv = rng.rand()  # a random uniform real
 
-                # do the calculations of the child candidate 1
-                beta = 1.0 + 2.0 * (V1 - design_vars_l[i_DV]) / (V2 - V1)
-                alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
-                beta_q = (
-                    np.power(rv * alpha, 1.0 / (eta_c + 1.0))
-                    if rng.rand() <= 1 / alpha
-                    else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
-                )
-                c1 = 0.5 * (V1 + V2 - beta_q * (V2 - V1))
+            # do the calculations of the child candidate 1
+            beta = 1.0 + 2.0 * (V1 - design_vars_l[i_DV]) / (V2 - V1)
+            alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
+            beta_q = (
+                np.power(rv * alpha, 1.0 / (eta_c + 1.0))
+                if rng.rand() <= 1 / alpha
+                else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
+            )
+            c1 = 0.5 * (V1 + V2 - beta_q * (V2 - V1))
 
-                # do the calculations of the child candidate 2
-                beta = 1.0 + 2.0 * (design_vars_u[i_DV] - V2) / (V2 - V1)
-                alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
-                beta_q = (
-                    np.power(rv * alpha, 1.0 / (eta_c + 1.0))
-                    if rng.rand() < 1.0 / alpha
-                    else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
-                )
-                c2 = 0.5 * (V1 + V2 + beta_q * (V2 - V1))
+            # do the calculations of the child candidate 2
+            beta = 1.0 + 2.0 * (design_vars_u[i_DV] - V2) / (V2 - V1)
+            alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
+            beta_q = (
+                np.power(rv * alpha, 1.0 / (eta_c + 1.0))
+                if rng.rand() < 1.0 / alpha
+                else np.power(1.0 / (2.0 - rv * alpha), 1.0 / (eta_c + 1.0))
+            )
+            c2 = 0.5 * (V1 + V2 + beta_q * (V2 - V1))
 
-                # check the limits
-                if c1 < design_vars_l[i_DV]:
-                    c1 = design_vars_l[i_DV]
-                if c2 < design_vars_l[i_DV]:
-                    c2 = design_vars_l[i_DV]
-                if c1 > design_vars_u[i_DV]:
-                    c1 = design_vars_u[i_DV]
-                if c2 > design_vars_u[i_DV]:
-                    c2 = design_vars_u[i_DV]
+            # check the limits
+            if c1 < design_vars_l[i_DV]:
+                c1 = design_vars_l[i_DV]
+            if c2 < design_vars_l[i_DV]:
+                c2 = design_vars_l[i_DV]
+            if c1 > design_vars_u[i_DV]:
+                c1 = design_vars_u[i_DV]
+            if c2 > design_vars_u[i_DV]:
+                c2 = design_vars_u[i_DV]
 
-                is_changed = True
+            is_changed = True
 
-                # coinflip to determine who gets which kid... the only fair way
-                if rng.rand() > 0.5:
-                    design_vars_a[i_DV] = c2
-                    design_vars_b[i_DV] = c1
-                else:
-                    design_vars_a[i_DV] = c1
-                    design_vars_b[i_DV] = c2
+            # coinflip to determine who gets which kid... the only fair way
+            if rng.rand() > 0.5:
+                design_vars_a[i_DV] = c2
+                design_vars_b[i_DV] = c1
+            else:
+                design_vars_a[i_DV] = c1
+                design_vars_b[i_DV] = c2
 
         else:
             design_vars_a[i_DV] = design_vars_1[i_DV]
