@@ -771,6 +771,14 @@ class NSGA2:
         assert len(design_vars_proposal) == self.N_population
         changed = np.logical_or(changed, changed_mutation)
 
+        # Check if DVs are violating the bounds
+        if np.any(design_vars_proposal < design_vars_l) or np.any(design_vars_proposal > design_vars_u):
+            raise ValueError(
+                "Proposed design variables violate the bounds. "
+                f"Lower bounds: {design_vars_l}, Upper bounds: {design_vars_u}, "
+                f"Proposed: {design_vars_proposal}"
+            )
+
         # update the objectives that have changed
         self.update_data_external(
             design_vars_proposal,
