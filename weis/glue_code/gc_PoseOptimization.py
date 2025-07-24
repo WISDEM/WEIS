@@ -36,22 +36,20 @@ class PoseOptimizationWEIS(PoseOptimization):
     
     def set_objective(self, wt_opt):
         # Set merit figure. Each objective has its own scaling.  Check first for user override
-        
-        # make merit figure a list if it is not already
+
+        # make merit_figure and merit_figure_user a list if it is not already
         if isinstance(self.opt['merit_figure'], str):
             self.opt['merit_figure'] = [self.opt['merit_figure']]
 
-        # # Check that merit_figure and merit_figure_user are not both set
-        # if self.opt['merit_figure_user']['name'] != "" and len(self.opt['merit_figure']) > 0:
-        #     raise Exception('Please set either merit_figure or merit_figure_user, not both.')
+        if isinstance(self.opt['merit_figure_user'], dict):
+            self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]
 
-        assert(self.opt["merit_figure_user"]["name"] == "")
+        for merit_figure_user in self.opt['merit_figure_user']:
+            if merit_figure_user["name"] != "":
+                coeff = -1.0 if merit_figure_user["max_flag"] else 1.0
+                wt_opt.model.add_objective(merit_figure_user["name"],
+                                        ref=coeff*np.abs(merit_figure_user["ref"]))   
         
-        
-        # if self.opt["merit_figure_user"]["name"] != "":
-        #     coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
-        #     wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
-        #                                ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))    
 
         for merit_figure in self.opt['merit_figure']:       
             if merit_figure == 'blade_tip_deflection':

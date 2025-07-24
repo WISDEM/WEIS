@@ -413,7 +413,7 @@ class NSGA2Driver(Driver):
             desvar_new = design_vars_fronts[0][median_idx, :]
             # obj_new = objs_fronts[0][median_idx, :]
             for name in desvars:
-                i, j in self._desvar_idx[name]
+                i, j = self._desvar_idx[name]
                 val = desvar_new[i:j]
                 self.set_design_var(name, val)
             # run the nonlinear solve with debugging stdio capture
@@ -458,9 +458,15 @@ class NSGA2Driver(Driver):
                 break
 
         # set the DVs
+        out_of_bounds = False
         for name in self._designvars:
             i, j = self._desvar_idx[name]
             self.set_design_var(name, x[i:j])
+
+            # Check that design variables are within bounds
+            if not (self._designvars[name]["lower"] <= x[i:j]).all() or not (x[i:j] <= self._designvars[name]["upper"]).all():
+                out_of_bounds = True
+                break
 
         # a very large number, but smaller than the result of nan_to_num in Numpy
         almost_inf = INF_BOUND
@@ -468,16 +474,22 @@ class NSGA2Driver(Driver):
         # execute the model under a debugger
         with RecordingDebugging(self._get_name(), self.iter_count, self) as rec:
             self.iter_count += 1
-            try:
-                self._run_solve_nonlinear()
-            except AnalysisError:
-                # tell the optimizer that this is a bad point
-                model._clear_iprint()
-                success = 0
 
-            # get the objective values
-            obj_values = self.get_objective_values()
-            constr_values_raw = self.get_constraint_values()
+            if not out_of_bounds:
+                try:
+                    self._run_solve_nonlinear()
+                except AnalysisError:
+                    # tell the optimizer that this is a bad point
+                    model._clear_iprint()
+                    success = 0
+
+                # get the objective values
+                obj_values = self.get_objective_values()
+                constr_values_raw = self.get_constraint_values()
+            else:
+                # if out of bounds, set the objective to a very large number and skip
+                obj_values = {name: np.inf for name in self._objs}
+                constr_values_raw = self.get_constraint_values()  # get the constraint values, which should be all zeros, but since fitness is inf, it hopefully doesn't matter
 
             if is_single_objective:  # single objective optimization
                 for i in obj_values.values():
