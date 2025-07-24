@@ -260,27 +260,28 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['flags']["floating"]:
                 n_member = modopt["floating"]["members"]["n_members"]
                 for k in range(n_member):
+                    kname = modopt['floating']['members']['name'][k]
                     n_height_mem = modopt["floating"]["members"]["n_height"][k]
-                    self.add_input(f"member{k}:joint1", np.zeros(3), units="m")
-                    self.add_input(f"member{k}:joint2", np.zeros(3), units="m")
-                    self.add_input(f"member{k}:s", np.zeros(n_height_mem))
-                    self.add_input(f"member{k}:s_ghost1", 0.0)
-                    self.add_input(f"member{k}:s_ghost2", 0.0)
-                    self.add_input(f"member{k}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+                    self.add_input(f"member{k}_{kname}:joint1", np.zeros(3), units="m")
+                    self.add_input(f"member{k}_{kname}:joint2", np.zeros(3), units="m")
+                    self.add_input(f"member{k}_{kname}:s", np.zeros(n_height_mem))
+                    self.add_input(f"member{k}_{kname}:s_ghost1", 0.0)
+                    self.add_input(f"member{k}_{kname}:s_ghost2", 0.0)
+                    self.add_input(f"member{k}_{kname}:wall_thickness", np.zeros(n_height_mem-1), units="m")
 
                     if modopt["floating"]["members"]["outer_shape"][k] == "circular":
-                        self.add_input(f"member{k}:outer_diameter", val=np.zeros(n_height_mem), units="m")
-                        self.add_input(f"member{k}:Ca", val=np.zeros(n_height_mem))
-                        self.add_input(f"member{k}:Cd", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:outer_diameter", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cd", val=np.zeros(n_height_mem))
                         self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height_mem), units="m")
                     elif modopt["floating"]["members"]["outer_shape"][k] == "rectangular":
                         raise Exception('Rectangular members are not yet supported in OpenFAST')
-                        self.add_input(f"member{k}:side_length_a", val=np.zeros(n_height_mem), units="m")
-                        self.add_input(f"member{k}:side_length_b", val=np.zeros(n_height_mem), units="m")
-                        self.add_input(f"member{k}:Ca", val=np.zeros(n_height_mem))
-                        self.add_input(f"member{k}:Cd", val=np.zeros(n_height_mem))
-                        self.add_input(f"member{k}:Cay", val=np.zeros(n_height_mem))
-                        self.add_input(f"member{k}:Cdy", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:side_length_a", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:side_length_b", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cd", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cay", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cdy", val=np.zeros(n_height_mem))
 
             # Turbine level inputs
             self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -1497,14 +1498,15 @@ class FASTLoadCases(ExplicitComponent):
 
             
             for k in range(n_member):
-                s_grid = inputs[f"member{k}:s"]
-                idiam = inputs[f"member{k}:outer_diameter"]
+                kname = modopt['floating']['members']['name'][k]
+                s_grid = inputs[f"member{k}_{kname}:s"]
+                idiam = inputs[f"member{k}_{kname}:outer_diameter"]
                 s_coarse = make_coarse_grid(s_grid, idiam)
-                s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}:s_ghost1"]), inputs[f"member{k}:s_ghost2"]) )
+                s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}_{kname}:s_ghost1"]), inputs[f"member{k}_{kname}:s_ghost2"]) )
                 id_coarse = np.interp(s_coarse, s_grid, idiam)
-                it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}:wall_thickness"])
-                xyz0 = inputs[f"member{k}:joint1"]
-                xyz1 = inputs[f"member{k}:joint2"]
+                it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:wall_thickness"])
+                xyz0 = inputs[f"member{k}_{kname}:joint1"]
+                xyz1 = inputs[f"member{k}_{kname}:joint2"]
                 dxyz = xyz1 - xyz0
                 inode_xyz = np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :]
                 inode_range = np.arange(inode_xyz.shape[0] - 1)
@@ -1517,8 +1519,8 @@ class FASTLoadCases(ExplicitComponent):
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
 
                 # Collect member coefficients
-                Ca_grid_mem = inputs[f"member{k}:Ca"]
-                Cd_grid_mem = inputs[f"member{k}:Cd"]
+                Ca_grid_mem = inputs[f"member{k}_{kname}:Ca"]
+                Cd_grid_mem = inputs[f"member{k}_{kname}:Cd"]
 
                 # There's some bug/feature in WISDEM that doesn't allow 0 Ca, Cd, this fixes that
                 zero_ind = Ca_grid_mem < 0
