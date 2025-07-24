@@ -43,6 +43,7 @@ class WindPark(om.Group):
         #nlbgs.options["maxiter"] = 2
         #nlbgs.options["atol"] = nlbgs.options["atol"] = 1e-2
 
+        '''
         dac_ivc = om.IndepVarComp()
         n_te_flaps = modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"]
         dac_ivc.add_output("te_flap_ext",   val = np.ones(n_te_flaps))
@@ -52,6 +53,7 @@ class WindPark(om.Group):
         dac_ivc.add_output("delta_max_pos", val=np.zeros(n_te_flaps), units="rad",  desc="1D array of the max angle of the trailing edge flaps.")
         dac_ivc.add_output("delta_max_neg", val=np.zeros(n_te_flaps), units="rad",  desc="1D array of the min angle of the trailing edge flaps.")
         self.add_subsystem("dac_ivc",dac_ivc)
+        '''
 
         tune_rosco_ivc = om.IndepVarComp()
         if modeling_options["ROSCO"]["linmodel_tuning"]["type"] == "robust":
@@ -220,7 +222,7 @@ class WindPark(om.Group):
             self.connect("tune_rosco_ivc.ptfm_freq",        "sse_tune.tune_rosco.ptfm_freq")
 
             self.connect("tune_rosco_ivc.Kp_float",         "sse_tune.tune_rosco.Kp_float")
-            self.connect("dac_ivc.delta_max_pos",           "sse_tune.tune_rosco.delta_max_pos")
+            #self.connect("dac_ivc.delta_max_pos",           "sse_tune.tune_rosco.delta_max_pos") # DAC removed
             if modeling_options["ROSCO"]["Flp_Mode"] > 0:
                 self.connect("tune_rosco_ivc.flp_kp_norm",    "sse_tune.tune_rosco.flp_kp_norm")
                 self.connect("tune_rosco_ivc.flp_tau",     "sse_tune.tune_rosco.flp_tau")
@@ -277,8 +279,7 @@ class WindPark(om.Group):
                 self.connect("blade.high_level_blade_props.prebendTip", "raft.blade_precurveTip")
                 self.connect("blade.high_level_blade_props.presweep", "raft.blade_presweep")
                 self.connect("blade.high_level_blade_props.presweepTip", "raft.blade_presweepTip")
-                self.connect("airfoils.name", "raft.airfoils_name")
-                self.connect("airfoils.r_thick", "raft.airfoils_r_thick")
+                self.connect("airfoils.rthick_master", "raft.airfoils_r_thick")
                 self.connect("blade.opt_var.af_position", "raft.airfoils_position")
                 self.connect("airfoils.aoa", "raft.airfoils_aoa")
                 self.connect("airfoils.cl", "raft.airfoils_cl")
@@ -400,10 +401,10 @@ class WindPark(om.Group):
             if opt_options["opt_flag"]:
                 self.add_subsystem("conv_plots_weis",    Convergence_Trends_Opt(opt_options = opt_options))
 
-            if modeling_options["ROSCO"]["Flp_Mode"]:
-                # Connections to blade 
-                self.connect("dac_ivc.te_flap_end",             "blade.outer_shape.span_end")
-                self.connect("dac_ivc.te_flap_ext",             "blade.outer_shape.span_ext")
+            #if modeling_options["ROSCO"]["Flp_Mode"]:
+            #    # Connections to blade 
+            #    self.connect("dac_ivc.te_flap_end",             "blade.outer_shape.span_end")
+            #    self.connect("dac_ivc.te_flap_ext",             "blade.outer_shape.span_ext")
 
 
 
@@ -946,6 +947,7 @@ class WindPark(om.Group):
                 self.connect("tune_rosco_ivc.flp_tau",        "outputs_2_screen_weis.flp_tau")
                 self.connect("tune_rosco_ivc.IPC_Kp1p",        "outputs_2_screen_weis.IPC_Kp1p")
                 self.connect("tune_rosco_ivc.IPC_Ki1p",        "outputs_2_screen_weis.IPC_Ki1p")
-                self.connect("dac_ivc.te_flap_end",            "outputs_2_screen_weis.te_flap_end")
+                #if modeling_options["ROSCO"]["Flp_Mode"]:
+                #    self.connect("dac_ivc.te_flap_end",            "outputs_2_screen_weis.te_flap_end")
                 if modeling_options["OL2CL"]["flag"]:
                     self.connect("aeroelastic.OL2CL_pitch",      "outputs_2_screen_weis.OL2CL_pitch")

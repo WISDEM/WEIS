@@ -48,12 +48,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         if modeling_override:
             update_options(self.modeling_options, modeling_override)
-            sch.re_validate_modeling(self.modeling_options)
-                
+            sch.load_modeling_yaml(self.modeling_options)
         
         if analysis_override:
             update_options(self.analysis_options, analysis_override)
-            sch.re_validate_analysis(self.analysis_options)
+            sch.load_analysis_yaml(self.analysis_options)
 
         self.set_run_flags()
         self.set_openmdao_vectors()
