@@ -853,7 +853,11 @@ class WindPark(om.Group):
 
                 if modeling_options["flags"]["monopile"]:
                     mono_params = ["z_full","outer_diameter_full","t_full",
-                                  "E_full","G_full","rho_full","sigma_y_full"]
+                                   "E_full","G_full","rho_full","sigma_y_full",
+                                  "section_A", "section_Asx","section_Asy",
+                                  "section_Ixx", "section_Iyy", "section_J0",
+                                  "section_rho", "section_E", "section_G",
+                                  ]
                     for k in mono_params:
                         self.connect(f"fixedse.{k}", f"fixedse_post.{k}")
                     self.connect("fixedse.env.qdyn", "fixedse_post.qdyn")
