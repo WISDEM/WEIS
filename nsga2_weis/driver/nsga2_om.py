@@ -1,5 +1,6 @@
 import os
 import copy
+from pprint import pprint
 
 import numpy as np
 
@@ -66,11 +67,11 @@ class NSGA2Driver(Driver):
         self.supports["optimization"] = True
         self.supports["inequality_constraints"] = True
         self.supports["multiple_objectives"] = True
+        self.supports["two_sided_constraints"] = True
 
         # what we don't support yet
         self.supports["integer_design_vars"] = False  # TODO: implement
         self.supports["equality_constraints"] = False
-        self.supports["two_sided_constraints"] = False
         self.supports["linear_constraints"] = False
         self.supports["simultaneous_derivatives"] = False
         self.supports["active_set"] = False
@@ -399,16 +400,18 @@ class NSGA2Driver(Driver):
             self.optimizer_nsga2.sort_data()  # re-sort the data
 
             # get the fronts and save the first for the driver
-            rv = self.optimizer_nsga2.get_fronts(compute_constrs=False)
+            rv = self.optimizer_nsga2.get_fronts(compute_constrs=True, feasibility_dominates=True)
             design_vars_fronts = rv[1]
             objs_fronts = rv[2]
+            constrs_fronts = rv[3]
             self.desvar_nd = copy.deepcopy(design_vars_fronts[0])
+            self.constr_nd = copy.deepcopy(constrs_fronts[0])
             self.obj_nd = copy.deepcopy(objs_fronts[0])
 
             # get the median entry to for the point estimate
             median_idx = len(design_vars_fronts[0]) // 2
             desvar_new = design_vars_fronts[0][median_idx, :]
-            obj_new = objs_fronts[0][median_idx, :]
+            # obj_new = objs_fronts[0][median_idx, :]
             for name in desvars:
                 i, j in self._desvar_idx[name]
                 val = desvar_new[i:j]
@@ -474,7 +477,8 @@ class NSGA2Driver(Driver):
 
             # get the objective values
             obj_values = self.get_objective_values()
-            constr_values = self.get_constraint_values()
+            constr_values_raw = self.get_constraint_values()
+
             if is_single_objective:  # single objective optimization
                 for i in obj_values.values():
                     obj = i  # first and only key in the dict
@@ -486,7 +490,21 @@ class NSGA2Driver(Driver):
                 for name, val in obj_values.items():
                     obj.append(val)
                 obj = np.array(obj)
-            constr = np.atleast_1d(np.array([val for val in constr_values.values()]).squeeze())
+
+            constr_adjusted = []  # convert all bounds to leq zero
+            for name, meta in self._cons.items():
+                # print(f"DEBUG!!!!! lower: {meta['lower']} upper: {meta['upper']} INF_BOUND: {INF_BOUND}")
+                if (meta["lower"] <= -INF_BOUND/10) and (meta["upper"] <= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
+                elif (meta["lower"] >= -INF_BOUND/10) and (meta["upper"] >= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
+                elif (meta["lower"] >= -INF_BOUND/10) and (meta["upper"] <= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    # add as sequential one-sided constraints
+                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
+                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
+                else:
+                    raise ValueError(f"you've attempted to constraint {name} between numerically infinite values in both directions: \n{meta}")
+            constr = np.hstack(constr_adjusted)
 
         if self.options["penalty_parameter"] != 0:
             raise NotImplementedError("penalty-driven constraints not implemented.")
