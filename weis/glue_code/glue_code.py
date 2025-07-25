@@ -56,11 +56,12 @@ class WindPark(om.Group):
         self.add_subsystem('dac_ivc',dac_ivc)
 
         tune_rosco_ivc = om.IndepVarComp()
-        
+
         # Generic DVs
         rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
+        rosco_tuning_dv_names = [ dv['name'] for dv in rosco_tuning_dvs ]
         for dv in rosco_tuning_dvs:
-            # TODO: support arrays
+
             ivc_units = None
             if 'units' in dv:
                 ivc_units = dv['units']
@@ -80,7 +81,6 @@ class WindPark(om.Group):
         # DISCON DVs
         discon_dvs = opt_options['design_variables']['control']['discon']
         for dv in discon_dvs:
-            # TODO: support scalars
             ivc_units = None
             if 'units' in dv:
                 ivc_units = dv['units']
@@ -97,11 +97,17 @@ class WindPark(om.Group):
 
             tune_rosco_ivc.add_output(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
 
+        # These are always added
         tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
         tune_rosco_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
         tune_rosco_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
         tune_rosco_ivc.add_output('omega_pc_max',     val=0.0,                    desc='Maximum allowable omega for robust tuning')
         tune_rosco_ivc.add_output('stability_margin', val=0.0,                    desc='Stability margin for robust tuning')
+        
+        # Skip if already added, could apply same treatment to The Ones Above
+        if 'ps_percent' not in rosco_tuning_dv_names:
+            tune_rosco_ivc.add_output('ps_percent', val=modeling_options['ROSCO']['ps_percent'],  desc='Peak shaving fraction [0-1], {default = 1.0}')
+
 
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
 
@@ -223,6 +229,9 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.vs_minspd',        'sse_tune.tune_rosco.vs_minspd') 
             self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
+            
+            # Peak shaving DV should also influence rotor power in WISDEM
+            self.connect(f'tune_rosco_ivc.ps_percent', "rotorse.rp.powercurve.ps_percent")
 
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
@@ -231,7 +240,8 @@ class WindPark(om.Group):
 
             # Connect generic ivc/dvs
             for dv in rosco_tuning_dvs:
-                self.connect(f'tune_rosco_ivc.{dv["name"]}',     f'sse_tune.tune_rosco.{dv["name"]}')
+                if dv['name'] not in ['ps_percent']:   #  already added above
+                    self.connect(f'tune_rosco_ivc.{dv["name"]}',     f'sse_tune.tune_rosco.{dv["name"]}')
 
             # Connect discon ivc/dvs
             for dv in discon_dvs:
