@@ -105,9 +105,9 @@ constraints:
         fairlead_depth: # keep fairlead above bottom trough of largest wave
             flag: True
     control:
-        Max_PtfmPitch:
-            flag: True
-            max: 6.0
+        # Max_PtfmPitch:
+        #     flag: True
+        #     max: 6.0
         Std_PtfmPitch:
             flag: False
             max: 1.25  # Same as IEA-15MW with same DLCs
@@ -115,7 +115,8 @@ constraints:
             flag: False
             max: 0.4
 
-merit_figure: [structural_mass, AEP]
+merit_figure: [structural_mass, Max_PtfmPitch]
+# merit_figure: [structural_mass, AEP]
 
 # # figure of merit
 # merit_figure_user:
