@@ -65,6 +65,7 @@ Environment:
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
+        TMax: 60.0
         DT: 0.01
         CompElast: 1
         CompInflow: 1
