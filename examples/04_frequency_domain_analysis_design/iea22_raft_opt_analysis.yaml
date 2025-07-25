@@ -118,7 +118,7 @@ constraints:
 merit_figure: [structural_mass, AEP]
 
 # # figure of merit
-# merit_figure_user: 
+# merit_figure_user:
 #     name: financese.lvoe
 #     max_flag: False
 #     ref: 1.e-2
@@ -130,6 +130,9 @@ driver:
         max_iter: 50      # Maximum number of iterations (SLSQP)
         maxgen: 2        # Maximum number of generations (DE)
         # maxtime: 3420
+        pop_size: 10
+        max_gen: 10
+        run_parallel: True
         solver: NSGA2  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:

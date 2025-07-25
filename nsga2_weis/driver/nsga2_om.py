@@ -393,7 +393,9 @@ class NSGA2Driver(Driver):
         # iterate over the specified generations
         for generation in range(max_gen + 1):
             # iterate the population
+            print(f"\n\n\nDEBUG!!!!! NSGA2 OM DRIVER STARTING GENERATION {generation}\n\n\n")
             self.optimizer_nsga2.iterate_population()
+        print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
 
         if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2
             # save the non-dominated points
