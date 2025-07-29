@@ -6,8 +6,8 @@ from openmdao.utils.mpi import MPI
 
 
 def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
-    
-    
+
+
     fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
     evolutionary_methods = ['DE', 'NSGA2']
 
@@ -29,9 +29,9 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
             if not MPI:
                 print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
-    # # if we're doing a GA or such, "FD" means "entities in epoch"
-    # if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
-    #     nFD = maxnP
+    # if we're doing a GA or such, "FD" means "entities in epoch"
+    elif opt_options['driver']['optimization']['solver'] in evolutionary_methods:
+        nFD = maxnP
 
     if not MPI:
         print("To run the code in parallel with MPI, execute one of the following commands\n")
@@ -68,13 +68,13 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
             nFD = min([maxnP, nFD])
             nOFp = 1
         nP = nFD + nFD * nOFp
-    
+
     else:
         nOFp = nOF
         nP = nFD + nFD * nOFp
         if not MPI:
             print("If you have access to (at least) %d processors, please call WEIS as:"%nP)
-    
+
     if not MPI:
         print("mpiexec -np %d python weis_driver.py\n"%nP)
 
