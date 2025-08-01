@@ -653,7 +653,18 @@ class FASTLoadCases(ExplicitComponent):
 
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
-            fst_vt['MoorDyn']['TmaxIC'] = 1.0
+            if 'option_names' in fst_vt['MoorDyn']:  # MoorDyn is special, and option_names is only present if 
+                if 'TmaxIC' in fst_vt['MoorDyn']['option_names']:
+                    tmax_name = 'TmaxIC'
+                elif 'TMAXIC' in fst_vt['MoorDyn']['option_names']:     # if input is read from openfast-io, it's upper-ed
+                    tmax_name = 'TMAXIC'
+                else:
+                    tmax_name = None
+
+                if tmax_name is not None:
+                    tmax_ind = fst_vt['MoorDyn']['option_names'].index(tmax_name)
+                    fst_vt['MoorDyn']['option_values'][tmax_ind] = 1.0
+            
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
@@ -826,9 +837,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['SeaState'] = {}
         fst_vt['HydroDyn'] = {}
         fst_vt['MoorDyn'] = {}
+        fst_vt['WaterKin'] = {}
         fst_vt['MAP'] = {}
         fst_vt['BeamDyn'] = {}
         fst_vt['BeamDynBlade'] = {}
+        fst_vt['WaterKin'] = {}
         
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
@@ -1126,6 +1139,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['blade:edge_mode_shapes'][0,i] / sum(inputs['blade:edge_mode_shapes'][0,:])
 
         # Update BeamDyn Main
+        fst_vt['BeamDyn']['DTBeam'] = "Default"
         fst_vt['BeamDyn']['member_total'] = 1
         fst_vt['BeamDyn']['kp_total'] = len(inputs['ref_axis_blade'][:,0])
         fst_vt['BeamDyn']['members'] = [{}]
@@ -1322,6 +1336,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
+            
+            # Circular cross-section properties
             fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
             fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
             fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
@@ -1402,8 +1418,15 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MType'] = np.ones( n_members, dtype=np.int_ )
             fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
-            fst_vt['SubDyn']['NPropSets'] = n_members
+            fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
+            
+            # Circular beam cross-section properties
+            fst_vt['SubDyn']['NBCPropSets'] = n_members
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
+            
+            # Rectangular beam cross-section properties (not yet supported)
+            fst_vt['SubDyn']['NBRPropSets'] = 0
+            
             fst_vt['SubDyn']['NCablePropSets'] = 0
             fst_vt['SubDyn']['NRigidPropSets'] = 0
             fst_vt['SubDyn']['NSpringPropSets'] = 0
@@ -1523,37 +1546,60 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
-            fst_vt['HydroDyn']['PropSetID'] = ijoints
-            fst_vt['HydroDyn']['PropD'] = d_coarse
-            fst_vt['HydroDyn']['PropThck'] = t_coarse
+            
+            # Only cylindrical member supported for now
+            fst_vt['HydroDyn']['NPropSetsCyl'] = n_joints      # each joint has a cross section
+            fst_vt['HydroDyn']['CylPropSetID'] = ijoints
+            fst_vt['HydroDyn']['CylPropD'] = d_coarse
+            fst_vt['HydroDyn']['CylPropThck'] = t_coarse
+            fst_vt['HydroDyn']['NPropSetsRec'] = 0   # placeholder for now
+            
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
             fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
+            fst_vt['HydroDyn']['MSecGeom'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['MSpinOrient'] = np.zeros( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['MHstLMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['NCoefDpth'] = 0
-            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NCoefDpthCyl'] = fst_vt['HydroDyn']['NCoefMembersCyl'] = 0
+            fst_vt['HydroDyn']['NCoefDpthRec'] = fst_vt['HydroDyn']['NCoefMembersRec'] = 0
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            if 'CylSimplCd' not in fst_vt['HydroDyn']:
+                for m in ['Cd', 'CdMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.6
+                for m in ['Ca', 'CaMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                
+            if 'RecSimplCdA' not in fst_vt['HydroDyn']:
+                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.6
+                for m in ['CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 1.0
+                for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
 
             if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+                
             elif modopt["RAFT"]["potential_model_override"] == 2:
                 # BEM only, no strip theory
-                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCb'] = fst_vt['HydroDyn']['SimplCbMG'] = 0.0
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
+
+                for m in ['Cd', 'CdMG', 'Ca', 'CaMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
+                
+                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                    fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
+                
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
@@ -1562,7 +1608,7 @@ class FASTLoadCases(ExplicitComponent):
                         idx = modopt['floating']['members']['platform_elem_memid'][k]
                         PropPotBool[k] = modopt["RAFT"]["model_potential"][idx]    
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
-
+                
             if fst_vt['HydroDyn']['NBody'] > 1:
                 raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')
 
@@ -1573,12 +1619,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PtfmRefztRot']  = [0]
 
             # If we're using the potential model, need these settings that aren't default
-            if fst_vt['HydroDyn']['PotMod'] == 1:
+            if fst_vt['HydroDyn']['PotMod'] or fst_vt['HydroDyn']['PotMod'] == 1:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
-            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['OpenFAST_Linear']['flag'] and modopt['RAFT']['runPyHAMS']:
+            if (fst_vt['HydroDyn']['PotMod'] or fst_vt['HydroDyn']['PotMod'] == 1) and modopt['OpenFAST_Linear']['flag'] and modopt['RAFT']['runPyHAMS']:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
@@ -1620,6 +1666,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
             fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Cl'] = n_lines * [None]
+            fst_vt['MoorDyn']['dF'] = n_lines * [None]
+            fst_vt['MoorDyn']['cF'] = n_lines * [None]
             fst_vt['MoorDyn']['NonLinearEA'] = n_lines * [None]
 
             # Connection properties - Points
@@ -1953,6 +2002,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
+        WindFile_plexp = PLExp * np.ones(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
 
         self.TMax = np.zeros(dlc_generator.n_cases)
@@ -1974,11 +2024,11 @@ class FASTLoadCases(ExplicitComponent):
                 if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
                     dlc_generator.cases[i_case].HubHt = hub_height
 
-                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridHeight =  2. * hub_height - 1.e-3
+                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use 2*hub_height if not set
+                    dlc_generator.cases[i_case].GridHeight =  2.0 * hub_height - 1.e-3
 
-                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
+                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use 2.2*hub_height if not set
+                    dlc_generator.cases[i_case].GridWidth =  2.2 * hub_height - 1.e-3
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
@@ -2008,10 +2058,10 @@ class FASTLoadCases(ExplicitComponent):
 
                 for idx, i_case in enumerate(np.arange(idx_s, idx_e)):
                     rank_j = sub_ranks[idx]
-                    WindFile_type[i_case] , WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
+                    WindFile_type[i_case], WindFile_plexp[i_case], WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
         else:
             for i_case in range(dlc_generator.n_cases):
-                WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
+                WindFile_type[i_case], WindFile_plexp[i_case], WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
 
 
@@ -2034,8 +2084,9 @@ class FASTLoadCases(ExplicitComponent):
             case_name.extend(case_name_i)
 
         # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
-        for case_i, wt, wf in zip(case_list,WindFile_type,WindFile_name):
+        for case_i, wt, wa, wf in zip(case_list,WindFile_type,WindFile_plexp,WindFile_name):
             case_i[('InflowWind','WindType')] = wt
+            case_i[('InflowWind','PLExp')] = wa
             case_i[('InflowWind','FileName_Uni')] = wf
             case_i[('InflowWind','FileName_BTS')] = wf
 
