@@ -770,7 +770,7 @@ class DLCGenerator(object):
         dlc_options['bin_ID']           = np.repeat(np.arange(n_cases), n_seeds)  # bin ID for fatigue cases   
 
         if abs(sum(self.metocean['probability'][:n_cases]) - 1.) > 1.e-3:
-            logger.warning(f'DLC 1.2 fatigue probabilities only sum to {sum(self.metocean['probability'][:n_cases]):.3f}')
+            logger.warning(f'DLC 1.2 Warning: fatigue probabilities only sum to {sum(self.metocean['probability'][:n_cases]):.3f}')
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
