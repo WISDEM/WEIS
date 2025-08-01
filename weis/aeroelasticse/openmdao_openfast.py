@@ -1119,7 +1119,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['fore_aft_modes'][1, :] / sum(inputs['fore_aft_modes'][1, :])     # HACK, don't commit
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
@@ -2261,7 +2261,7 @@ class FASTLoadCases(ExplicitComponent):
         # Delete the extra case_inputs because they don't play nicely with aeroelasticse
         for case in case_list:
             for key in list(case):
-                if key[0] in ['DLC','TurbSim']:
+                if key[0] in ['DLC','TurbSim','CaseInfo']:
                     del case[key]
         
         
