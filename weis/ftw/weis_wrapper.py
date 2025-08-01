@@ -2,12 +2,14 @@ import numpy as np
 import os, sys
 import warnings
 import openmdao.api as om
+from copy                               import copy
 from weis.glue_code.gc_LoadInputs       import WindTurbineOntologyPythonWEIS
 from weis.glue_code.gc_PoseOptimization import PoseOptimizationWEIS
 from openmdao.utils.mpi                 import MPI
+from wisdem.inputs                      import load_yaml
 from openfast_io.FileTools              import save_yaml
 from wisdem.inputs.validation           import simple_types
-from weis import weis_main
+from weis                               import weis_main
 
 
 def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None, test_run=False):
@@ -27,11 +29,36 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
         )
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
-    # Save yaml files (for debugging, will delete later)
+    # Files and paths
+    if os.path.isabs(opt_options['general']['folder_output']):
+        out_dir = opt_options['general']['folder_output']
+    else:
+        out_dir = os.path.join(os.path.realpath(os.curdir), opt_options['general']['folder_output'])
+    if os.path.isabs(opt_options['recorder']['file_name']):
+        recorder_output_path = opt_options['recorder']['file_name']
+    else:
+        recorder_output_path = os.path.join(out_dir, opt_options['recorder']['file_name'])
+    if MPI:
+        recorder_output_path += ('_' + str(int(rank)))
+    fname_doedata = opt_options['general']['fname_output'] + '_doedata.yaml'
+
+    # If skip flag, check existence of the doedata file, read, and broadcast to all MPI cores
+    doedata = None
     if (not MPI) or (MPI and rank == 0):
-        save_yaml(opt_options['general']['folder_output'], opt_options['general']['fname_output'] + '_wt_input.yaml', wt_init)
-        save_yaml(opt_options['general']['folder_output'], opt_options['general']['fname_output'] + '_modeling_input.yaml', modeling_options)
-        save_yaml(opt_options['general']['folder_output'], opt_options['general']['fname_output'] + '_analysis_input.yaml', opt_options)
+        if opt_options['driver']['design_of_experiments']['skip_doe_if_doedata_exist']:
+            if os.path.isfile(os.path.join(out_dir, fname_doedata)):
+                try:
+                    doedata = load_yaml(os.path.join(out_dir, fname_doedata))
+                    print('{:} file exists. Skipping design of experiments.'.format(fname_doedata))
+                except:
+                    doedata = None
+                    print('Unable to read {:} file. Executing design of experiments.'.format(fname_doedata))
+            else:
+                print('{:} file does not exist. Executing design of experiments.'.format(fname_doedata))
+    if MPI:
+        doedata = MPI.COMM_WORLD.bcast(doedata, root=0)
+    if doedata != None:
+        return doedata
 
     # Raise error when a proper simulation level is not specified.
     if modeling_options['OpenFAST']['flag']:
@@ -68,35 +95,11 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
         fname_wt_input, fname_modeling_options, fname_opt_options,
         geometry_override, {}, opt_override, test_run)
 
-    # Save yaml files (for debugging, will delete later)
-    if (not MPI) or (MPI and rank == 0):
-        save_yaml(opt_options['general']['folder_output'], opt_options['general']['fname_output'] + '_modeling_doe.yaml', modeling_options_doe)
-        save_yaml(opt_options['general']['folder_output'], opt_options['general']['fname_output'] + '_analysis_doe.yaml', opt_options_doe)
-
-    return wt_opt_doe, modeling_options_doe, opt_options_doe
-
-
-def ftw_extract_doe(wt_opt_doe, modeling_options, opt_options):
-    # Output folder and recorder output file paths
-    if os.path.isabs(opt_options['general']['folder_output']):
-        out_dir = opt_options['general']['folder_output']
-    else:
-        out_dir = os.path.join(os.path.realpath(os.curdir), opt_options['general']['folder_output'])
-    if os.path.isabs(opt_options['recorder']['file_name']):
-        recorder_output_path = opt_options['recorder']['file_name']
-    else:
-        recorder_output_path = os.path.join(out_dir, opt_options['recorder']['file_name'])
-
-    if MPI:
-        rank = MPI.COMM_WORLD.Get_rank()
-        recorder_output_path += '_' + str(int(rank)) # MPI SQL files have rank numbers
-    else:
-        rank = 0
-
+    # OpenMDAO case reader - obtain list of cases
     cr = om.CaseReader(recorder_output_path)
     cases = cr.list_cases(source = 'driver', out_stream = None)
 
-    # Obtain list of key variables
+    # Obtain list of key variables (only at rank 0, will be broadcasted later)
     if (not MPI) or (MPI and rank == 0):
         # Choose the first case from rank 0
         case = cr.get_case(cases[0])
@@ -176,9 +179,11 @@ def ftw_extract_doe(wt_opt_doe, modeling_options, opt_options):
         output_lens = MPI.COMM_WORLD.bcast(output_lens, root=0)
         output_vecs = MPI.COMM_WORLD.bcast(output_vecs, root=0)
 
-    # Retrieve data from each case for all cases and all MPI instances
+    # Empty dataset list
     input_dataset = [np.zeros((0, input_lens[idx]), dtype=float) for idx in range(len(input_vars))]
     output_dataset = [np.zeros((0, output_lens[idx]), dtype=float) for idx in range(len(output_vars))]
+    
+    # Retrieve data from each case for all cases and all MPI instances
     for casename in cases:
         case = cr.get_case(casename)
         for idx in range(len(input_vars)):
@@ -205,27 +210,64 @@ def ftw_extract_doe(wt_opt_doe, modeling_options, opt_options):
         input_dataset_gathered = MPI.COMM_WORLD.gather(input_dataset, root=0)
         output_dataset_gathered = MPI.COMM_WORLD.gather(output_dataset, root=0)
     else:
-        input_dataset_gathered = [input_dataset]
-        output_dataset_gathered = [output_dataset]
+        input_dataset_gathered = [copy(input_dataset)]
+        output_dataset_gathered = [copy(output_dataset)]
     
-    if rank == 0:
-        input_dataset = [dp for proc in input_dataset_gathered for dp in proc]
-        output_dataset = [dp for proc in output_dataset_gathered for dp in proc]
+    if (not MPI) or (MPI and rank == 0):
+        # Empty dataset list
+        input_dataset = [np.zeros((0, input_lens[idx]), dtype=float) for idx in range(len(input_vars))]
+        output_dataset = [np.zeros((0, output_lens[idx]), dtype=float) for idx in range(len(output_vars))]
+        
+        # Merge input dataset from all MPI instances
+        for idx in range(len(input_dataset_gathered)):
+            for jdx in range(len(input_dataset_gathered[0])):
+                data_currentcase = input_dataset_gathered[idx][jdx]
+                input_dataset[jdx] = np.concatenate(
+                    (input_dataset[jdx], data_currentcase), axis=0)
+
+        # Merge output dataset from all MPI instances
+        for idx in range(len(output_dataset_gathered)):
+            for jdx in range(len(output_dataset_gathered[0])):
+                data_currentcase = output_dataset_gathered[idx][jdx]
+                output_dataset[jdx] = np.concatenate(
+                    (output_dataset[jdx], data_currentcase), axis=0)
+
+        # Convert numpy arrays to nested list
+        for idx in range(len(input_dataset)):
+            if type(input_dataset[idx]) == np.ndarray:
+                input_dataset[idx] = input_dataset[idx].tolist()
+        for idx in range(len(output_dataset)):
+            if type(output_dataset[idx]) == np.ndarray:
+                output_dataset[idx] = output_dataset[idx].tolist()
     else:
         input_dataset = None
         output_dataset = None
 
-    return input_vars, input_dataset, input_lens, input_vecs, output_vars, output_dataset, output_lens, output_vecs
+    # Save data into a single yaml file
+    if (not MPI) or (MPI and rank == 0):
+        doedata = {
+            'input': [],
+            'output': [],
+        }
 
+        # Input variables
+        for idx in range(len(input_vars)):
+            doedata['input'].append({
+                'name': input_vars[idx],
+                'data': input_dataset[idx],
+                'len': input_lens[idx],
+                'vec': input_vecs[idx]})
 
+        # Output variables
+        for idx in range(len(output_vars)):
+            doedata['output'].append({
+                'name': output_vars[idx],
+                'data': output_dataset[idx],
+                'len': output_lens[idx],
+                'vec': output_vecs[idx]})
 
+        # Save to yaml file: [output-folder]/[output-name]_doedata.yaml
+        save_yaml(out_dir, fname_doedata, doedata)
 
-
-
-
-
-
-
-
-
+    return doedata
 

@@ -337,6 +337,19 @@ properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
                                         initial: *initial
+    driver:
+        type: object
+        default: {}
+        properties:
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    skip_doe_if_results_exist:
+                        type: boolean
+                        default: False
+                        description: Toggle skipping the design of experiments if extracted results (fname_output_doedata.yaml) exist
     constraints:
         # GB: These all need gammas or safety factors
         type: object

@@ -107,19 +107,20 @@ constraints:
     mooring_tension:
       flag: True
 
-merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: structural_mass
 
 driver:
   optimization:
-    flag: False           # Flag to enable optimization
-    solver: LN_COBYLA     # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    tol: 1.e-2            # Optimality tolerance
-    max_iter: 50          # Maximum number of iterations (SLSQP)
+    flag: False             # Flag to enable optimization
+    solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    tol: 1.e-2              # Optimality tolerance
+    max_iter: 50            # Maximum number of iterations (SLSQP)
   design_of_experiments:
-    flag: False            # Flag to enable design of experiments
-    run_parallel: True    # Flag to run using parallel processing
+    flag: False             # Flag to enable design of experiments
+    run_parallel: True      # Flag to run using parallel processing
     generator: LatinHypercube    # Type of input generator. (Uniform)
-    num_samples: 20 # 600 # 350 # 750      # number of samples for (Uniform only)
+    num_samples: 200        # number of samples for (Uniform only)
+    skip_doe_if_doedata_exist: True
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
