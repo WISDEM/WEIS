@@ -765,7 +765,7 @@ class DLCGenerator(object):
         dlc_options['wave_period']      = np.repeat(self.metocean['wave_period_fatigue'][:n_cases], n_seeds)
         dlc_options['wind_heading']     = np.repeat(wrap_180(np.array(self.metocean['wind_direction_fatigue']))[:n_cases], n_seeds)
         dlc_options['yaw_misalign']     = np.repeat(wrap_180(-np.array(self.metocean['wind_direction_fatigue']))[:n_cases], n_seeds)
-        dlc_options['wave_direction']   = np.repeat(wrap_180(self.metocean['wave_direction_fatigue'])[:n_cases], n_seeds)
+        dlc_options['wave_direction']   = np.repeat(-wrap_180(self.metocean['wave_direction_fatigue'])[:n_cases], n_seeds)  # Wave direction is opposite of wind direction (https://forums.nrel.gov/t/wave-direction-in-hydrodyn/2616/5)
         dlc_options['probability']      = np.repeat(self.metocean['probability'][:n_cases], n_seeds)
         dlc_options['bin_ID']           = np.repeat(np.arange(n_cases), n_seeds)  # bin ID for fatigue cases   
 
