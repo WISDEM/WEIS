@@ -24,7 +24,7 @@ design_variables:
             z_coordinate:       # draft
                 - names: [main_keel, col1_keel, col2_keel, col3_keel]
                   lower_bound: -30.0
-                  upper_bound: -12.0
+                  upper_bound: -8.0
                 # - names: [col1_freeboard, col2_freeboard, col3_freeboard]
                 #   lower_bound: 10.0
                 #   upper_bound: 20.0
@@ -84,11 +84,11 @@ constraints:
             lower_bound: 15.0
         pitch_period:
             flag: True
-            lower_bound: 20. # +/- 10%
+            lower_bound: 15. # +/- 10%
             upper_bound: 80.
         heave_period:
             flag: False
-            lower_bound: 16. # +/- 10%
+            lower_bound: 15. # +/- 10%
             upper_bound: 80.
         # fixed_ballast_capacity:
         #     flag: True
@@ -113,7 +113,7 @@ constraints:
     control:
         Max_PtfmPitch:
             flag: True
-            max: 6.0
+            max: 9.0
         Std_PtfmPitch:
             flag: False
             max: 1.25  # Same as IEA-15MW with same DLCs
