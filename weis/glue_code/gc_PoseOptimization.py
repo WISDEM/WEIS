@@ -52,6 +52,9 @@ class PoseOptimizationWEIS(PoseOptimization):
 
 
         for merit_figure in self.opt['merit_figure']:
+            if merit_figure == 'none':  # default
+                break
+
             if merit_figure == 'blade_tip_deflection':
                 wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
 
