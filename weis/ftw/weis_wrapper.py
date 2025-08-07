@@ -40,7 +40,7 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
         recorder_output_path = os.path.join(out_dir, opt_options['recorder']['file_name'])
     if MPI:
         recorder_output_path += ('_' + str(int(rank)))
-    fname_doedata = opt_options['general']['fname_output'] + '_doedata.yaml'
+    fname_doedata = opt_options['general']['fname_output'] + '-doedata.yaml'
 
     # If skip flag, check existence of the doedata file, read, and broadcast to all MPI cores
     doedata = None
@@ -266,7 +266,7 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
                 'len': output_lens[idx],
                 'vec': output_vecs[idx]})
 
-        # Save to yaml file: [output-folder]/[output-name]_doedata.yaml
+        # Save to yaml file: [output-folder]/[output-name]-doedata.yaml
         save_yaml(out_dir, fname_doedata, doedata)
 
     return doedata
