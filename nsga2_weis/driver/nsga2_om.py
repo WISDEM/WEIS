@@ -1,6 +1,8 @@
 import os
 import copy
 from pprint import pprint
+from openfast_io.FileTools     import save_yaml
+from wisdem.inputs.validation         import simple_types
 
 import numpy as np
 
@@ -390,11 +392,42 @@ class NSGA2Driver(Driver):
         )
         self.optimizer_nsga2.get_fronts()  # evaluate the initial fronts
 
+        # get the debug output file for the openmdao nsga2 driver
+        nsga2_output_dir = model.get_outputs_dir()
+        nsga2_debug_collection = dict()
+
+        rv = self.optimizer_nsga2.get_fronts(
+            compute_constrs=True,
+            feasibility_dominates=True,
+        )
+        nsga2_debug_collection[-1]= {
+            "generation": -1,
+            "design_vars_fronts": rv[1],
+            "objs_fronts": rv[2],
+            "constrs_fronts": rv[3],
+        }
+        # create a yaml file at the path
+        save_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+
         # iterate over the specified generations
         for generation in range(max_gen + 1):
             # iterate the population
             print(f"\n\n\nDEBUG!!!!! NSGA2 OM DRIVER STARTING GENERATION {generation}\n\n\n")
             self.optimizer_nsga2.iterate_population()
+
+            rv = self.optimizer_nsga2.get_fronts(
+                compute_constrs=True,
+                feasibility_dominates=True,
+            )
+            nsga2_debug_collection[generation] = {
+                "generation": generation,
+                "design_vars_fronts": rv[1],
+                "objs_fronts": rv[2],
+                "constrs_fronts": rv[3],
+            }
+            # create a yaml file at the path
+            save_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+
         print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
 
         if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2

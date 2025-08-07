@@ -113,6 +113,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
         wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs','totals']
 
         # Setup openmdao problem
+        wt_opt.options['work_dir'] = folder_output  # set the OM working directory
         if opt_options['opt_flag']:
             wt_opt.setup()
         else:
