@@ -1488,22 +1488,31 @@ class FASTLoadCases(ExplicitComponent):
             joints_xyz = np.empty((0, 3))
             N1 = np.array([], dtype=np.int_)
             N2 = np.array([], dtype=np.int_)
+            
+
+            # Every member will have all parameters: circular members have zeros for side-lenghts and rectangular members have zeros for diameters
             d_coarse = np.array([])
             t_coarse = np.array([])
             Ca_coarse = np.array([])
             Cd_coarse = np.array([])
+            a_coarse = np.array([])
+            b_coarse = np.array([])
+            Cay_coarse = np.array([])
+            Cdy_coarse = np.array([])
             
             # Look over members and grab all nodes and internal connections
             n_member = modopt["floating"]["members"]["n_members"]
 
             
             for k in range(n_member):
+
+                member_shape = modopt['floating']['members']['outer_shape'][k]
+
                 kname = modopt['floating']['members']['name'][k]
                 s_grid = inputs[f"member{k}_{kname}:s"]
-                idiam = inputs[f"member{k}_{kname}:outer_diameter"]
+
                 s_coarse = make_coarse_grid(s_grid, idiam)
                 s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}_{kname}:s_ghost1"]), inputs[f"member{k}_{kname}:s_ghost2"]) )
-                id_coarse = np.interp(s_coarse, s_grid, idiam)
                 it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:wall_thickness"])
                 xyz0 = inputs[f"member{k}_{kname}:joint1"]
                 xyz1 = inputs[f"member{k}_{kname}:joint2"]
@@ -1514,11 +1523,11 @@ class FASTLoadCases(ExplicitComponent):
                 nk = joints_xyz.shape[0]
                 N1 = np.append(N1, nk + inode_range + 1)
                 N2 = np.append(N2, nk + inode_range + 2)
-                d_coarse = np.append(d_coarse, id_coarse)  
                 t_coarse = np.append(t_coarse, it_coarse)  
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
 
                 # Collect member coefficients
+                # These are common for all members, so we can just append them
                 Ca_grid_mem = inputs[f"member{k}_{kname}:Ca"]
                 Cd_grid_mem = inputs[f"member{k}_{kname}:Cd"]
 
@@ -1536,8 +1545,40 @@ class FASTLoadCases(ExplicitComponent):
                 Ca_coarse = np.append(Ca_coarse, i_Ca_coarse)  
                 Cd_coarse = np.append(Cd_coarse, i_Cd_coarse)  
 
+                # Start assigning member-shape dependent properties
+                if member_shape == 'circular':
+                    idiam = inputs[f"member{k}_{kname}:outer_diameter"]
+                    id_coarse = np.interp(s_coarse, s_grid, idiam)
+                    d_coarse = np.append(d_coarse, id_coarse)  
+                    a_coarse = np.append(a_coarse, np.zeros_like(id_coarse))
+                    b_coarse = np.append(b_coarse, np.zeros_like(id_coarse))
+                    Cay_coarse = np.append(Cay_coarse, np.zeros_like(id_coarse))
+                    Cdy_coarse = np.append(Cdy_coarse, np.zeros_like(id_coarse))
+                elif member_shape == 'rectangular':
+                    i_a = inputs[f"member{k}_{kname}:side_length_a"]
+                    i_b = inputs[f"member{k}_{kname}:side_length_b"]
+                    ia_coarse = np.interp(s_coarse, s_grid, i_a)
+                    ib_coarse = np.interp(s_coarse, s_grid, i_b)
+                    d_coarse = np.append(d_coarse, np.zeros_like(id_coarse))
+                    a_coarse = np.append(a_coarse, ia_coarse)
+                    b_coarse = np.append(b_coarse, ib_coarse)
+                    Cay_grid_mem = inputs[f"member{k}_{kname}:Cay"]
+                    Cdy_grid_mem = inputs[f"member{k}_{kname}:Cdy"]
+                    i_Cay_coarse = np.interp(s_coarse, s_grid, Cay_grid_mem)
+                    i_Cdy_coarse = np.interp(s_coarse, s_grid, Cdy_grid_mem)
+                    Cay_coarse = np.append(Cay_coarse, i_Cay_coarse)
+                    Cdy_coarse = np.append(Cdy_coarse, i_Cdy_coarse)
+
                 
         if modopt['flags']['offshore']:
+
+            # Get indices for circular and rectangular members
+            idx_circular = np.where(d_coarse > 0.0)[0]
+            idx_rectangular = np.where(a_coarse > 0.0)[0]
+            n_circular = len(idx_circular)
+            n_rectangular = len(idx_rectangular)
+
+
             fst_vt['SeaState']['WtrDens'] = float(inputs['rho_water'][0])
             fst_vt['SeaState']['WtrDpth'] = float(inputs['water_depth'][0])
             fst_vt['Fst']['WtrDpth'] = float(inputs['water_depth'][0])
@@ -1579,8 +1620,12 @@ class FASTLoadCases(ExplicitComponent):
                 joints_xyz[idx,2] += 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
+            assert n_circular + n_rectangular == n_joints, "Error in member shape classification for HydroDyn."
+
             n_members = N1.shape[0]
             ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
+            ijoints_circular = ijoints[idx_circular]
+            ijoints_rectangular = ijoints[idx_rectangular]
             imembers = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['HydroDyn']['NJoints'] = n_joints
             fst_vt['HydroDyn']['JointID'] = ijoints
@@ -1588,13 +1633,19 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
             
-            # Only cylindrical member supported for now
-            fst_vt['HydroDyn']['NPropSetsCyl'] = n_joints      # each joint has a cross section
-            fst_vt['HydroDyn']['CylPropSetID'] = ijoints
-            fst_vt['HydroDyn']['CylPropD'] = d_coarse
-            fst_vt['HydroDyn']['CylPropThck'] = t_coarse
-            fst_vt['HydroDyn']['NPropSetsRec'] = 0   # placeholder for now
-            
+            # Cylindrical member
+            fst_vt['HydroDyn']['NPropSetsCyl'] = n_circular      # each joint has a cross section
+            fst_vt['HydroDyn']['CylPropSetID'] = ijoints_circular
+            fst_vt['HydroDyn']['CylPropD'] = d_coarse[idx_circular]
+            fst_vt['HydroDyn']['CylPropThck'] = t_coarse[idx_circular]
+            # Rectangular member
+            fst_vt['HydroDyn']['NPropSetsRec'] = n_rectangular  # placeholder for now
+            fst_vt['HydroDyn']['RecPropSetID'] = ijoints_rectangular
+            fst_vt['HydroDyn']['RecPropA'] = a_coarse[idx_rectangular]
+            fst_vt['HydroDyn']['RecPropB'] = b_coarse[idx_rectangular]
+            fst_vt['HydroDyn']['RecPropThck'] = t_coarse[idx_rectangular]
+
+
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
@@ -1612,32 +1663,55 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
             # Member-based coefficients
-            if modopt['flags']['floating']:
+            if modopt['flags']['floating']: # Why is this only used for floating? Not offshore as above?
 
                 fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
                 fst_vt['HydroDyn']['MCoefMod']          = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
-                fst_vt['HydroDyn']['NCoefMembersCyl']   = len(imembers)
-                fst_vt['HydroDyn']['MemberID_HydCCyl']  = imembers
-                fst_vt['HydroDyn']['CylMemberCd1']    = fst_vt['HydroDyn']['CylMemberCdMG1']   = Cd_coarse[N1-1]
-                fst_vt['HydroDyn']['CylMemberCa1']    = fst_vt['HydroDyn']['CylMemberCaMG1']   = Ca_coarse[N1-1]
-                fst_vt['HydroDyn']['CylMemberCd2']    = fst_vt['HydroDyn']['CylMemberCdMG2']   = Cd_coarse[N2-1]
-                fst_vt['HydroDyn']['CylMemberCa2']    = fst_vt['HydroDyn']['CylMemberCaMG2']   = Ca_coarse[N2-1]
-                fst_vt['HydroDyn']['CylMemberCb1']    = fst_vt['HydroDyn']['CylMemberCbMG1']   = np.ones(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberCb2']    = fst_vt['HydroDyn']['CylMemberCbMG2']   = np.ones(np.shape(N1))
+                fst_vt['HydroDyn']['NCoefMembersCyl']   = len(idx_circular)
+                fst_vt['HydroDyn']['MemberID_HydCCyl']  = imembers[idx_circular]
+                fst_vt['HydroDyn']['CylMemberCd1']    = fst_vt['HydroDyn']['CylMemberCdMG1']   = Cd_coarse[N1-1][idx_circular]
+                fst_vt['HydroDyn']['CylMemberCa1']    = fst_vt['HydroDyn']['CylMemberCaMG1']   = Ca_coarse[N1-1][idx_circular]
+                fst_vt['HydroDyn']['CylMemberCd2']    = fst_vt['HydroDyn']['CylMemberCdMG2']   = Cd_coarse[N2-1][idx_circular]
+                fst_vt['HydroDyn']['CylMemberCa2']    = fst_vt['HydroDyn']['CylMemberCaMG2']   = Ca_coarse[N2-1][idx_circular]
+                fst_vt['HydroDyn']['CylMemberCb1']    = fst_vt['HydroDyn']['CylMemberCbMG1']   = np.ones(n_circular)
+                fst_vt['HydroDyn']['CylMemberCb2']    = fst_vt['HydroDyn']['CylMemberCbMG2']   = np.ones(n_circular)
 
                 # pass through Cp, Axial Coeffs later, zeros for now
-                fst_vt['HydroDyn']['CylMemberCp1']    = fst_vt['HydroDyn']['CylMemberCpMG1']   = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberCp2']    = fst_vt['HydroDyn']['CylMemberCpMG2']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberCp1']    = fst_vt['HydroDyn']['CylMemberCpMG1']   = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberCp2']    = fst_vt['HydroDyn']['CylMemberCpMG2']   = np.zeros(n_circular)
 
-                fst_vt['HydroDyn']['CylMemberAxCd1']  = fst_vt['HydroDyn']['CylMemberAxCdMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberAxCa1']  = fst_vt['HydroDyn']['CylMemberAxCaMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberAxCd2']  = fst_vt['HydroDyn']['CylMemberAxCdMG2'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberAxCa2']  = fst_vt['HydroDyn']['CylMemberAxCaMG2'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberAxCp1']  = fst_vt['HydroDyn']['CylMemberAxCpMG1'] = np.zeros(np.shape(N1))
-                fst_vt['HydroDyn']['CylMemberAxCp2']  = fst_vt['HydroDyn']['CylMemberAxCpMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['CylMemberAxCd1']  = fst_vt['HydroDyn']['CylMemberAxCdMG1'] = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberAxCa1']  = fst_vt['HydroDyn']['CylMemberAxCaMG1'] = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberAxCd2']  = fst_vt['HydroDyn']['CylMemberAxCdMG2'] = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberAxCa2']  = fst_vt['HydroDyn']['CylMemberAxCaMG2'] = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberAxCp1']  = fst_vt['HydroDyn']['CylMemberAxCpMG1'] = np.zeros(n_circular)
+                fst_vt['HydroDyn']['CylMemberAxCp2']  = fst_vt['HydroDyn']['CylMemberAxCpMG2'] = np.zeros(n_circular)
 
-                # TODO: member-based coefficients for rectangular members
+                # For rectangular members
+                fst_vt['HydroDyn']['NCoefMembersRec']   = len(idx_rectangular)
+                fst_vt['HydroDyn']['MemberID_HydCRec']  = imembers[idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCdA1']    = fst_vt['HydroDyn']['RecMemberCdAMG1']   = Cd_coarse[N1-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCdA2']    = fst_vt['HydroDyn']['RecMemberCdAMG2']   = Cd_coarse[N2-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCdB1']    = fst_vt['HydroDyn']['RecMemberCdAMG1']   = Cdy_coarse[N1-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCdB2']    = fst_vt['HydroDyn']['RecMemberCdAMG2']   = Cdy_coarse[N2-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCaA1']    = fst_vt['HydroDyn']['RecMemberCaAMG1']   = Ca_coarse[N1-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCaA2']    = fst_vt['HydroDyn']['RecMemberCaAMG2']   = Ca_coarse[N2-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCaB1']    = fst_vt['HydroDyn']['RecMemberCaAMG1']   = Cay_coarse[N1-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCaB2']    = fst_vt['HydroDyn']['RecMemberCaAMG2']   = Cay_coarse[N2-1][idx_rectangular]
+                fst_vt['HydroDyn']['RecMemberCb1']    = fst_vt['HydroDyn']['RecMemberCbAMG1']   = np.ones(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberCb2']    = fst_vt['HydroDyn']['RecMemberCbAMG2']   = np.ones(n_rectangular)
+
+                # pass through Cp, Axial Coeffs later, zeros for now
+                fst_vt['HydroDyn']['RecMemberCp1']    = fst_vt['HydroDyn']['RecMemberCpMG1']   = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberCp2']    = fst_vt['HydroDyn']['RecMemberCpMG2']   = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCd1']  = fst_vt['HydroDyn']['RecMemberAxCdMG1'] = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCa1']  = fst_vt['HydroDyn']['RecMemberAxCaMG1'] = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCd2']  = fst_vt['HydroDyn']['RecMemberAxCdMG2'] = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCa2']  = fst_vt['HydroDyn']['RecMemberAxCaMG2'] = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCp1']  = fst_vt['HydroDyn']['RecMemberAxCpMG1'] = np.zeros(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberAxCp2']  = fst_vt['HydroDyn']['RecMemberAxCpMG2'] = np.zeros(n_rectangular)
+
             
             # Simple Cylindrical and rectangular member coefficients
             if 'CylSimplCd' not in fst_vt['HydroDyn']:
