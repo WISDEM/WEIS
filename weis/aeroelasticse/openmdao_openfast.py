@@ -275,7 +275,7 @@ class FASTLoadCases(ExplicitComponent):
                         self.add_input(f"member{k}_{kname}:Cd", val=np.zeros(n_height_mem))
                         self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height_mem), units="m")
                     elif modopt["floating"]["members"]["outer_shape"][k] == "rectangular":
-                        raise Exception('Rectangular members are not yet supported in OpenFAST')
+                        # raise Exception('Rectangular members are not yet supported in OpenFAST')
                         self.add_input(f"member{k}_{kname}:side_length_a", val=np.zeros(n_height_mem), units="m")
                         self.add_input(f"member{k}_{kname}:side_length_b", val=np.zeros(n_height_mem), units="m")
                         self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
@@ -1499,7 +1499,11 @@ class FASTLoadCases(ExplicitComponent):
             b_coarse = np.array([])
             Cay_coarse = np.array([])
             Cdy_coarse = np.array([])
-            
+            MSecGeom = np.array([], dtype=np.int_)  # 1 for circular, 2 for rectangular
+
+            idx_circular_member = [i for i, shape in enumerate(modopt['floating']['members']['outer_shape']) if shape == 'circular']
+            idx_rectangular_member = [i for i, shape in enumerate(modopt['floating']['members']['outer_shape']) if shape == 'rectangular']
+
             # Look over members and grab all nodes and internal connections
             n_member = modopt["floating"]["members"]["n_members"]
 
@@ -1511,7 +1515,16 @@ class FASTLoadCases(ExplicitComponent):
                 kname = modopt['floating']['members']['name'][k]
                 s_grid = inputs[f"member{k}_{kname}:s"]
 
-                s_coarse = make_coarse_grid(s_grid, idiam)
+                if member_shape == 'circular':
+                    idiam = inputs[f"member{k}_{kname}:outer_diameter"]
+                    i_dim = idiam
+                elif member_shape == 'rectangular':
+                    i_a = inputs[f"member{k}_{kname}:side_length_a"]
+                    i_b = inputs[f"member{k}_{kname}:side_length_b"]
+                    i_dim = i_a
+
+
+                s_coarse = make_coarse_grid(s_grid, i_dim)
                 s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}_{kname}:s_ghost1"]), inputs[f"member{k}_{kname}:s_ghost2"]) )
                 it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:wall_thickness"])
                 xyz0 = inputs[f"member{k}_{kname}:joint1"]
@@ -1547,7 +1560,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 # Start assigning member-shape dependent properties
                 if member_shape == 'circular':
-                    idiam = inputs[f"member{k}_{kname}:outer_diameter"]
+                    MSecGeom = np.append(MSecGeom, 1)
                     id_coarse = np.interp(s_coarse, s_grid, idiam)
                     d_coarse = np.append(d_coarse, id_coarse)  
                     a_coarse = np.append(a_coarse, np.zeros_like(id_coarse))
@@ -1555,8 +1568,7 @@ class FASTLoadCases(ExplicitComponent):
                     Cay_coarse = np.append(Cay_coarse, np.zeros_like(id_coarse))
                     Cdy_coarse = np.append(Cdy_coarse, np.zeros_like(id_coarse))
                 elif member_shape == 'rectangular':
-                    i_a = inputs[f"member{k}_{kname}:side_length_a"]
-                    i_b = inputs[f"member{k}_{kname}:side_length_b"]
+                    MSecGeom = np.append(MSecGeom, 2)
                     ia_coarse = np.interp(s_coarse, s_grid, i_a)
                     ib_coarse = np.interp(s_coarse, s_grid, i_b)
                     d_coarse = np.append(d_coarse, np.zeros_like(id_coarse))
@@ -1650,11 +1662,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MemberID'] = imembers
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
             fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
-            fst_vt['HydroDyn']['MSecGeom'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['MSecGeom'] = MSecGeom
             fst_vt['HydroDyn']['MSpinOrient'] = np.zeros( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['MHstLMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['MHstLMod'] = MSecGeom
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['NCoefDpthCyl'] = fst_vt['HydroDyn']['NCoefMembersCyl'] = 0
@@ -1668,12 +1680,12 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
                 fst_vt['HydroDyn']['MCoefMod']          = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
-                fst_vt['HydroDyn']['NCoefMembersCyl']   = len(idx_circular)
-                fst_vt['HydroDyn']['MemberID_HydCCyl']  = imembers[idx_circular]
-                fst_vt['HydroDyn']['CylMemberCd1']    = fst_vt['HydroDyn']['CylMemberCdMG1']   = Cd_coarse[N1-1][idx_circular]
-                fst_vt['HydroDyn']['CylMemberCa1']    = fst_vt['HydroDyn']['CylMemberCaMG1']   = Ca_coarse[N1-1][idx_circular]
-                fst_vt['HydroDyn']['CylMemberCd2']    = fst_vt['HydroDyn']['CylMemberCdMG2']   = Cd_coarse[N2-1][idx_circular]
-                fst_vt['HydroDyn']['CylMemberCa2']    = fst_vt['HydroDyn']['CylMemberCaMG2']   = Ca_coarse[N2-1][idx_circular]
+                fst_vt['HydroDyn']['NCoefMembersCyl']   = len(idx_circular_member)
+                fst_vt['HydroDyn']['MemberID_HydCCyl']  = imembers[idx_circular_member]
+                fst_vt['HydroDyn']['CylMemberCd1']    = fst_vt['HydroDyn']['CylMemberCdMG1']   = Cd_coarse[N1[idx_circular_member]-1]
+                fst_vt['HydroDyn']['CylMemberCa1']    = fst_vt['HydroDyn']['CylMemberCaMG1']   = Ca_coarse[N1[idx_circular_member]-1]
+                fst_vt['HydroDyn']['CylMemberCd2']    = fst_vt['HydroDyn']['CylMemberCdMG2']   = Cd_coarse[N2[idx_circular_member]-1]
+                fst_vt['HydroDyn']['CylMemberCa2']    = fst_vt['HydroDyn']['CylMemberCaMG2']   = Ca_coarse[N2[idx_circular_member]-1]
                 fst_vt['HydroDyn']['CylMemberCb1']    = fst_vt['HydroDyn']['CylMemberCbMG1']   = np.ones(n_circular)
                 fst_vt['HydroDyn']['CylMemberCb2']    = fst_vt['HydroDyn']['CylMemberCbMG2']   = np.ones(n_circular)
 
@@ -1689,18 +1701,18 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['CylMemberAxCp2']  = fst_vt['HydroDyn']['CylMemberAxCpMG2'] = np.zeros(n_circular)
 
                 # For rectangular members
-                fst_vt['HydroDyn']['NCoefMembersRec']   = len(idx_rectangular)
-                fst_vt['HydroDyn']['MemberID_HydCRec']  = imembers[idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCdA1']    = fst_vt['HydroDyn']['RecMemberCdAMG1']   = Cd_coarse[N1-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCdA2']    = fst_vt['HydroDyn']['RecMemberCdAMG2']   = Cd_coarse[N2-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCdB1']    = fst_vt['HydroDyn']['RecMemberCdAMG1']   = Cdy_coarse[N1-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCdB2']    = fst_vt['HydroDyn']['RecMemberCdAMG2']   = Cdy_coarse[N2-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCaA1']    = fst_vt['HydroDyn']['RecMemberCaAMG1']   = Ca_coarse[N1-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCaA2']    = fst_vt['HydroDyn']['RecMemberCaAMG2']   = Ca_coarse[N2-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCaB1']    = fst_vt['HydroDyn']['RecMemberCaAMG1']   = Cay_coarse[N1-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCaB2']    = fst_vt['HydroDyn']['RecMemberCaAMG2']   = Cay_coarse[N2-1][idx_rectangular]
-                fst_vt['HydroDyn']['RecMemberCb1']    = fst_vt['HydroDyn']['RecMemberCbAMG1']   = np.ones(n_rectangular)
-                fst_vt['HydroDyn']['RecMemberCb2']    = fst_vt['HydroDyn']['RecMemberCbAMG2']   = np.ones(n_rectangular)
+                fst_vt['HydroDyn']['NCoefMembersRec']   = len(idx_rectangular_member)
+                fst_vt['HydroDyn']['MemberID_HydCRec']  = imembers[idx_rectangular_member]
+                fst_vt['HydroDyn']['RecMemberCdA1']    = fst_vt['HydroDyn']['RecMemberCdAMG1']   = Cd_coarse[N1[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCdA2']    = fst_vt['HydroDyn']['RecMemberCdAMG2']   = Cd_coarse[N2[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCdB1']    = fst_vt['HydroDyn']['RecMemberCdBMG1']   = Cdy_coarse[N1[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCdB2']    = fst_vt['HydroDyn']['RecMemberCdBMG2']   = Cdy_coarse[N2[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCaA1']    = fst_vt['HydroDyn']['RecMemberCaAMG1']   = Ca_coarse[N1[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCaA2']    = fst_vt['HydroDyn']['RecMemberCaAMG2']   = Ca_coarse[N2[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCaB1']    = fst_vt['HydroDyn']['RecMemberCaBMG1']   = Cay_coarse[N1[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCaB2']    = fst_vt['HydroDyn']['RecMemberCaBMG2']   = Cay_coarse[N2[idx_rectangular_member]-1]
+                fst_vt['HydroDyn']['RecMemberCb1']    = fst_vt['HydroDyn']['RecMemberCbMG1']   = np.ones(n_rectangular)
+                fst_vt['HydroDyn']['RecMemberCb2']    = fst_vt['HydroDyn']['RecMemberCbMG2']   = np.ones(n_rectangular)
 
                 # pass through Cp, Axial Coeffs later, zeros for now
                 fst_vt['HydroDyn']['RecMemberCp1']    = fst_vt['HydroDyn']['RecMemberCpMG1']   = np.zeros(n_rectangular)
