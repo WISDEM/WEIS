@@ -132,7 +132,7 @@ driver:
         max_iter: 50      # Maximum number of iterations (SLSQP)
         maxgen: 2        # Maximum number of generations (DE)
         # maxtime: 3420
-        pop_size: 20
+        pop_size: 100
         max_gen: 20
         run_parallel: True
         solver: NSGA2  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'

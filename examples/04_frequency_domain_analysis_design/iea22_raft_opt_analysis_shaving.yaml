@@ -7,7 +7,7 @@ design_variables:
         rosco_tuning:
         - name: ps_percent
           start: 0.8
-          min: 0.6
+          min: 0.4
           max: 1.0
     tower:
         outer_diameter:
@@ -81,7 +81,7 @@ constraints:
             upper_bound: 0.17453292519943295 # 10 deg
         metacentric_height:
             flag: True
-            lower_bound: 15.0
+            lower_bound: 10.0
         pitch_period:
             flag: True
             lower_bound: 15. # +/- 10%
@@ -135,17 +135,17 @@ driver:
         max_iter: 50      # Maximum number of iterations (SLSQP)
         maxgen: 2        # Maximum number of generations (DE)
         # maxtime: 3420
-        pop_size: 100
-        max_gen: 10
+        pop_size: 200
+        max_gen: 20
         run_parallel: True
         solver: NSGA2  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         seed: 12345
         # procs_per_model: 10
         # penalty_parameter: 10
         # penalty_exponent: 10
-        # Pc: 10
+        Pc: 0.9
         # eta_c: 10
-        # Pm: 10
+        Pm: 0.3
         # eta_m: 10
         compute_pareto: True
 
