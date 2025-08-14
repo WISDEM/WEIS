@@ -97,6 +97,12 @@ openfast_input_map = {
     'wake_mod': ("AeroDyn","Wake_Mod"),
     'tau1_const': ("AeroDyn","tau1_const"),
 
+    'stc_number': ("ServoDyn", "NumSStC"),
+    'stc_filenames': ("ServoDyn","SStCfiles"),
+    'excursion_load': ("SStC","StaticLoad"),
+
+    'pitch_control_mode': ("ServoDyn","PCMode"),
+    'torque_control_mode': ("ServoDyn","VSContrl"),
 
     'mooring_failureid': ("MoorDyn","Failure_ID"),
     'mooring_failurepoint': ("MoorDyn","Failure_Point"),
