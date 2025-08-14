@@ -38,9 +38,11 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
         recorder_output_path = opt_options['recorder']['file_name']
     else:
         recorder_output_path = os.path.join(out_dir, opt_options['recorder']['file_name'])
+    fname_doedata = recorder_output_path + '-doedata.yaml'
+    fname_sm = recorder_output_path + '-surrogate.smt'
+
     if MPI:
         recorder_output_path += ('_' + str(int(rank)))
-    fname_doedata = opt_options['general']['fname_output'] + '-doedata.yaml'
 
     # If skip flag, check existence of the doedata file, read, and broadcast to all MPI cores
     doedata = None
@@ -55,10 +57,14 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
                     print('Unable to read {:} file. Executing design of experiments.'.format(fname_doedata))
             else:
                 print('{:} file does not exist. Executing design of experiments.'.format(fname_doedata))
+    if opt_options['driver']['design_of_experiments']['skip_training_if_sm_exist']:
+        skip_training_if_sm_exist = True
+    else:
+        skip_training_if_sm_exist = False
     if MPI:
         doedata = MPI.COMM_WORLD.bcast(doedata, root=0)
     if doedata != None:
-        return doedata
+        return doedata, fname_doedata, fname_sm, skip_training_if_sm_exist
 
     # Raise error when a proper simulation level is not specified.
     if modeling_options['OpenFAST']['flag']:
@@ -269,5 +275,5 @@ def ftw_doe(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_
         # Save to yaml file: [output-folder]/[output-name]-doedata.yaml
         save_yaml(out_dir, fname_doedata, doedata)
 
-    return doedata
+    return doedata, fname_doedata, fname_sm, skip_training_if_sm_exist
 
