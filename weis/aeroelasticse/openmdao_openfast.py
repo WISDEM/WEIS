@@ -2419,6 +2419,19 @@ class FASTLoadCases(ExplicitComponent):
                             fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
                             magnitude_channels[f'M1N1{s}{k}K{x}e'] = [f'M1N1{k}K{x}e'] if x=='z' else [f'M1N1{k}Kxe', f'M1N1{k}Kye']
 
+            # Fatigue of mooring lines
+            if modopt['flags']['mooring']:
+                mooring_fatigue = FatigueParams(
+                    slope = 3,      # For chain
+                    load2stress=1.0,      # Placeholder
+                    ultimate_stress=1e6,  # Placeholder
+                    S_intercept=1.2e11    # Chain value
+                    )
+                for i_line in range(modopt['mooring']['n_lines']):
+                    fatigue_channels[f'ANCHTEN{i_line+1}'] = mooring_fatigue
+                    fatigue_channels[f'FAIRTEN{i_line+1}'] = mooring_fatigue
+
+
         # Store settings
         fastBatch.goodman            = modopt['General']['goodman_correction'] # Where does this get placed in schema?
         fastBatch.fatigue_channels   = fatigue_channels
