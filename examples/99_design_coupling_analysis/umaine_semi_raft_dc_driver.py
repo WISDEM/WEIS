@@ -1,5 +1,6 @@
 import os
 from weis.ftw.weis_wrapper import ftw_doe
+from weis.ftw.
 
 # TEST_RUN will reduce the number and duration of simulations
 TEST_RUN = False
@@ -14,6 +15,11 @@ modeling_override = {}
 analysis_override = {}
 
 # Run DOE to prepare for the surrogate model training
-doedata = ftw_doe(
+doedata, fname_doedata, fname_sm, skip_training_if_sm_exist = ftw_doe(
     fname_wt_input, fname_modeling_options, fname_analysis_options,
     geometry_override, modeling_override, analysis_override, TEST_RUN)
+
+# Train SM
+smdata = ftw_sm_train(doedata=doedata, sm=None,
+    fname_doedata=fname_doedata, fname_sm=fname_sm,
+    skip_training_if_sm_exist = skip_training_if_sm_exist)
