@@ -21,15 +21,16 @@ def ftw_surrogate_modeling(fname_doedata=None, fname_smt=None,
         n_cores = 1
     # Broadcast arguments (trust data from rank 0)
     if MPI and n_cores > 1:
-        MPI.COMM_WORLD.bcast(fname_doedata, root=0)
-        MPI.COMM_WORLD.bcast(fname_smt, root=0)
-        MPI.COMM_WORLD.bcast(doedata, root=0)
-        MPI.COMM_WORLD.bcast(WTSM, root=0)
-        MPI.COMM_WORLD.bcast(skip_training_if_sm_exist, root=0)
+        fname_doedata = MPI.COMM_WORLD.bcast(fname_doedata, root=0)
+        fname_smt = MPI.COMM_WORLD.bcast(fname_smt, root=0)
+        doedata = MPI.COMM_WORLD.bcast(doedata, root=0)
+        WTSM = MPI.COMM_WORLD.bcast(WTSM, root=0)
+        skip_training_if_sm_exist = MPI.COMM_WORLD.bcast(skip_training_if_sm_exist, root=0)
     # Parse arguments
     if skip_training_if_sm_exist: # Try to read WTSM and/or smt
         # Check if WTSM is provided
         if type(WTSM) == WTsurrogate:
+            print('WTSM object provided. Returning WTSM.')
             # Try to write to file if rank == 0
             if rank == 0:
                 try:
@@ -39,14 +40,14 @@ def ftw_surrogate_modeling(fname_doedata=None, fname_smt=None,
                 except:
                     pass
             return WTSM # Must return at here as WTSM is already provided
-        elif type(WTSM) == None:
+        elif type(WTSM) == type(None):
             # Read smt file
             if type(fname_smt) == str:
                 smt_loaded = False
+                WTSM = WTsurrogate()
                 if rank == 0: # Read and broadcast from rank 0
                     if os.path.isfile(fname_smt):
                         try:
-                            WTSM = WTsurrogate()
                             WTSM._read_sm(fname_smt)
                             if WTSM._sm_trained: # If successfully loaded
                                 smt_loaded = True
@@ -54,12 +55,19 @@ def ftw_surrogate_modeling(fname_doedata=None, fname_smt=None,
                             pass
                 if MPI:
                     # Broadcast flag
-                    MPI.COMM_WORLD.bcast(smt_loaded, root=0)
+                    smt_loaded = MPI.COMM_WORLD.bcast(smt_loaded, root=0)
                 if smt_loaded:
                     if MPI:
                         # Broadcast WTSM
-                        MPI.COMM_WORLD.bcast(WTSM, root=0)
+                        sm = WTSM._sm
+                        sm = MPI.COMM_WORLD.bcast(sm, root=0)
+                        WTSM._sm = sm
+                        WTSM._sm_trained = True
+                    if WTSM._rank == 0:
+                        print('{:} file exists. Skipping surrogate model training'.format(fname_smt))
                     return WTSM
+                else:
+                    WTSM = None
     # WTSM is not privided and smt reading is not successful.
     # Generate WTSM based on doedata
     if type(doedata) == dict: # doedata provided
@@ -81,6 +89,7 @@ class WTsurrogate:
     def __init__(self, doedata=None):
         self._doe_loaded = False
         self._sm_trained = False
+        self._sm = None
         # MPI cores and rank number
         if MPI:
             self._rank = MPI.COMM_WORLD.Get_rank()
@@ -90,7 +99,7 @@ class WTsurrogate:
             self._n_cores = 1
         # Broadcast doedata to all cores
         if MPI and self._n_cores > 1:
-            MPI.COMM_WORLD.bcast(doedata, root=0)
+            doedata = MPI.COMM_WORLD.bcast(doedata, root=0)
         # If doedata=None, sm training performed manually
         # If doedata is provided, sm training performed automatically
         if type(doedata) == dict:
@@ -249,12 +258,10 @@ class WTsurrogate:
                     sm_dict = copy(sm_list_flattened[idx])
                     sn = sm_dict['serial_number']
                     sm_list_new[sn] = sm_dict
-                print('rank={:}, sm_list_new={:}'.format(self._rank, sm_list_new))
             else:
                 sm_list_new = []
-                print('rank={:}, len(sm_list_new)={:}'.format(self._rank, len(sm_list_new)))
             # MPI Re-broadcast full list to all cores
-            MPI.COMM_WORLD.bcast(sm_list_new, root=0)
+            sm_list_new = MPI.COMM_WORLD.bcast(sm_list_new, root=0)
         else:
             sm_list_new = sm_list
         # Save to class object, finalize training
