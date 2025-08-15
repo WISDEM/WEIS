@@ -121,6 +121,7 @@ driver:
     generator: LatinHypercube    # Type of input generator. (Uniform)
     num_samples: 200        # number of samples for (Uniform only)
     skip_doe_if_doedata_exist: True
+    skip_training_if_sm_exist: True
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder

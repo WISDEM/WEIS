@@ -350,6 +350,10 @@ properties:
                         type: boolean
                         default: False
                         description: Toggle skipping the design of experiments if extracted results (fname_output-doedata.yaml) exist
+                    skip_training_if_sm_exist:
+                        type: boolean
+                        default: False
+                        description: Toggle skipping the surrogate model training if trained results are provided.
     constraints:
         # GB: These all need gammas or safety factors
         type: object
