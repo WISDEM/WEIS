@@ -267,7 +267,70 @@ class WTsurrogate:
         # Save to class object, finalize training
         self._sm = sm_list_new
         self._sm_trained = True
+    def get_input_bounds(self):
+        try:
+            return np.array(self._sm[0]['input']['bounds'])
+        except:
+            try:
+                return self._bounds_in
+            except:
+                warnings.warn('No data loaded.')
+        return None
+    def predict(self, x):
+        # Check if surrogate model is trained or loaded.
+        if not self._sm_trained:
+            warnings.warn('Surrogate model not trained.')
+            return None
+        # Get all surrogate models
+        sm_list = self._sm
+        n_data = x.shape[0]
+        n_x = x.shape[1]
+        # For each input data point
+        for idx in range(n_data):
+            yresult = None
+            vresult = None
+            yt = np.zeros((1,0), dtype=float)
+            vt = np.zeros((1,0), dtype=float)
+            for sm in sm_list:
+                # sn = sm['serial_number']
+                smobj = sm['surrogate_model_object']
+                # input_label = sm['input']['label']
+                # input_len = sm['input']['len']
+                # input_index = sm['input']['index']
+                # input_bounds = sm['input']['bounds']
+                # output_label = sm['output']['label']
+                # output_len = sm['output']['len']
+                # output_index = sm['output']['index']
+                # output_bounds = sm['output']['bounds']
+                yval, vval = smobj.predict(x[idx,:].reshape(1,-1))
+                yt = np.concatenate((yt, yval), axis=1)
+                vt = np.concatenate((vt, vval), axis=1)
+            if yresult == None:
+                yresult = copy(yt)
+            else:
+                yresult = np.concatenate((yresult, copy(yt)), axis=0)
+            if vresult == None:
+                vresult = copy(vt)
+            else:
+                vresult = np.concatenate((vresult, copy(vt)), axis=0)
+        return yresult, vresult
 
+
+
+
+
+
+        for sm in sm_list:
+            sn = sm['serial_number']
+            smobj = sm['surrogate_model_object']
+            input_label = sm['input']['label']
+            input_len = sm['input']['len']
+            input_index = sm['input']['index']
+            input_bounds = sm['input']['bounds']
+            output_label = sm['output']['label']
+            output_len = sm['output']['len']
+            output_index = sm['output']['index']
+            output_bounds = sm['output']['bounds']
 
 
 

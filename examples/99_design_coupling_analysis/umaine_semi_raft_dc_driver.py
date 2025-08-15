@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from weis.ftw.weis_wrapper import ftw_doe
 from weis.ftw.surrogate    import ftw_surrogate_modeling
 
@@ -6,7 +7,8 @@ from weis.ftw.surrogate    import ftw_surrogate_modeling
 TEST_RUN = False
 
 ## File management
-run_dir = os.path.dirname( os.path.realpath(__file__) )
+run_dir = os.path.realpath(os.curdir)
+#run_dir = os.path.dirname( os.path.realpath(__file__) )
 fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S_rectangular.yaml")
 fname_modeling_options = os.path.join(run_dir, "umaine_semi_raft_dc_modeling.yaml")
 fname_analysis_options = os.path.join(run_dir, "umaine_semi_raft_dc_analysis.yaml")
@@ -22,3 +24,13 @@ doedata, fname_doedata, fname_smt, skip_training_if_sm_exist = ftw_doe(
 # Train WTSM
 WTSM = ftw_surrogate_modeling(fname_doedata=fname_doedata, fname_smt=fname_smt,
     doedata=doedata, WTSM=None, skip_training_if_sm_exist=skip_training_if_sm_exist)
+
+# Usage Example (Temporary code --- to be removed)
+input_bounds = WTSM.get_input_bounds()
+input_lower = input_bounds[0,:].reshape(1,-1)
+input_upper = input_bounds[1,:].reshape(1,-1)
+x_normalized = np.random.rand(1,input_lower.size)
+x = input_lower + (input_upper - input_lower)*x_normalized
+y, v = WTSM.predict(x)
+print(y)
+print(v)
