@@ -174,13 +174,11 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
+        orig_dir = os.getcwd()
+        FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
+        os.chdir(FAST_directory)
         if not self.use_exe: # Use library
 
-            FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
-            
-            orig_dir = os.getcwd()
-            os.chdir(FAST_directory)
-        
             openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.basename(writer.FAST_InputFileOut)))
             openfastlib.run()
 
@@ -196,7 +194,6 @@ class runFAST_pywrapper(object):
                                        magnitude_channels=self.magnitude_channels, fatigue_channels=self.fatigue_channels)
 
             # if save_file: write_fast
-            os.chdir(orig_dir)
 
         else: # use executable
             wrapper = FAST_wrapper()
@@ -245,7 +242,10 @@ class runFAST_pywrapper(object):
 
                 output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, name=self.FAST_InputFile,
                                            magnitude_channels=self.magnitude_channels, fatigue_channels=self.fatigue_channels)
-
+        
+        # Change back to original directory
+        os.chdir(orig_dir)
+        
         # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
