@@ -419,8 +419,8 @@ def update_splom(csv_data, selected_channels):
     simplified_names = {}
     simplified_df = df[available_vars].copy()
     
-    # Add row index for linking across subplots
-    simplified_df['row_index'] = range(len(simplified_df))
+    # Add row index for linking across subplots with color
+    simplified_df['sample_id'] = range(len(simplified_df))
     
     for var in available_vars:
         # Split by '.' and take the last element
@@ -429,14 +429,16 @@ def update_splom(csv_data, selected_channels):
         # Rename column in dataframe
         simplified_df = simplified_df.rename(columns={var: simplified_name})
     
-    # Get the simplified column names (excluding row_index)
+    # Get the simplified column names (excluding sample_id)
     simplified_vars = [simplified_names[var] for var in available_vars]
     
-    # Create scatter plot matrix with simplified column names and hover data
+    # Create scatter plot matrix with color-coded samples for linking
     splom_fig = px.scatter_matrix(
         simplified_df,
         dimensions=simplified_vars,
-        hover_data=['row_index'],
+        color='sample_id',
+        hover_data=['sample_id'],
+        color_continuous_scale='viridis',
         title=f'Scatter Plot Matrix ({len(available_vars)} variables)'
     )
     
@@ -449,17 +451,24 @@ def update_splom(csv_data, selected_channels):
             'xanchor': 'center'
         },
         # Improve hover behavior for linked data
-        hovermode='closest'
+        hovermode='closest',
+        # Add colorbar title
+        coloraxis_colorbar=dict(
+            title="Sample ID",
+            title_side="right"
+        )
     )
     splom_fig.update_traces(
         diagonal_visible=True, 
         showlowerhalf=False, 
         showupperhalf=True,
-        # Customize hover template to show row index
-        hovertemplate='<b>Row %{customdata[0]}</b><br>' +
+        # Customize hover template to show sample ID
+        hovertemplate='<b>Sample %{customdata[0]}</b><br>' +
                       '%{xaxis.title.text}: %{x}<br>' +
                       '%{yaxis.title.text}: %{y}<br>' +
-                      '<extra></extra>'
+                      '<extra></extra>',
+        # Increase marker size for better visibility
+        marker=dict(size=4, line=dict(width=0.5, color='white'))
     )
     
     return splom_fig

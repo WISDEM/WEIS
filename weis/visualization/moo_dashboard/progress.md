@@ -5,7 +5,7 @@ This is having the same coding environment as WEIS Input/Output Viz tool (appSer
 ## Action Items
 - [X] Data Upload
 - [X] Dynamic Scatter plot matrix renderer with toggle buttons - channel multi-selection from the user
-- [ ] Link samples
+- [X] Link samples
 - [ ] Show Pareto Fronts
 - [ ] Download interactive version of html
 
