@@ -604,7 +604,7 @@ components:
               cylindrical: True
 
             - name: col2_freeboard
-              location: [51.75, 1.0471975, 15.0]
+              location: [51.75, 1.0471976, 15.0]
               cylindrical: True
 
             - name: col3_keel
