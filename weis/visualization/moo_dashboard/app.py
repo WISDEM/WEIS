@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, dash_table, Input, Output, State, callback, callback_context
+from dash import Dash, dcc, html, Input, Output, State, callback, callback_context, ALL
 import dash_bootstrap_components as dbc
 import base64
 import yaml
@@ -65,18 +65,33 @@ yaml_file_input = dbc.Row([
                     ),
                 ], className="mb-3")
 
+cfg_graph_input = dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Channels to display:", className="fw-bold mb-2"),
+                        html.Div(id='channels', children=[
+                            dbc.Alert("Load YAML file to see variable options", color="info", className="text-center")
+                        ]),
+                    ]),
+                ], className="mb-3")
+
 app.layout = html.Div([
     dbc.Container([
+        # File Loaders
         dbc.Row([
             dbc.Col(csv_file_input, width=12),
             dbc.Col(yaml_file_input, width=12)
         ], className="mt-4"),  # Added margin at the top
+
+        # Plot Renderers
         dbc.Row([
-            dbc.Col(dcc.Graph(id='splom'), width=12)
-        ], className="mt-3")
+            dbc.Col(cfg_graph_input, width=4),
+            dbc.Col(dcc.Graph(id='splom'), width=8)
+        ], className="mt-4"),  # Added margin at the top
     ]),
+    # Store data to use across callbacks
     dcc.Store(id='csv-df'),
-    dcc.Store(id='yaml-df')
+    dcc.Store(id='yaml-df'),
+    dcc.Store(id='selected-channels', data=[]),  # Store list of selected channels
 ])
 
 
@@ -203,8 +218,18 @@ def load_yaml_data(contents, load_clicks, filename, date, file_path):
     
     elif trigger_id == 'yaml-load-btn' and load_clicks and file_path:
         # File path was entered and load button clicked
-        if file_path.endswith('.yaml') or file_path.endswith('.yml'):
-            config = yaml.safe_load(file_path)
+        try:
+            if file_path.endswith('.yaml') or file_path.endswith('.yml'):
+                with open(file_path, 'r') as file:
+                    config = yaml.safe_load(file)
+            else:
+                print("Unsupported file format")
+                return None
+        except Exception as e:
+            print(f"Error reading YAML file: {e}")
+            return None
+    else:
+        return None
     
     objectives = extract_variable_names(config.get('objectives', []))
     constraints = extract_variable_names(config.get('constraints', []))
@@ -219,33 +244,132 @@ def load_yaml_data(contents, load_clicks, filename, date, file_path):
         'design_vars': design_vars
     }
 
+#######################################################
+## Configuration Panel for Dynamic SPLOM Generation
+## We give users which channels to display in the SPLOM
+#######################################################
 
-# @callback(Output('output-data-upload', 'children'),
-#           Input('csv-df', 'data'))
-# def update_output(stored_data):
-#     if stored_data is not None:
-#         df = pd.read_json(io.StringIO(stored_data), orient='split')
-#         return html.Div([
-#             dash_table.DataTable(
-#                 df.to_dict('records'),
-#                 [{'name': i, 'id': i} for i in df.columns]
-#             ),
-#         ])
+# Callback to create dynamic button groups for channels selection
+@callback(Output('channels', 'children'),  # Remove the list brackets
+          [Input('yaml-df', 'data'),
+           Input('selected-channels', 'data')])
+def update_channel_buttons(yaml_data, selected_channels):
+    if yaml_data is None:
+        no_data_msg = dbc.Alert("Load YAML file to see variable options", color="info", className="text-center")
+        return [no_data_msg]  # Return as a list since we want multiple children
+    
+    # Ensure selected variables are lists
+    selected_channels = selected_channels or []
+
+    # Extract all variables
+    objectives = yaml_data.get('objectives', [])
+    constraints = yaml_data.get('constraints', [])
+    design_vars = yaml_data.get('design_vars', [])
+    
+    all_variables = objectives + constraints + design_vars
+    
+    if not all_variables:
+        no_vars_msg = dbc.Alert("No variables found in YAML file", color="warning", className="text-center")
+        return [no_vars_msg]  # Return as a list
+    
+    # Create button groups for each category
+    def create_button_group(variables, category_name, color, selected_vars):
+        if not variables:
+            return []
+        
+        buttons = []
+        for var in variables:
+            # Determine if this button should be active (filled) or outline
+            is_selected = (var in selected_vars)
+            buttons.append(
+                dbc.Button(
+                    var,
+                    id={'type': 'channel-btn', 'index': var},  # Changed to 'channel-btn'
+                    color=color,
+                    outline=not is_selected,  # Filled if selected, outline if not
+                    size='sm',
+                    className='me-1 mb-1'
+                )
+            )
+        
+        return [
+            html.Div([
+                html.Small(category_name, className="text-muted fw-bold"),
+                html.Div(buttons, className="d-flex flex-wrap")
+            ], className="mb-2")
+        ]
+
+    # Create channel buttons
+    buttons = []
+    if objectives:
+        buttons.extend(create_button_group(objectives, "Objectives", "primary", selected_channels))
+    if constraints:
+        buttons.extend(create_button_group(constraints, "Constraints", "warning", selected_channels))
+    if design_vars:
+        buttons.extend(create_button_group(design_vars, "Design Variables", "success", selected_channels))
+
+    return buttons  # Return the list directly
+
+# Callback to handle channel button clicks (multi-select)
+@callback(Output('selected-channels', 'data'),
+          [Input({'type': 'channel-btn', 'index': ALL}, 'n_clicks')],  # Changed to match new button type
+          State('selected-channels', 'data'),
+          prevent_initial_call=True)
+def handle_channels_selection(n_clicks_list, current_selected):
+    if not n_clicks_list or not any(n_clicks_list):
+        return current_selected or []
+    
+    # Find which button was clicked
+    ctx = callback_context
+    if ctx.triggered:
+        try:
+            trigger_info = ctx.triggered[0]['prop_id']
+            button_id_str = trigger_info.split('.n_clicks')[0]
+            
+            import ast
+            button_info = ast.literal_eval(button_id_str)
+            clicked_var = button_info['index']
+            
+            # Toggle selection: add if not present, remove if present
+            current_selected = current_selected or []
+            if clicked_var in current_selected:
+                current_selected.remove(clicked_var)
+            else:
+                current_selected.append(clicked_var)
+            
+            return current_selected
+        except Exception as e:
+            print(f"Error parsing button ID: {e}")
+            # Fallback method
+            if '"index":"' in trigger_info:
+                start = trigger_info.find('"index":"') + 9
+                end = trigger_info.find('"', start)
+                if end > start:
+                    clicked_var = trigger_info[start:end]
+                    current_selected = current_selected or []
+                    if clicked_var in current_selected:
+                        current_selected.remove(clicked_var)
+                    else:
+                        current_selected.append(clicked_var)
+                    return current_selected
+    
+    return current_selected or []
+
 
 @callback(Output('splom', 'figure'),
-          Input('csv-df', 'data'),
-          Input('yaml-df', 'data'))
-def update_splom(csv_data, yaml_data):
-    if csv_data is None or yaml_data is None:
+          [Input('csv-df', 'data'),
+           Input('selected-channels', 'data')])
+def update_splom(csv_data, selected_channels):
+    if csv_data is None:
         # Return empty figure with a message
         return {
             'data': [],
             'layout': {
-                'title': 'Load CSV data to view scatter plot matrix',
+                'title': 'Load CSV data to view plots',
                 'xaxis': {'visible': False},
                 'yaxis': {'visible': False},
                 'annotations': [{
-                    'text': 'No data available',
+                    'text': 'No CSV data available',
                     'xref': 'paper',
                     'yref': 'paper',
                     'x': 0.5,
@@ -261,10 +385,82 @@ def update_splom(csv_data, yaml_data):
     # Convert JSON back to DataFrame
     df = pd.read_json(io.StringIO(csv_data), orient='split')
     
-    print(yaml_data)
-    # Create scatter plot matrix
-    splom_fig = px.scatter_matrix(df)
-    splom_fig.update_layout(title='Scatter Plot Matrix')
+    # Ensure selected variables are lists
+    selected_channels = selected_channels or []
+
+    # Combine all selected variables
+    all_selected_vars = list(set(selected_channels))
+
+    # Filter variables that exist in the DataFrame
+    available_vars = [var for var in all_selected_vars if var in df.columns]
+    
+    if len(available_vars) == 0:
+        return {
+            'data': [],
+            'layout': {
+                'title': 'Select variables to display SPLOM',
+                'xaxis': {'visible': False},
+                'yaxis': {'visible': False},
+                'annotations': [{
+                    'text': 'Click variable buttons to select channels for SPLOM',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'x': 0.5,
+                    'y': 0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'middle',
+                    'showarrow': False,
+                    'font': {'size': 16, 'color': 'blue'}
+                }]
+            }
+        }
+    
+    # Create a mapping of simplified names for display
+    simplified_names = {}
+    simplified_df = df[available_vars].copy()
+    
+    # Add row index for linking across subplots
+    simplified_df['row_index'] = range(len(simplified_df))
+    
+    for var in available_vars:
+        # Split by '.' and take the last element
+        simplified_name = var.split('.')[-1]
+        simplified_names[var] = simplified_name
+        # Rename column in dataframe
+        simplified_df = simplified_df.rename(columns={var: simplified_name})
+    
+    # Get the simplified column names (excluding row_index)
+    simplified_vars = [simplified_names[var] for var in available_vars]
+    
+    # Create scatter plot matrix with simplified column names and hover data
+    splom_fig = px.scatter_matrix(
+        simplified_df,
+        dimensions=simplified_vars,
+        hover_data=['row_index'],
+        title=f'Scatter Plot Matrix ({len(available_vars)} variables)'
+    )
+    
+    splom_fig.update_layout(
+        width=800, 
+        height=800,
+        title={
+            'text': f'Scatter Plot Matrix ({len(available_vars)} variables)',
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        # Improve hover behavior for linked data
+        hovermode='closest'
+    )
+    splom_fig.update_traces(
+        diagonal_visible=True, 
+        showlowerhalf=False, 
+        showupperhalf=True,
+        # Customize hover template to show row index
+        hovertemplate='<b>Row %{customdata[0]}</b><br>' +
+                      '%{xaxis.title.text}: %{x}<br>' +
+                      '%{yaxis.title.text}: %{y}<br>' +
+                      '<extra></extra>'
+    )
     
     return splom_fig
 
