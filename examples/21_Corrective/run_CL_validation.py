@@ -30,10 +30,10 @@ fontsize_legend = 16
 fontsize_axlabel = 18
 fontsize_tick = 15
 
+
 # parameters
 bins = 5
 slope = 4
-
 
 def evaluate_multi(case_data):
 
@@ -151,7 +151,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = testpath + os.sep +'DLC1.6_0_weis_job_00_DISCON.IN'
+    param_filename = testpath + os.sep + 'DLC1.6_0_weis_job_00_DISCON.IN'
    
 
     T_of = []
@@ -247,7 +247,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     PSD_dict = {}
     w_mean = []
 
-    PSD_quantities = ['GenSpeed','TwrBsMyt','BldPitch1','GenPwr','PtfmPitch','PtfmSurge','Wave1Elev']
+    PSD_quantities = []
 
     BldPitch_array = []
     currspeed_array = []
@@ -255,6 +255,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     GenPwr_array = []
     TwrBsMyt_array = []
     PtfmPitch_array = []
+    PtfmSurge_array = []
     DEL_array = []
     #-----------------------------------------------
     # Plot results
@@ -263,8 +264,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     
     elapsed = tf - transition_time
     tf = tf - transition_time
-    tspan = [0,600]
-    
+    tspan = [t0,tf]
 
     model_sim_time = []
     n_test = len(outputs)
@@ -413,7 +413,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                 unit = ' [rpm]'
 
             elif state == 'PtfmPitch':
-                plt_title = 'Platfrom Pitch'
+                plt_title = 'Platform Pitch'
                 unit = ' [deg]'
 
             elif state == 'PtfmSurge':
@@ -443,6 +443,10 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
             if state == 'PtfmPitch':
                 dict = {'OpenFAST':states_of[:,ix],'DFSM':states_dfsm[:,ix]}
                 PtfmPitch_array.append(dict)
+
+            if state == 'PtfmSurge':
+                dict = {'OpenFAST':states_of[:,ix],'DFSM':states_dfsm[:,ix]}
+                PtfmSurge_array.append(dict)
 
             if state in PSD_quantities:
                 xf,FFT_of,_ = spectral.fft_wrap(time_of,states_of[:,ix],averaging = 'Welch',averaging_window= 'hamming')
@@ -519,9 +523,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
             std_dict[output+'_of_'+ str(icase)] = np.std(outputs_of[:,iy])
             std_dict[output+'_dfsm_'+ str(icase)] = np.std(outputs_dfsm[:,iy])
 
-            if output == 'TwrBsMyt':
-                dict = {'OpenFAST':outputs_of[:,iy],'DFSM':outputs_dfsm[:,iy]}
-                TwrBsMyt_array.append(dict)
+            
 
             if output == 'TwrBsMyt':
                 TwrBsMyt_of = outputs_of[:,iy]
@@ -542,8 +544,14 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                 DEL_array.append(dict)
 
             if output == 'GenPwr':
+
+                i_genspeed = reqd_states.index('GenSpeed')
+                i_gentq = reqd_controls.index('GenTq')
+                outputs_of[:,iy] = 0.95*0.1047*states_of[:,i_genspeed]*controls_of[:,i_gentq]
+                outputs_dfsm[:,iy] = 0.95*0.1047*states_dfsm[:,i_genspeed]*controls_dfsm[:,i_gentq]
                 dict = {'OpenFAST':outputs_of[:,iy],'DFSM':outputs_dfsm[:,iy]}
                 GenPwr_array.append(dict)
+                breakpoint()
 
             if output in PSD_quantities:
                 xf,FFT_of,_ = spectral.fft_wrap(time_of,outputs_of[:,iy],averaging = 'Welch',averaging_window= 'hamming')
@@ -610,11 +618,10 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
         pickle.dump(results_dict,handle)
 
 
-    results_dict = {'ws_array':currspeed_array,'wave_array':waveelev_array,'myt_array':TwrBsMyt_array}
-    #savemat('ts_dict.mat',results_dict)
-    
-    # with open('ts_dict_test_15s.pkl','wb') as handle:
-    #     pickle.dump(results_dict,handle)
+    results_dict = {'ws_array':currspeed_array,'wave_array':waveelev_array,'ps_array':PtfmSurge_array,'pp_array':PtfmPitch_array,'bp_array':BldPitch_array}
+
+    with open(plot_path +os.sep +'ts_dict.pkl','wb') as handle:
+        pickle.dump(results_dict,handle)
                 
 
 if __name__ == '__main__':
@@ -625,7 +632,7 @@ if __name__ == '__main__':
     test = False
     
 
-    test_inds = np.arange(0,35)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
+    test_inds = [45]#np.array([10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44,50,51,52,53,54,60,61,62,63,64])
     
 
     # path to this directory
@@ -674,7 +681,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_iea15_35.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_iea15_51.pkl'
 
         format = '.pdf'
         dt = 0.01;transition_time = 200
@@ -693,7 +700,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # datapath
-        testpath = this_dir + os.sep + 'outputs' + os.sep +'train_35_600'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'iea15_noPS'
         
 
         # get the path to all .outb files in the directory
@@ -744,7 +751,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_35'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_noPS'
     
 
     if rank == 0 and not os.path.isdir(save_path):

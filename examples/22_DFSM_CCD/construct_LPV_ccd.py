@@ -176,7 +176,7 @@ if __name__ == '__main__':
     test_inds = model_data['test_inds']
 
     # base model
-    with open('dfsm_iea15_test3.pkl','rb') as handle:
+    with open('dfsm_iea15_42.pkl','rb') as handle:
         dfsm_start = pickle.load(handle)
 
     A_start = dfsm_start.A_array[ind_start,:,:]

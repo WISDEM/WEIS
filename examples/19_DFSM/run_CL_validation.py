@@ -30,10 +30,10 @@ fontsize_legend = 16
 fontsize_axlabel = 18
 fontsize_tick = 15
 
+
 # parameters
 bins = 5
 slope = 4
-
 
 def evaluate_multi(case_data):
 
@@ -151,7 +151,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = testpath + os.sep + 'DLC1.6_0_IEA_22_Semi_00_DISCON.IN'
+    param_filename = testpath + os.sep + 'DLC1.6_1_weis_job_00_DISCON.IN'
    
 
     T_of = []
@@ -199,9 +199,9 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
         args = {'DT': dt, 'num_blade': num_blade,'pitch':bp0}
 
         # hardcoded for now
-        param = {'VS_GenEff':95.75,
-                    'WE_GearboxRatio':1.0,
-                    'VS_RtPwr':22000000.00000,
+        param = {'VS_GenEff':93.93,
+                    'WE_GearboxRatio':96.0,
+                    'VS_RtPwr':5000000.00000,
                     'time':[t0],
                     'dt':[dt],
                     'blade_pitch':[bp0],
@@ -209,7 +209,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                     't0':t0,
                     'tf':tf,
                     'w_fun':w_fun,
-                    'gen_speed_scaling':1,
+                    'gen_speed_scaling':100,
                     'wave_fun':wave_fun,
                     'ny': len(reqd_outputs),
                     'args':args,
@@ -628,7 +628,7 @@ if __name__ == '__main__':
     test = False
     
 
-    test_inds = np.arange(60,70) #np.array([10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44,50,51,52,53,54,60,61,62,63,64])
+    test_inds = np.arange(0,5)#np.array([0,1,2,3,4,10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44,50,51,52,53,54,60,61,62,63,64])+5
     
 
     # path to this directory
@@ -677,10 +677,10 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_iea22.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_semi2.pkl'
 
         format = '.pdf'
-        dt = 0.01;transition_time = 210
+        dt = 0.01;transition_time = 200
 
         # load dfsm model
         with open(pkl_name,'rb') as handle:
@@ -696,7 +696,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # datapath
-        testpath = this_dir + os.sep + 'outputs' + os.sep +'IEA22_test'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'NREL_semi_test'
         
 
         # get the path to all .outb files in the directory
@@ -747,7 +747,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_iea15'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_nrel_semi2'
     
 
     if rank == 0 and not os.path.isdir(save_path):

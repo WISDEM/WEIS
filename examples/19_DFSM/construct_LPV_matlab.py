@@ -42,7 +42,7 @@ def ModelData():
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
     model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt'] 
 
-    model_data['datapath'] = outputs_dir+os.sep +'train_1p62'
+    model_data['datapath'] = outputs_dir+os.sep +'NREL_semi'
 
     scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
@@ -52,7 +52,6 @@ def ModelData():
     model_data['scale_args'] = scale_args
 
     n_var = ns*(nc+2*ns)
-
     model_data['n_var'] = n_var
 
     model_data['w_start'] = 14.00
@@ -61,7 +60,7 @@ def ModelData():
     model_data['tmin'] = 200
 
     model_data['test_inds'] = np.array([5,11,17,23,29])
-    model_data['dfsm_file_name'] = 'dfsm_iea15_test4.pkl'
+    model_data['dfsm_file_name'] = 'dfsm_semi_test.pkl'
      
     return model_data
 
@@ -148,9 +147,9 @@ if __name__ == '__main__':
 
     
     FAST_sim_array = np.array(FAST_sim)
-    sort_ind = np.argsort(w_array)
+    # sort_ind = np.argsort(w_array)
 
-    FAST_sim_array = FAST_sim_array[sort_ind]
+    # FAST_sim_array = FAST_sim_array[sort_ind]
 
     FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
 

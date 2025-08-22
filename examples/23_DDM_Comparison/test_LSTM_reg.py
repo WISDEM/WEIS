@@ -251,6 +251,8 @@ if __name__ == '__main__':
     bp_mse = np.zeros((n_test,))
     twrbsmyt_mse = np.zeros((n_test,))
     gs_mse = np.zeros((n_test,))
+    ps_mse = np.zeros((n_test,))
+    pp_mse = np.zeros((n_test,))
     model_sim_time = np.zeros((n_test,))
 
 
@@ -398,6 +400,10 @@ if __name__ == '__main__':
                         title = 'Generator Power [kW]'
                     elif output == 'GenSpeed':
                         title = 'Generator Speed [rpm]'
+                    elif output == 'PtfmPitch':
+                        title = 'Platform Pitch [deg]'
+                    elif output == 'PtfmSurge':
+                        title = 'Platform Surge [m]'
                     elif output == 'TwrBsMyt':
                         title = 'Tower-Base Moment [kNm]'    
                     else:
@@ -419,6 +425,20 @@ if __name__ == '__main__':
                         gs_dfsm = gs_dfsm(time_test2)
 
                         gs_mse[i_test] = calculate_mse(gs_of,gs_dfsm)
+
+                    elif output == 'PtfmSurge':
+                        ps_of = outputs_test[t_ind,i_out]
+                        ps_dfsm = CubicSpline(time_test,outputs_test_pred[:,i_out])
+                        ps_dfsm = ps_dfsm(time_test2)
+
+                        ps_mse[i_test]= calculate_mse(ps_of,ps_dfsm)
+
+                    elif output == 'PtfmPitch':
+                        pp_of = outputs_test[t_ind,i_out]
+                        pp_dfsm = CubicSpline(time_test,outputs_test_pred[:,i_out])
+                        pp_dfsm = pp_dfsm(time_test2)
+
+                        pp_mse[i_test]= calculate_mse(pp_of,pp_dfsm)
 
                     if output == 'TwrBsMyt':
                         M_of = outputs_test[t_ind,i_out]
@@ -469,7 +489,7 @@ if __name__ == '__main__':
                             fig.savefig(plot_path +os.sep+ control +'_' +str(i_test)+ '_comp.pdf')
                             plt.close(fig)
 
-    results_dict = {'bp_mse':bp_mse,'gs_mse':gs_mse,'twrbsmyt_mse':twrbsmyt_mse,'model_sim_time':model_sim_time}
+    results_dict = {'bp_mse':bp_mse,'gs_mse':gs_mse,'twrbsmyt_mse':twrbsmyt_mse,'pp_mse':pp_mse,'ps_mse':ps_mse,'model_sim_time':model_sim_time}
     results_file = plot_path+os.sep+'results_dict.pkl'
     
     with open(results_file,'wb') as handle:

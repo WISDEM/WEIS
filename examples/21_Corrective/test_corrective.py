@@ -17,6 +17,9 @@ import fatpack
 from scipy.stats import weibull_min
 #from sherpa.algorithms import GPyOpt
 
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+
 # plot properties
 markersize = 10
 linewidth = 1.5
@@ -39,7 +42,6 @@ def calc_DEL(myt,elapsed):
     F, Fmean = fatpack.find_rainflow_ranges(myt, return_means=True)
     Nrf, Frf = fatpack.find_range_count(F, bins)
     DELs_= Frf ** slope * Nrf / elapsed
-
     DEL = DELs_.sum() ** (1.0 / slope)
 
     return DEL
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     this_dir = os.path.dirname(os.path.abspath(__file__))
     outputs_folder = this_dir + os.sep + 'outputs'
 
-    results_file = outputs_folder+os.sep+'CL_val_iea22_18'+os.sep +'ts_dict.pkl'
+    results_file = outputs_folder+os.sep+'CL_val_iea22_test'+os.sep +'ts_dict.pkl'
 
     # load results file
     with open(results_file,'rb') as handle:
@@ -72,8 +74,8 @@ if __name__ == '__main__':
 
     RNN_type = 'LSTM'
 
-    save_folder = outputs_folder + os.sep +'corrective_fun_results_iea22_18'
-    sf = save_folder + os.sep + 'test'
+    save_folder = outputs_folder + os.sep +'corrective_fun_results_iea22'
+    sf = save_folder + os.sep + 'test_fin'
     if not os.path.exists(sf):
         os.mkdir(sf)
 
@@ -90,7 +92,9 @@ if __name__ == '__main__':
         myt_of[:,i] = myt_list[i]['OpenFAST']
         myt_dfsm[:,i] = myt_list[i]['DFSM']
 
-    nw = 1; ns = 10
+    nw = 6; ns = 10
+
+    W = [8,10,12,14,16,18]
 
     k = 2
     v_avg = 11.4
@@ -122,13 +126,21 @@ if __name__ == '__main__':
 
     wind_array = wind_array[:nt-1,:]
     wave_array = wave_array[:nt-1,:]
-    myt_of = myt_of[:nt-1,:]/1e5
-    myt_dfsm = myt_dfsm[:nt-1:]/1e5
+    myt_of = myt_of[:nt-1,:]/1e0
+    myt_dfsm = myt_dfsm[:nt-1:]/1e0
+
+    mean_of = np.mean(myt_of,axis = 0);mean_of = np.reshape(mean_of,[ns,nw],order = 'F');
+    mean_of = np.mean(mean_of,axis = 0)
+    std_of = np.std(myt_of,axis = 0);std_of = np.reshape(std_of,[ns,nw],order = 'F');std_of = np.mean(std_of,axis = 0)
+
+    mean_dfsm = np.mean(myt_dfsm,axis = 0);mean_dfsm = np.reshape(mean_dfsm,[ns,nw],order = 'F');mean_dfsm = np.mean(mean_dfsm,axis = 0)
+    std_dfsm = np.std(myt_dfsm,axis = 0);std_dfsm = np.reshape(std_dfsm,[ns,nw],order = 'F');std_dfsm = np.mean(std_dfsm,axis = 0)
+
+    mean_w = np.mean(wind_array,axis = 0)
+    
     
     nt = nt-1
-    print(nt)
-
-    
+    print(nt)    
 
     save_name = save_folder + os.sep + RNN_type + '_corrective.keras'
     
@@ -136,21 +148,25 @@ if __name__ == '__main__':
 
         model = load_model(save_name)
 
-    time = np.arange(0,600,0.01)
+    time = np.linspace(0,600,nt)
 
     elapsed = time[-1] - time[0]
 
-    nt_train_list = [1000,60000]
+    nt_train_list = [1000,nt]
 
-    xlim = [00,600]
+    xlim = [0,600]
+
+    #n_cases = [21]
     
 
     for i_nt,nt_train in enumerate(nt_train_list):
 
         batch_size = int(nt/nt_train)
 
-        DEL = np.zeros((n_cases,3))
-        M_std = np.zeros((n_cases,3))
+        mean_corr = np.zeros((n_cases,))
+        std_corr = np.zeros((n_cases,))
+
+        mean_w = np.zeros((n_cases,))
 
         if nt_train == 1000:
             n_cases_ = 1
@@ -170,26 +186,45 @@ if __name__ == '__main__':
             test_output =np.reshape(test_output,[nt,],order = 'C')
 
             
+            mean_corr[i_case] = np.mean(test_output)
+            std_corr[i_case] = np.std(test_output)
+            
             fig,ax = plt.subplots(1)
-
+            
             ax.plot(time,myt_of[:,i_case],label = 'OpenFAST', color = 'k')
+            ax.axhline(np.mean(myt_of[:,i_case]),ls = '--',alpha = 0.5,color = 'k')
             ax.plot(time,test_output,label = 'DFSM + LSTM',color = 'tab:orange')
-            ax.set_xlabel(['Time [s]'],fontsize = fontsize_axlabel)
-            ax.set_ylabel('Norm. TwrBsMyt',fontsize = fontsize_axlabel)
+            ax.axhline(np.mean(test_output),ls = '--',alpha = 0.5,color = 'tab:orange')
+            ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+            ax.set_ylabel('Ptfm. Surge [m]',fontsize = fontsize_axlabel)
             ax.set_xlim(xlim)
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
 
-            #plt.show()
             fig.savefig(sf + os.sep +'comp_corr'+str(i_case)+'.pdf')
             plt.close(fig)
+
+            # fig,ax = plt.subplots(1)
+
+            # ax.hist(myt_of[:,i_case]-test_output,bins = 100,label = 'DFSM+LSTM',color = 'k')
+            # ax.hist(myt_of[:,i_case]-myt_dfsm[:,i_case],bins = 100,label = 'DFSM',color = 'red')
+            # #ax.set_xlabel(['Time [s]'],fontsize = fontsize_axlabel)
+            # ax.set_xlabel('Norm. TwrBsMyt Error',fontsize = fontsize_axlabel)
+            # #ax.set_xlim(xlim)
+            # ax.tick_params(labelsize=fontsize_tick)
+            # ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+            # fig.savefig(sf + os.sep +'comp_error'+str(i_case)+'.pdf')
+            # plt.close(fig)
 
             fig,ax = plt.subplots(1)
 
             ax.plot(time,myt_of[:,i_case],label = 'OpenFAST',color = 'k')
+            ax.axhline(np.mean(myt_of[:,i_case]),ls = '--',alpha = 0.5,color = 'k')
             ax.plot(time,myt_dfsm[:,i_case],label = 'DFSM',color = 'red')
-            ax.set_xlabel(['Time [s]'],fontsize = fontsize_axlabel)
-            ax.set_ylabel('Norm. TwrBsMyt',fontsize = fontsize_axlabel)
+            ax.axhline(np.mean(myt_dfsm[:,i_case]),ls = '--',alpha = 0.5,color = 'r')
+            ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+            ax.set_ylabel('Ptfm. Surge [m]',fontsize = fontsize_axlabel)
             ax.set_xlim(xlim)
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
@@ -197,82 +232,150 @@ if __name__ == '__main__':
             fig.savefig(sf + os.sep +'comp_LPV'+str(i_case)+'.pdf')
             plt.close(fig)
 
-            DEL[i_case,0] = calc_DEL(myt_of[:,i_case]*1e0,elapsed)
-            DEL[i_case,1] = calc_DEL(myt_dfsm[:,i_case]*1e0,elapsed)
-            DEL[i_case,2] = calc_DEL(test_output*1e0,elapsed)
+        #     DEL[i_case,0] = calc_DEL(myt_of[:,i_case]*1e0,elapsed)
+        #     DEL[i_case,1] = calc_DEL(myt_dfsm[:,i_case]*1e0,elapsed)
+        #     DEL[i_case,2] = calc_DEL(test_output*1e0,elapsed)
 
-            M_std[i_case,0] = np.std(myt_of[:,i_case])
-            M_std[i_case,1] = np.std(myt_dfsm[:,i_case])
-            M_std[i_case,2] = np.std(test_output)
+        #     M_std[i_case,0] = np.std(myt_of[:,i_case])
+        #     M_std[i_case,1] = np.std(myt_dfsm[:,i_case])
+        #     M_std[i_case,2] = np.std(test_output)
 
-        DEL_of = reshape_mean(DEL[:,0],ns,nw)*prob
-        DEL_dfsm = reshape_mean(DEL[:,1],ns,nw)*prob
-        DEL_corr = reshape_mean(DEL[:,2],ns,nw)*prob
-        #--------------------------------------------------
-        fig,ax = plt.subplots(1)
+        # DEL_of = reshape_mean(DEL[:,0],ns,nw)*prob
+        # DEL_dfsm = reshape_mean(DEL[:,1],ns,nw)*prob
+        # DEL_corr = reshape_mean(DEL[:,2],ns,nw)*prob
+        # #--------------------------------------------------
+        # fig,ax = plt.subplots(1)
 
-        ax.plot(mw,DEL_of,'ko-',label = 'OpenFAST')
-        #ax.plot(mw,DEL_dfsm,'ro-',label = 'DFSM')
-        ax.plot(mw,DEL_corr,'o-',color = 'tab:orange', label = 'DFSM + LSTM')
+        # ax.plot(mw,DEL_of,'ko-',label = 'OpenFAST')
+        # #ax.plot(mw,DEL_dfsm,'ro-',label = 'DFSM')
+        # ax.plot(mw,DEL_corr,'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
-        ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
-        ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
-        ax.tick_params(labelsize=fontsize_tick)
-        ax.legend(ncol = 2,fontsize = fontsize_legend)
+        # ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
+        # ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
+        # ax.tick_params(labelsize=fontsize_tick)
+        # ax.legend(ncol = 2,fontsize = fontsize_legend)
 
-        fig.savefig(sf + os.sep +'DEL_corr.pdf')
-        plt.close(fig)
-        #---------------------------------------------------
-        fig,ax = plt.subplots(1)
+        # fig.savefig(sf + os.sep +'DEL_corr.pdf')
+        # plt.close(fig)
+        # #---------------------------------------------------
+        # fig,ax = plt.subplots(1)
 
-        ax.plot(mw,DEL_of,'ko-',label = 'OpenFAST')
-        ax.plot(mw,DEL_dfsm,'ro-',label = 'DFSM')
+        # ax.plot(mw,DEL_of,'ko-',label = 'OpenFAST')
+        # ax.plot(mw,DEL_dfsm,'ro-',label = 'DFSM')
 
-        ax.tick_params(labelsize=fontsize_tick)
-        ax.legend(ncol = 2,fontsize = fontsize_legend)
-        ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
-        ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
+        # ax.tick_params(labelsize=fontsize_tick)
+        # ax.legend(ncol = 2,fontsize = fontsize_legend)
+        # ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
+        # ax.set_ylabel('Weighted DEL',fontsize = fontsize_axlabel)
 
-        fig.savefig(sf + os.sep +'DEL_lpv.pdf')
-        plt.close(fig)
-        #--------------------------------------------------------------
-        fig,ax = plt.subplots(1)
+        # fig.savefig(sf + os.sep +'DEL_lpv.pdf')
+        # plt.close(fig)
+        # #--------------------------------------------------------------
+        # fig,ax = plt.subplots(1)
 
-        DEL_of_ = np.sort(DEL_of)
-        sort_ind = np.argsort(DEL_of)
+        # DEL_of_ = np.sort(DEL_of)
+        # sort_ind = np.argsort(DEL_of)
 
-        ax.plot(DEL_of_,DEL_of[sort_ind],'ko-',label = 'OpenFAST')
-        ax.plot(DEL_of_,DEL_dfsm[sort_ind],'ro-',label = 'DFSM')
-        ax.plot(DEL_of_,DEL_corr[sort_ind],'o-',color = 'tab:orange', label = 'DFSM + LSTM')
+        # ax.plot(DEL_of_,DEL_of[sort_ind],'ko-',label = 'OpenFAST')
+        # ax.plot(DEL_of_,DEL_dfsm[sort_ind],'ro-',label = 'DFSM')
+        # ax.plot(DEL_of_,DEL_corr[sort_ind],'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
-        ax.legend(ncol = 3,fontsize = fontsize_legend)
-        ax.tick_params(labelsize=fontsize_tick)
-        ax.set_xlabel('Actual DEL',fontsize = fontsize_axlabel)
-        ax.set_ylabel('Predicted DEL',fontsize = fontsize_axlabel)
+        # ax.legend(ncol = 3,fontsize = fontsize_legend)
+        # ax.tick_params(labelsize=fontsize_tick)
+        # ax.set_xlabel('Actual DEL',fontsize = fontsize_axlabel)
+        # ax.set_ylabel('Predicted DEL',fontsize = fontsize_axlabel)
 
-        fig.savefig(sf + os.sep +'act-pred.pdf')
-        plt.close(fig)
-        #-------------------------------------------------
-        fig,ax = plt.subplots(1)
+        # fig.savefig(sf + os.sep +'act-pred.pdf')
+        # plt.close(fig)
 
-        ax.plot(mw,reshape_mean(M_std[:,0],ns,nw),'ko-',label = 'OpenFAST')
-        ax.plot(mw,reshape_mean(M_std[:,1],ns,nw),'ro-',label = 'DFSM')
-        ax.plot(mw,reshape_mean(M_std[:,2],ns,nw),'o-',color = 'tab:orange', label = 'DFSM + LSTM')
 
-        ax.legend(ncol = 3)
+        # print('---------------------------------------')
 
-        ax.set_xlabel('Wind Speed [m/s]')
-        ax.set_ylabel('Myt std')
+        # print(np.sum(DEL_of))
+        # print(np.sum(DEL_dfsm))
+        # print(np.sum(DEL_corr))
+        # #model.save(save_name)
 
-        fig.savefig(sf + os.sep +'STD.pdf')
-        plt.close(fig)
+    mean_corr = np.reshape(mean_corr,[ns,nw],order = 'F');mean_corr = np.mean(mean_corr,axis = 0)
+    std_corr = np.reshape(std_corr,[ns,nw],order = 'F');std_corr = np.mean(std_corr,axis = 0)
 
-        print('---------------------------------------')
+    fmt ='-'
+    fmt2 = '-'
+    capsize = 4
+    alpha = 0.9
+    alpha2 = 0.2
 
-        print(np.sum(DEL_of))
-        print(np.sum(DEL_dfsm))
-        print(np.sum(DEL_corr))
-        #model.save(save_name)
+    color_of = 'k'
+    color_dfsm = 'r'
+    color_corr = 'tab:orange'
+
+    qty_of_lower = std_of #mean_of_array[:,ind] - min_of_array[:,ind]
+    qty_of_upper = std_of #max_of_array[:,ind] - mean_of_array[:,ind]
+    qty_of_mean = mean_of
+
+    qty_dfsm_lower = std_dfsm #mean_dfsm_array[:,ind] - min_dfsm_array[:,ind]
+    qty_dfsm_upper = std_dfsm #max_dfsm_array[:,ind] - mean_dfsm_array[:,ind]
+    qty_dfsm_mean = mean_dfsm
+
+    qty_corr_lower = std_corr #mean_dfsm_array[:,ind] - min_dfsm_array[:,ind]
+    qty_corr_upper = std_corr #max_dfsm_array[:,ind] - mean_dfsm_array[:,ind]
+    qty_corr_mean = mean_corr
+
+
+
+    fig,ax = plt.subplots(1)
+    ax.errorbar(W,mean_of,
+                                yerr = [qty_of_lower,qty_of_upper],
+                                fmt =fmt, capsize=capsize, alpha = alpha,color = color_of)
+        
+    ax.errorbar(W,mean_dfsm,
+                                yerr = [qty_dfsm_lower,qty_dfsm_upper],
+                                fmt =fmt, capsize=capsize, alpha = alpha,color = color_dfsm)
+    
+        
+    ax.scatter(W,mean_of,marker = 'o',
+                        s = 20, color = color_of)
+        
+    ax.scatter(W,mean_dfsm,marker = 'o',
+                        s = 20, color = color_dfsm)
+    
+    ax.set_xlabel('Current Speed [m/s]',fontsize = fontsize_axlabel)
+    ax.tick_params(labelsize=fontsize_tick)
+    ax.set_title('Norm. TwrBsMyt',fontsize = fontsize_axlabel)
+
+    fig_name = 'DFSM_range.pdf'
+    fig.savefig(sf +os.sep+ fig_name)
+
+    fig,ax = plt.subplots(1)
+    ax.errorbar(W,mean_of,
+                                yerr = [qty_of_lower,qty_of_upper],
+                                fmt =fmt, capsize=capsize, alpha = alpha,color = color_of)
+        
+    ax.errorbar(W,mean_corr,
+                                yerr = [qty_corr_lower,qty_corr_upper],
+                                fmt =fmt, capsize=capsize, alpha = alpha,color = color_corr)
+    
+        
+    ax.scatter(W,mean_of,marker = 'o',
+                        s = 20, color = color_of)
+        
+    ax.scatter(W,mean_corr,marker = 'o',
+                        s = 20, color = color_corr)
+    
+    ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
+    ax.tick_params(labelsize=fontsize_tick)
+    ax.set_title('Ptfm. Surge [m]',fontsize = fontsize_axlabel)
+
+    fig_name = 'Corr_range.pdf'
+    fig.savefig(sf +os.sep+ fig_name)
+
+    plt.show()
+
+    
+   
+
+
+
 
 
 

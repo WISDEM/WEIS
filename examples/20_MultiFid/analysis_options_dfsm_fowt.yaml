@@ -1,5 +1,5 @@
 general:
-    folder_output: /home/athulsun/multifidelity_paper_studies/06_multiobjective/outputs/below_rated_p05
+    folder_output: outputs/rated_14
     fname_output: refturb_output
 
 design_variables:

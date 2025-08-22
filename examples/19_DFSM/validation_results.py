@@ -7,6 +7,10 @@ from sklearn.metrics import r2_score
 from scipy.interpolate import CubicSpline
 #from pCrunch import PowerProduction
 
+plt.rcParams['font.family'] = 'DeJavu Serif'
+plt.rcParams['font.serif'] = ['Times New Roman']
+
+
 # plot properties
 markersize = 10
 linewidth = 1.5
@@ -19,7 +23,7 @@ if __name__ == '__main__':
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
-    results_folder = 'outputs/test_1p6'
+    results_folder = 'outputs/CL_val_iea15'
     results_file = this_dir + os.sep +results_folder + os.sep + 'DFSM_validation_results.pkl'
 
     comp_fol = this_dir + os.sep +results_folder + os.sep + 'compiled_results'
@@ -46,7 +50,7 @@ if __name__ == '__main__':
     PtfmPitch_array = results_dict['PtfmPitch_array']
     DEL_array = results_dict['DEL_array']
 
-    n_ws = 7;n_seeds = 5;
+    n_ws = 6;n_seeds = 10;
     test_inds = np.arange(0,n_ws*n_seeds)
     n_test = len(test_inds)
 
@@ -57,7 +61,8 @@ if __name__ == '__main__':
     # fontsize_axlabel = 16
     # fontsize_tick = 10
 
-    key_qty = ['RtVAvgxh','GenTq','BldPitch1','GenSpeed','GenPwr','TwrBsMyt','PtfmPitch']
+    key_qty = ['RtVAvgxh','GenTq','BldPitch1','GenSpeed','GenPwr','TwrBsMyt','PtfmPitch','PtfmSurge']
+    titles = ['','','Blade Pitch [deg]','Generator Speed [rpm]','Generator Power [MW]',' Tower-Base FA Moment [kNm]', 'Platform Pitch [deg]','Platform Surge [m]']
 
     n_qty = len(key_qty)
     MSE_array = np.zeros((n_test,n_qty))
@@ -107,8 +112,9 @@ if __name__ == '__main__':
             std_dfsm_array[i,iqty] = std_dict[dict_name_dfsm]
 
         dict = TwrBsMyt_array[i]
+        sort_ind = np.argsort(dict['OpenFAST'])
         MSE_tw[i] = calculate_MSE(dict['OpenFAST']/100,dict['DFSM']/100)
-        TW_r2[i] = r2_score(dict['OpenFAST'],dict['DFSM'])
+        TW_r2[i] = r2_score(dict['OpenFAST'][sort_ind],dict['DFSM'][sort_ind])
 
         dict_del = DEL_array[i]
         DEL_of[i] = dict_del['OpenFAST']
@@ -116,15 +122,18 @@ if __name__ == '__main__':
 
 
         dict2 = GenPwr_array[i]
+        sort_ind = np.argsort(dict2['OpenFAST'])
         GP[i] = calculate_MSE(dict2['OpenFAST']/10,dict2['DFSM']/10)
-        GP_r2[i] = r2_score(dict2['OpenFAST'],dict2['DFSM'])
+        GP_r2[i] = r2_score(dict2['OpenFAST'][sort_ind],dict2['DFSM'][sort_ind])
 
         dict3 = PtfmPitch_array[i]
+        sort_ind = np.argsort(dict3['OpenFAST'])
         PP[i] = calculate_MSE(dict3['OpenFAST']*10,dict3['DFSM']*10)
-        PP_r2[i] = r2_score(dict3['OpenFAST'],dict3['DFSM'])
+        PP_r2[i] = r2_score(dict3['OpenFAST'][sort_ind],dict3['DFSM'][sort_ind])
 
         dict4 = BldPitch_array[i]
-        BP_r2[i] = r2_score(dict4['OpenFAST'],dict4['DFSM'])
+        sort_ind = np.argsort(dict4['OpenFAST'])
+        BP_r2[i] = r2_score(dict4['OpenFAST'][sort_ind],dict4['DFSM'][sort_ind])
 
         WS[i] = mean_dict['RtVAvgxh_of_'+str(i)]
 
@@ -302,21 +311,38 @@ if __name__ == '__main__':
     # WS vs. range of TwrBSMyt
     #-----------------------------------------------------------------
     fmt ='-'
+    fmt2 = '-'
     capsize = 4
     alpha = 0.9
+    alpha2 = 0.2
 
     for ind,qty in enumerate(key_qty):
 
         if not(qty in ['RtVAvgxh','GenTq']): 
 
+            if qty == 'TwrBsMyt':
+                scaler = 1e3
+            elif qty == 'GenPwr': 
+                scaler = 1e3
+            else:
+                scaler = 1
 
-            qty_of_lower = mean_of_array[:,ind] - min_of_array[:,ind]
-            qty_of_upper = max_of_array[:,ind] - mean_of_array[:,ind]
-            qty_of_mean = mean_of_array[:,ind]
 
-            qty_dfsm_lower = mean_dfsm_array[:,ind] - min_dfsm_array[:,ind]
-            qty_dfsm_upper = max_dfsm_array[:,ind] - mean_dfsm_array[:,ind]
-            qty_dfsm_mean = mean_dfsm_array[:,ind]
+            qty_of_lower = std_of_array[:,ind]/scaler #mean_of_array[:,ind] - min_of_array[:,ind]
+            qty_of_upper = std_of_array[:,ind]/scaler #max_of_array[:,ind] - mean_of_array[:,ind]
+            qty_of_mean = mean_of_array[:,ind]/scaler
+
+            qty_dfsm_lower = std_dfsm_array[:,ind]/scaler #mean_dfsm_array[:,ind] - min_dfsm_array[:,ind]
+            qty_dfsm_upper = std_dfsm_array[:,ind]/scaler #max_dfsm_array[:,ind] - mean_dfsm_array[:,ind]
+            qty_dfsm_mean = mean_dfsm_array[:,ind]/scaler
+
+            # qty_of_lower1 = mean_of_array[:,ind] - min_of_array[:,ind]
+            # qty_of_upper1 = max_of_array[:,ind] - mean_of_array[:,ind]
+            # #qty_of_mean = mean_of_array[:,ind]
+
+            # qty_dfsm_lower1 = mean_dfsm_array[:,ind] - min_dfsm_array[:,ind]
+            # qty_dfsm_upper1 = max_dfsm_array[:,ind] - mean_dfsm_array[:,ind]
+            #qty_dfsm_mean = mean_dfsm_array[:,ind]
 
             fig,ax = plt.subplots(1)
             ax.errorbar(CS,qty_of_mean,
@@ -326,6 +352,14 @@ if __name__ == '__main__':
             ax.errorbar(CS,qty_dfsm_mean,
                                         yerr = [qty_dfsm_lower,qty_dfsm_upper],
                                         fmt =fmt, capsize=capsize, alpha = alpha,color = color_dfsm)
+            
+            # ax.errorbar(CS,qty_of_mean,
+            #                             yerr = [qty_of_lower1,qty_of_upper1],
+            #                             ls =fmt2, capsize=capsize-2, alpha = alpha2,color = color_of)
+                
+            # ax.errorbar(CS,qty_dfsm_mean,
+            #                             yerr = [qty_dfsm_lower1,qty_dfsm_upper1],
+            #                             ls =fmt2, capsize=capsize-2, alpha = alpha2,color = color_dfsm)
                 
             ax.scatter(CS,qty_of_mean,marker = 'o',
                                 s = 20, color = color_of)
@@ -335,13 +369,15 @@ if __name__ == '__main__':
             
             ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
             ax.tick_params(labelsize=fontsize_tick)
-            ax.set_title(qty,fontsize = fontsize_axlabel)
+            ax.set_title(titles[ind],fontsize = fontsize_axlabel)
 
             fig_name = qty+'_range'
 
             if save_flag:     
                 fig.savefig(comp_fol +os.sep+ fig_name + format)
 
-    plt.show()
+            breakpoint()
+
+    #plt.show()
 
 

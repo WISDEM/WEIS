@@ -42,7 +42,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         TwFADOF2 : False 
         TwSSDOF1 : False 
         TwSSDOF2 : False 
-        PtfmSgDOF: False 
+        PtfmSgDOF: True
         PtfmSwDOF: False 
         PtfmHvDOF: False 
         PtfmRDOF : False 
@@ -112,8 +112,8 @@ DLC_driver:
         # - DLC: "1.4"
         # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 1
-          wind_speed: [12]
+          n_seeds: 5
+          wind_speed: [6,8,10,12,14,16,18]
           analysis_time: 500.
           transient_time: 0.
           turbulent_wind:

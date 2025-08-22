@@ -6,23 +6,23 @@ General:
 
 WISDEM:
     RotorSE:
-        flag: False
+        flag: True
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
     TowerSE:
-        flag: False
+        flag: True
     DriveSE:
-        flag: False
+        flag: True
     FloatingSE:
-        flag: False
+        flag: True
     BOS:
-        flag: False
+        flag: True
 
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
-    from_openfast: True
+    from_openfast: False
     regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
@@ -65,7 +65,7 @@ ROSCO:
 DFSM:
     flag: True
     general_options:
-        dfsm_file: dfsm_fowt_1p6.pkl
+        dfsm_file: dfsm_iea15.pkl
         modeling_data_path: /home/athulsun/DFSM/data/FOWT_1p6
         save_results: True
         usecase: closed-loop-simulation
@@ -112,17 +112,17 @@ DLC_driver:
         # - DLC: "1.4"
         # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 5
-          wind_speed: [10,12]
-          analysis_time: 800.
+          n_seeds: 1
+          wind_speed: [14]
+          analysis_time: 500.
           transient_time: 0.
-          turbulent_wind:
-            HubHt: 150.0
-            RefHt: 150.0
-            GridHeight: 299.999
-            GridWidth: 299.999
-            PLExp: 0.12
-            IECturbc: -1
+        #   turbulent_wind:
+        #     HubHt: 150.0
+        #     RefHt: 150.0
+        #     GridHeight: 299.999
+        #     GridWidth: 299.999
+        #     PLExp: 0.12
+        #     IECturbc: -1
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"

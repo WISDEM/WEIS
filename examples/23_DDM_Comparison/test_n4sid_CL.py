@@ -151,6 +151,9 @@ if __name__ == '__main__':
     bp_mse = np.zeros((n_test,))
     twrbsmyt_mse = np.zeros((n_test,))
     gs_mse = np.zeros((n_test,))
+    pp_mse = np.zeros((n_test,))
+    ps_mse = np.zeros((n_test,))
+
 
     model_sim_time = np.zeros((n_test,))
 
@@ -352,16 +355,28 @@ if __name__ == '__main__':
                     gs_mse[idx] = calculate_MSE(gs_of,gs_n4sid)
 
                     title = 'Generator Speed [rpm]'
-                else:
-                    title = reqd_outputs[i]
 
-                if reqd_outputs[i] == 'TwrBsMyt':
+                elif reqd_outputs[i] == 'PtfmPitch':
+                    pp_of = outputs_OF[:,i]
+                    pp_n4sid = Y[:,i]
+
+                    pp_mse[idx] = calculate_MSE(pp_of,pp_n4sid)
+                    title = 'Platform Pitch [deg]'
+                elif reqd_outputs[i] == 'PtfmSurge':
+                    ps_of = outputs_OF[:,i]
+                    ps_n4sid = Y[:,i]
+
+                    ps_mse[idx] = calculate_MSE(ps_of,ps_n4sid)
+                    title = 'Platform Surge [m]'
+
+                elif reqd_outputs[i] == 'TwrBsMyt':
                     M_of = outputs_OF[:,i]
                     M_n4sid = Y[:,i]
                     
                     twrbsmyt_mse[idx] = calculate_MSE(M_of,M_n4sid)
 
                     title = 'Tower-Base Moment [kNm]'
+
                 else:
                     title = reqd_outputs[i]
 
@@ -375,7 +390,7 @@ if __name__ == '__main__':
                 ax1.tick_params(labelsize=fontsize_tick)
                 ax1.legend(ncol = 2,fontsize = fontsize_legend)
                 ax1.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                ax1.set_title(reqd_outputs[i],fontsize = fontsize_axlabel)
+                ax1.set_title(title,fontsize = fontsize_axlabel)
 
                 if save_flag:
                     if not os.path.exists(ts_path):
@@ -384,7 +399,7 @@ if __name__ == '__main__':
                     fig.savefig(ts_path +os.sep+ reqd_outputs[i] +'_' +str(idx)+ '_comp.pdf')
                 plt.close(fig)
 
-    results_dict = {'bp_mse':bp_mse,'gs_mse':gs_mse,'twrbsmyt_mse':twrbsmyt_mse,'model_sim_time':model_sim_time}
+    results_dict = {'bp_mse':bp_mse,'gs_mse':gs_mse,'twrbsmyt_mse':twrbsmyt_mse,'pp_mse':pp_mse,'ps_mse':ps_mse,'model_sim_time':model_sim_time}
     results_file = ts_path+os.sep+'results_dict.pkl'
 
     

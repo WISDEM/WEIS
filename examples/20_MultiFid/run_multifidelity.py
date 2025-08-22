@@ -18,13 +18,15 @@ if __name__ == '__main__':
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
     # 2. OpenFAST directory that has all the required files to run an OpenFAST simulations
-    OF_dir = this_dir + os.sep + 'outputs/below_rated_p05' + os.sep + 'openfast_runs'
+    OF_dir = this_dir + os.sep + 'outputs/rated_14' + os.sep + 'openfast_runs'
     wind_dataset = OF_dir + os.sep + 'wind_dataset.pkl'
 
     fst_files = [os.path.join(OF_dir,f) for f in os.listdir(OF_dir) if valid_extension(f,'*.fst')]
-
     n_OF_runs = len(fst_files)
-    
+
+    # flag to indicate multi objective study
+    MO_flag = False
+
 
     if MPI:
         
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     if rank == 0:
 
         # 1. DFSM file and the model detials
-        dfsm_file = this_dir + os.sep + 'dfsm_fowt_1p6.pkl'
+        dfsm_file = this_dir + os.sep + 'dfsm_iea15.pkl'
 
         reqd_states = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed']
         reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
@@ -83,67 +85,46 @@ if __name__ == '__main__':
             mpi_options = None
         
         mf_turb = MF_Turbine(dfsm_file,reqd_states,reqd_controls,reqd_outputs,OF_dir,rosco_yaml,mpi_options=mpi_options,transition_time=200,wind_dataset=wind_dataset)
-        bounds = {'omega_vs' : np.array([[1, 3]]),'zeta_vs' : np.array([[0.5, 3.0]])}
-        desvars = {'omega_vs' : np.array([2.5]),'zeta_vs': np.array([2.5])}
-        scaling_dict = {'omega_vs':10}
+        
+        # Design variables and bounds, and scaling dict
+        # the scaling is applied by division
+        bounds = {'omega_pc' : np.array([[1, 3]]),'zeta_pc' : np.array([[0.5, 3.0]])}
+        desvars = {'omega_pc' : np.array([2.5]),'zeta_pc': np.array([2.5])}
+        scaling_dict = {'omega_pc':10}
 
-        n_pts = 10
+        if MO_flag:
+            n_pts = 10
 
-        objs = np.zeros((n_pts,2))
-        opt_pts = np.zeros((n_pts,2))
+            objs = np.zeros((n_pts,2))
+            opt_pts = np.zeros((n_pts,2))
 
-        w1 = np.linspace(1,0,n_pts)
-        w2 = 1-w1
+            w1 = np.linspace(1,0,n_pts)
+            w2 = 1-w1
 
-        obj1 = 'TwrBsMyt_DEL'
-        obj2 = 'GenSpeed_Std'
+            obj1 = 'TwrBsMyt_DEL'
+            obj2 = 'GenSpeed_Std'
 
-        results_folder = OF_dir + os.sep + 'multi_fid_results_br'
+        else:
+            n_pts = 1
+
+        # create folder if it does not exists
+        results_folder = OF_dir + os.sep + 'multi_fid_results'
 
         if not os.path.exists(results_folder):
             os.mkdir(results_folder)
 
-        lf_warmstart_file = OF_dir + os.sep +'lf_ws_file_oz_25.dill'
-        hf_warmstart_file = OF_dir + os.sep +'hf_ws_file_oz_25.dill'
-
+        # Go through and run multifidelity studies.
+        # If MO_flag is enabled, different multifidelity studies are run for different values of the weights
+        # Else, just a single multi-fidelity study is run
         for i_pt in range(n_pts):
 
+            if MO_flag:
+                multi_fid_dict = {'obj1':obj1,'obj2':obj2,'w1':w1[i_pt],'w2':w2[i_pt]}
+            else:
+                multi_fid_dict = None
 
-            multi_fid_dict = {'obj1':obj1,'obj2':obj2,'w1':w1[i_pt],'w2':w2[i_pt]}
-
-            lf_warmstart_file_iter = results_folder + os.sep+'multiobj_iter_lf_'+ str(i_pt)+'.dill'
-            hf_warmstart_file_iter = results_folder + os.sep+'multiobj_iter_hf_'+ str(i_pt)+'.dill'
-
-            lf_warmstart_file_ = lf_warmstart_file
-            hf_warmstart_file_ = hf_warmstart_file
-
-
-            with open(lf_warmstart_file_,'rb') as handle:
-                lf_res = dill.load(handle)
-
-            with open(hf_warmstart_file_,'rb') as handle:
-                hf_res = dill.load(handle)
-
-            lf_res_iter = copy.deepcopy(lf_res)
-            hf_res_iter = copy.deepcopy(hf_res)
-
-            DV0 = np.array(hf_res['desvars'])[-1,:]
-            print(DV0)
-            
-            for i in range(len(lf_res_iter['outputs'])):
-                lf_res_iter['outputs'][i]['wt_objectives'] = lf_res_iter['outputs'][i][obj1]*w1[i_pt] + lf_res_iter['outputs'][i][obj2]*w2[i_pt]
-
-            for i in range(len(hf_res_iter['outputs'])):
-                hf_res_iter['outputs'][i]['wt_objectives'] = hf_res_iter['outputs'][i][obj1]*w1[i_pt] + hf_res_iter['outputs'][i][obj2]*w2[i_pt]
-
-            with open(lf_warmstart_file_iter,'wb') as handle:
-                dill.dump(lf_res_iter,handle)
-
-            with open(hf_warmstart_file_iter,'wb') as handle:
-                dill.dump(hf_res_iter,handle)
-
-            model_low = LFTurbine(desvars,  mf_turb, scaling_dict = scaling_dict,multi_fid_dict=multi_fid_dict,warmstart_file = lf_warmstart_file_iter)
-            model_high = HFTurbine(desvars, mf_turb, scaling_dict = scaling_dict,multi_fid_dict=multi_fid_dict, warmstart_file = hf_warmstart_file_iter)
+            model_low = LFTurbine(desvars,  mf_turb, scaling_dict = scaling_dict,multi_fid_dict=multi_fid_dict)
+            model_high = HFTurbine(desvars, mf_turb, scaling_dict = scaling_dict,multi_fid_dict=multi_fid_dict)
 
             np.random.seed(123)
 
@@ -159,34 +140,41 @@ if __name__ == '__main__':
                 log_filename = results_folder + os.sep +'MO_DEL_STD_'+str(i_pt)+'.txt'
             )
 
-            trust_region.add_objective("wt_objectives", scaler = 1e-0)
-            trust_region.design_vectors = np.array(hf_res_iter['desvars'])
-            #trust_region.add_constraint("GenSpeed_Max", upper=1.2)
-            trust_region.set_initial_point(DV0)
+            if MO_flag:
 
+                trust_region.add_objective("wt_objectives", scaler = 1e-0)
+            else:
+                
+                trust_region.add_objective("TwrBsMyt_DEL", scaler = 1)
+                trust_region.add_constraint("GenSpeed_Max", upper=1.2)
+            
 
+            # run multi-fidelity study
             t1 = timer.time()
             trust_region.optimize(plot=False, num_basinhop_iterations=2,num_iterations = 40)
             t2 = timer.time()
 
-            opt_pts[i_pt,:] = trust_region.design_vectors[-1,:]
-            objs[i_pt,0] = trust_region.model_high.run(opt_pts[i_pt,:])[obj1]
-            objs[i_pt,1] = trust_region.model_high.run(opt_pts[i_pt,:])[obj2]
+            if MO_flag:
+                opt_pts[i_pt,:] = trust_region.design_vectors[-1,:]
+                objs[i_pt,0] = trust_region.model_high.run(opt_pts[i_pt,:])[obj1]
+                objs[i_pt,1] = trust_region.model_high.run(opt_pts[i_pt,:])[obj2]
 
-            
-        fig,ax = plt.subplots(1)
+        if MO_flag:
 
-        ax.plot(objs[:,0],objs[:,1],'.',markersize = 8)
-        ax.set_xlabel(obj1)
-        ax.set_ylabel(obj2)
+            # plot pareto front
+            fig,ax = plt.subplots(1)
 
-        fig.savefig(results_folder + os.sep +'DELvsSTD.png')
-        print(objs)
-        print(opt_pts)
+            ax.plot(objs[:,0],objs[:,1],'.',markersize = 8)
+            ax.set_xlabel(obj1)
+            ax.set_ylabel(obj2)
 
+            fig.savefig(results_folder + os.sep +'DELvsSTD.png')
 
+            # save results
+            results_dict = {'objectives':objs,'opt_pts':opt_pts,'n_pts':n_pts,'obj1':obj1,'obj2':obj2}
 
-
+            with open(results_folder + os.sep + 'MO_results.pkl','wb') as handle:
+                pickle.dump(results_dict,handle)
 
     #---------------------------------------------------
     # More MPI stuff

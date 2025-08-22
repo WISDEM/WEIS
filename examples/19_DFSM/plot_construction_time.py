@@ -5,7 +5,7 @@ import numpy as np
 plt.rcParams['font.family'] = 'DeJavu Serif'
 plt.rcParams['font.serif'] = ['Times New Roman']
 
-dfsm_file = 'dfsm_iea22.pkl'
+dfsm_file = 'dfsm_iea15_test3.pkl'
 
 with open(dfsm_file,'rb') as handle:
     dfsm = pickle.load(handle)
@@ -25,6 +25,9 @@ fontsize_tick = 15
 print(dfsm.buff)
 print(dfsm.w_start)
 print(dfsm.train_inds)
+print(np.sum(model_construct_time)/60)
+print(np.sum(model_construct_time))
+print(np.max(model_construct_time))
 
 fig,ax = plt.subplots(1)
 
@@ -33,6 +36,7 @@ ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
 ax.set_ylabel('Model Construction Time [s]',fontsize = fontsize_axlabel)
 ax.tick_params(labelsize=fontsize_tick)
 ax.grid()
+fig.savefig('Model_time.pdf')
 
 plt.show()
 

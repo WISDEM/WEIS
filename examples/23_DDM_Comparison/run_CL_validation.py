@@ -270,6 +270,8 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
     bp_mse = np.zeros((n_test,))
     twrbsmyt_mse = np.zeros((n_test,))
     gs_mse = np.zeros((n_test,))
+    pp_mse = np.zeros((n_test,))
+    ps_mse = np.zeros((n_test,))
 
     color_of = 'k'
     color_dfsm = 'r'
@@ -426,6 +428,12 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
 
             if reqd_states[ix] == 'GenSpeed':
                 gs_mse[icase] = calculate_MSE(states_of[:,ix],states_dfsm[:,ix],scaled = False)
+
+            elif reqd_states[ix] == 'PtfmPitch':
+                pp_mse[icase] = calculate_MSE(states_of[:,ix],states_dfsm[:,ix])
+
+            elif reqd_states[ix] == 'PtfmSurge':
+                ps_mse[icase] = calculate_MSE(states_of[:,ix],states_dfsm[:,ix])
 
             mean_dict[state+'_of_'+ str(icase)] = np.mean(states_of[:,ix])
             mean_dict[state+'_dfsm_'+ str(icase)] = np.mean(states_dfsm[:,ix])
@@ -609,6 +617,8 @@ def run_closed_loop_simulation(dfsm,FAST_sim,dt,transition_time,save_flag,plot_p
                     'n_seeds':n_seeds,
                     'bp_mse':bp_mse,
                     'gs_mse':gs_mse,
+                    'ps_mse':ps_mse,
+                    'pp_mse':pp_mse,
                     'twrbsmyt_mse':twrbsmyt_mse,
                     'model_sim_time':model_sim_time}
     

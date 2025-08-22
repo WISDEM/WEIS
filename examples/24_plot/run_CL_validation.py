@@ -30,10 +30,10 @@ fontsize_legend = 16
 fontsize_axlabel = 18
 fontsize_tick = 15
 
+
 # parameters
 bins = 5
 slope = 4
-
 
 def evaluate_multi(case_data):
 
@@ -151,7 +151,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     lib_name = discon_lib_path
      
     # Write parameter input file
-    param_filename = testpath + os.sep +'DLC1.6_0_weis_job_00_DISCON.IN'
+    param_filename = testpath + os.sep + 'DLC1.6_0_weis_job_00_DISCON.IN'
    
 
     T_of = []
@@ -199,9 +199,9 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
         args = {'DT': dt, 'num_blade': num_blade,'pitch':bp0}
 
         # hardcoded for now
-        param = {'VS_GenEff':95.75,
-                    'WE_GearboxRatio':1.0,
-                    'VS_RtPwr':15000000.00000,
+        param = {'VS_GenEff':96,
+                    'WE_GearboxRatio':1,
+                    'VS_RtPwr':22000000.00000,
                     'time':[t0],
                     'dt':[dt],
                     'blade_pitch':[bp0],
@@ -263,8 +263,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     
     elapsed = tf - transition_time
     tf = tf - transition_time
-    tspan = [0,600]
-    
+    tspan = [t0,tf]
 
     model_sim_time = []
     n_test = len(outputs)
@@ -413,7 +412,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                 unit = ' [rpm]'
 
             elif state == 'PtfmPitch':
-                plt_title = 'Platfrom Pitch'
+                plt_title = 'Platform Pitch'
                 unit = ' [deg]'
 
             elif state == 'PtfmSurge':
@@ -489,7 +488,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
 
             if output == 'GenPwr':
                 plt_title = 'Generator Power'
-                unit = ' [kW]'
+                unit = ' [MW]'
 
             elif output == 'TwrBsFxt':
                 plt_title = 'Tower-Base FA Force'
@@ -497,7 +496,7 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
 
             elif output == 'TwrBsMyt':
                 plt_title = 'Tower-Base FA Moment'
-                unit = ' [kNm]'
+                unit = ' [MNm]'
             else:
                 plt_title = output
                 unit = ''
@@ -542,6 +541,11 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                 DEL_array.append(dict)
 
             if output == 'GenPwr':
+
+                i_genspeed = reqd_states.index('GenSpeed')
+                i_gentq = reqd_controls.index('GenTq')
+                outputs_of[:,iy] = 0.95*0.1047*states_of[:,i_genspeed]*controls_of[:,i_gentq]*param['gen_speed_scaling']
+                outputs_dfsm[:,iy] = 0.95*0.1047*states_dfsm[:,i_genspeed]*controls_dfsm[:,i_gentq]*param['gen_speed_scaling']
                 dict = {'OpenFAST':outputs_of[:,iy],'DFSM':outputs_dfsm[:,iy]}
                 GenPwr_array.append(dict)
 
@@ -568,12 +572,25 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
                 PSD_dict[output + '_FFT_dfsm_'+str(icase)] = np.sqrt(FFT_dfsm)
 
             fig,ax = plt.subplots(1)
-            ax.plot(time_of,outputs_of[:,iy],color = color_of,label = 'OpenFAST')
-            ax.plot(time_dfsm,outputs_dfsm[:,iy],color = color_dfsm,label = 'DFSM')
+
+            if output == 'TwrBsMyt':
+                ax.set_xlim([350,550])
+                scale = 1000
+            elif output == 'GenPwr':
+                scale = 1000
+                ax.set_xlim(tspan)
+            else:
+                ax.set_xlim(tspan)
+                scale = 1
+
+            ax.plot(time_of,outputs_of[:,iy]/scale,color = color_of,label = 'OpenFAST')
+            ax.plot(time_dfsm,outputs_dfsm[:,iy]/scale,color = color_dfsm,label = 'DFSM')
             
             
             ax.set_title(plt_title + unit,fontsize = fontsize_axlabel)
-            ax.set_xlim(tspan)
+
+            
+
             ax.tick_params(labelsize=fontsize_tick)
             ax.legend(ncol = 2,fontsize = fontsize_legend)
             ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
@@ -609,12 +626,6 @@ def run_closed_loop_simulation(dfsm,FAST_sim,testpath,dt,transition_time,save_fl
     with open(results_file,'wb') as handle:
         pickle.dump(results_dict,handle)
 
-
-    results_dict = {'ws_array':currspeed_array,'wave_array':waveelev_array,'myt_array':TwrBsMyt_array}
-    #savemat('ts_dict.mat',results_dict)
-    
-    # with open('ts_dict_test_15s.pkl','wb') as handle:
-    #     pickle.dump(results_dict,handle)
                 
 
 if __name__ == '__main__':
@@ -625,7 +636,7 @@ if __name__ == '__main__':
     test = False
     
 
-    test_inds = np.arange(0,35)#np.array([4,5,6,7,8,9,10,15,16,17,18,19])
+    test_inds = [18,38,46]#np.array([0,1,2,3,4,10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44,50,51,52,53,54,60,61,62,63,64])+5
     
 
     # path to this directory
@@ -674,10 +685,10 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # pickle with the saved DFSM model
-        pkl_name = this_dir + os.sep +'dfsm_iea15_35.pkl'
+        pkl_name = this_dir + os.sep +'dfsm_iea15_test3.pkl'
 
         format = '.pdf'
-        dt = 0.01;transition_time = 200
+        dt = 0.01;transition_time = 210
 
         # load dfsm model
         with open(pkl_name,'rb') as handle:
@@ -693,7 +704,7 @@ if __name__ == '__main__':
         #---------------------------------------------------
 
         # datapath
-        testpath = this_dir + os.sep + 'outputs' + os.sep +'train_35_600'
+        testpath = this_dir + os.sep + 'outputs' + os.sep +'test_1p62'
         
 
         # get the path to all .outb files in the directory
@@ -701,25 +712,19 @@ if __name__ == '__main__':
         outfiles = sorted(outfiles)
         
         # required states
-        reqd_states = dfsm.reqd_states #['PtfmPitch','TTDspFA','GenSpeed']#
+        reqd_states = dfsm.reqd_states
         
         # required controls
-        reqd_controls =  dfsm.reqd_controls#['Wind1VelX','GenTq','BldPitch1','Wave1Elev']# 
+        reqd_controls =  dfsm.reqd_controls
         
         # required outputs
-        reqd_outputs = dfsm.reqd_outputs #['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] #
+        reqd_outputs = dfsm.reqd_outputs
         
         # scaling parameters
-        scale_args = dfsm.scale_args#{'state_scaling_factor': np.array([1,1,1]),
-        #             'control_scaling_factor': np.array([1,1,1,1]),
-        #             'output_scaling_factor': np.array([1,1,1,1,1,1,1])
-        #             }
+        scale_args = dfsm.scale_args
         
         # filter parameters
-        filter_args = dfsm.filter_args #{'state_filter_flag': [True,True,True],
-                    # 'state_filter_type': [['filtfilt'],['filtfilt'],['filtfilt']],
-                    # 'state_filter_tf': [[0.1],[0.1],[0.1],[0.1]],
-                    # }
+        filter_args = dfsm.filter_args 
         
         # name of mat file that has the linearized models
         mat_file_name = None
@@ -744,7 +749,7 @@ if __name__ == '__main__':
     save_flag = True
 
     # save path
-    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_35'
+    save_path = this_dir + os.sep + 'outputs' + os.sep +'CL_val_iea15'
     
 
     if rank == 0 and not os.path.isdir(save_path):

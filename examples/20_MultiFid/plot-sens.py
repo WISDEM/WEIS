@@ -14,14 +14,19 @@ format = '.pdf'
 plt.rcParams['font.family'] = 'DeJavu Serif'
 plt.rcParams['font.serif'] = ['Times New Roman']
 
+'''
+File to plot contours of key performance metrics
+
+'''
+
 
 if __name__ == '__main__':
 
     # get path to this dir
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
-    results_file = this_dir + os.sep +'sensstudy_results_OZ.pkl'
-    plot_path = this_dir + os.sep +'sens_results_OZ'
+    results_file = this_dir + os.sep +'outputs/sensstudy_results_OZ.pkl'
+    plot_path = this_dir + os.sep +'outputs/sens_results_OZ'
 
     if not os.path.exists(plot_path):
         os.mkdir(plot_path)

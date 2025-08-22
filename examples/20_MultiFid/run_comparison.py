@@ -66,7 +66,7 @@ if __name__ == '__main__':
     if rank == 0:
 
         # 1. DFSM file and the model detials
-        dfsm_file = this_dir + os.sep + 'dfsm_fowt_1p6.pkl'
+        dfsm_file = this_dir + os.sep + 'dfsm_iea15_test3.pkl'
 
         reqd_states = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed']
         reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
@@ -159,8 +159,7 @@ if __name__ == '__main__':
             
 
             results_dict = {'OZ':OZ,'twrbsmyt_del':twrbsmyt_del,'genspeed_max':genspeed_max,'pitch_travel':pitch_travel,'genspeed_std':genspeed_std,'ptfmpitch_max':ptfmpitch_max,'ptfmpitch_std':ptfmpitch_std,'P_avg':p_avg}
-            # with open('sensstudy_results_iea22.pkl','wb') as handle:
-            #     pickle.dump(results_dict,handle)
+            
                 
         else:
 
