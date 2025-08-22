@@ -1,8 +1,8 @@
 import numpy as np
 import os,sys
 import matplotlib.pyplot as plt
-from mf_models.mf_controls import MF_Turbine,compute_outputs,valid_extension
-from mf_models.prod_functions import LFTurbine,HFTurbine
+from weis.dfsm.mf_models.mf_controls import MF_Turbine,compute_outputs,valid_extension
+from weis.dfsm.mf_models.prod_functions import LFTurbine,HFTurbine
 from weis.glue_code.mpi_tools import MPI
 import pickle
 from scipy.stats import qmc
@@ -16,11 +16,10 @@ if __name__ == '__main__':
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
     # 1. DFSM file and the model detials
-    dfsm_file = os.path.join(this_dir,'..', "09_DFSM", "dfsm_models", "dfsm_iea15_volturnus.pkl")
+    dfsm_file = os.path.join(this_dir, "dfsm_models", "dfsm_iea15_volturnus.pkl")
 
     # 2. OpenFAST directory that has all the required files to run an OpenFAST simulations
-    OF_dir = os.path.join(this_dir, 'outputs' ,'IEA-15', '2_for_mf', 'openfast_runs')
-    wind_dataset = os.path.join(OF_dir, 'wind_dataset.pkl')
+    OF_dir = os.path.join(this_dir, 'outputs' ,'IEA-15', '0_dfsm_setup', 'openfast_runs')
 
     # 3. ROSCO yaml file
     rosco_yaml = os.path.join(this_dir, '..', "00_setup", "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi", "IEA-15-240-RWT-UMaineSemi_ROSCO.yaml")
@@ -28,6 +27,7 @@ if __name__ == '__main__':
     # 4. Startup transients
     transition_time = 0
 
+    wind_dataset = os.path.join(OF_dir, 'wind_dataset.pkl')
     fst_files = [os.path.join(OF_dir,f) for f in os.listdir(OF_dir) if valid_extension(f,'*.fst')]
     n_OF_runs = len(fst_files)
 
