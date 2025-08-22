@@ -1,3 +1,14 @@
+## Requirements
+The DFSM construction uses matlab, so this is requred: https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html
+
+
+1. Run OpenFAST simulations in operational DLCs, usually 6 seeds, across all wind speeds, or just the ones that are needed (14,16,18).  Only enable the DOFs that you want to include in the DFSM.  Ensure that NcIMURAys is in the openfast outputs
+
+
+
+2. 
+
+
 ## Overview
 This example introduces the basic workings of the derivative function surrogate modeling (DFSM) approach, and demonstrates a usecase for closed-loop simulations.
 
