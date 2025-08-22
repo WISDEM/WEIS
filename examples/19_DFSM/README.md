@@ -2,11 +2,17 @@
 The DFSM construction uses matlab, so this is requred: https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html
 
 
-1. Run OpenFAST simulations in operational DLCs, usually 6 seeds, across all wind speeds, or just the ones that are needed (14,16,18).  Only enable the DOFs that you want to include in the DFSM.  Ensure that NcIMURAys is in the openfast outputs
+1. Run OpenFAST simulations in operational DLCs (ideally 1.6 to i), usually 6 seeds, across all wind speeds, or just the ones that are needed (14,16,18).  Only enable the DOFs that you want to include in the DFSM.  Ensure that NcIMURAys is in the openfast outputs
 
 
 
-2. 
+2. Run python construct_LPV_matlab.py.  MATLAB optimization toolbox is required.  Not yet tested.
+
+3. Run pre-made DFSM models.  All are trained on DLC 1.6 (8-18 m/s).  Can run though WEIS.  Just need to provide DFSM file.
+
+Notes:
+- DFSM code located in weis/dfsm
+- Pickle contains dfsm class object
 
 
 ## Overview

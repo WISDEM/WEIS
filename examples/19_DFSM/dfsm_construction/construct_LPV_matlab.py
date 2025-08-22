@@ -38,15 +38,19 @@ def ModelData():
     
     model_data = {}
 
-    model_data['reqd_states'] = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
+    model_data['reqd_states'] = ['PtfmSurge','PtfmPitch','GenSpeed'];ns = len(model_data['reqd_states'])
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
-    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt'] 
+    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','NcIMURAys','RtFldCp','RtFldCt']   # need NcIMURAys for ROSCO, but the others are up to the user
 
-    model_data['datapath'] = outputs_dir+os.sep +'NREL_semi'
+    # This is where the openfast simulations live
+    model_data['openfast_output_dir'] = '/Users/dzalkind/Tools/WEIS-Main/examples/01_simulate_own_openfast_model/outputs/01_openfast_dlcs/1_IEA_22/1_updated_mooring/openfast_runs/rank_0'
 
-    scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
+    # These are set up for the 5-MW semi, which have gearboxes
+    # Want states to be around the same magnitude
+    # Array corresponds to states, control, outputs above
+    scale_args = {'state_scaling_factor': np.array([1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
-                  'output_scaling_factor': np.array([1,1,1,1,1,1,1])
+                  'output_scaling_factor': np.array([1,1,1,1,1,1])
                   }
     
     model_data['scale_args'] = scale_args
@@ -54,28 +58,28 @@ def ModelData():
     n_var = ns*(nc+2*ns)
     model_data['n_var'] = n_var
 
-    model_data['w_start'] = 14.00
-    model_data['buff'] = 0.01000
-    model_data['train_inds'] = np.arange(0,5)
-    model_data['tmin'] = 200
+    model_data['w_start'] = 12.00       # starting wind speed for LPV model construction
+    model_data['buff'] = 0.01000        # buffer to keep eigenvalues of LPV A matrix above -buff.  \delta in notebook
+    model_data['train_inds'] = np.arange(0,3) # how many seeds to we want to use in the training process, seeds are automatically determined based on mean wind speed
+    model_data['tmin'] = 200.           # time in simulation to start simulation (transient time)
 
-    model_data['test_inds'] = np.array([5,11,17,23,29])
-    model_data['dfsm_file_name'] = 'dfsm_semi_test.pkl'
-     
+    model_data['test_inds'] = np.array([2])  # seeds used to check fittness of model
+    model_data['dfsm_file_name'] = 'dfsm_iea15_test4.pkl'  # dfsm file is stored as a pickle file
+
     return model_data
 
 
 if __name__ == '__main__':
     
     
-    # datapath
+    # openfast_output_dir
     region = 'LPV'
 
     model_data = ModelData()
-    datapath =  model_data['datapath'] #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
+    openfast_output_dir =  model_data['openfast_output_dir'] #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
     
     # get the path to all .outb files in the directory
-    outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
+    outfiles = [os.path.join(openfast_output_dir,f) for f in os.listdir(openfast_output_dir) if valid_extension(f)]
     outfiles = sorted(outfiles)
 
     # required states
@@ -153,10 +157,10 @@ if __name__ == '__main__':
 
     FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
 
-    
-    print(FAST_sim.shape)
 
-    
+    print(f'Detected {FAST_sim.shape[0]} seeds for {FAST_sim.shape[1]} mean wind speeds')
+
+    # TODO: check training indices, valid starting wind speed?
 
     train_inds = model_data['train_inds']
     
@@ -165,6 +169,7 @@ if __name__ == '__main__':
 
     w_start = model_data['w_start']
 
+    # TODO: check for valid start, check test indices
     ind_start = np.where(W == w_start)[0][0]
     ind_forward_pass = np.where(W >= w_start)[0]
     ind_backward_pass = np.flip(np.where(W < w_start))[0]
@@ -218,6 +223,12 @@ if __name__ == '__main__':
 
             x0 = matlab.double([])
             
+            # Example: run a MATLAB command using the engine
+            # You can use eng.eval('your_matlab_command', nargout=0) to execute a command
+            eng.eval(f"addpath(genpath('{os.path.dirname(__file__)}'))", nargout=0)
+
+            # os.path.dirname(__file__)
+
             t1 = timer.time()
             A,B,C,D,x = eng.construct_LPV(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,buff,nargout = 5)
             t2 = timer.time()
