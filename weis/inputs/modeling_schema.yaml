@@ -71,7 +71,7 @@ properties:
                     allow_fails:
                         type: boolean
                         default: False
-                        description: Allow WEIS to continue if OpenFAST fails?  All outputs will be filled with fail_value. Use with caution!
+                        description: Allow WEIS to continue if OpenFAST fails  All outputs will be filled with fail_value. Use with caution!
                     fail_value:
                         type: number
                         default: -9999
@@ -135,6 +135,23 @@ properties:
                 default: 0
                 enum: [0, 1, 2]
                 description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
+            intersection_mesh:
+                type: integer
+                default: 0
+                enum: [0, 1]
+                description: Enable intersection mesh for potential BEM modeling. 0 = no intersection mesh, 1 = intersection mesh; turn on plot_design option for visualizing the mesh.
+            characteristic_length_min:
+                type: number
+                default: 1.0
+                minimum: 0.0
+                maximum: 1000.0
+                description: Minimum characteristic length of the mesh for potential BEM modeling.
+            characteristic_length_max:
+                type: number
+                default: 3.0
+                minimum: 0.0
+                maximum: 1000.0
+                description: Maximum characteristic length of the mesh for potential BEM modeling. This is the dominant length scale for the mesh.
             xi_start:
                 type: number
                 default: 0.0
@@ -254,7 +271,7 @@ properties:
                     # CalcSteady:
                     #     type: boolean
                     #     default: False
-                    #     description: Calculate a steady-state periodic operating point before linearization? [unused if Linearize=False] (flag)
+                    #     description: Calculate a steady-state periodic operating point before linearization [unused if Linearize=False] (flag)
                     # DZ: For now, we determine TrimCase this automatically based on whether wind_speeds > v_rated
                     # TrimCase:
                     #     type: string
@@ -322,7 +339,7 @@ properties:
                     # LinOutMod:
                     #     type: boolean
                     #     default: False
-                    #     description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+                    #     description: Write module-level linearization output files in addition to output for full system (flag) [unused if Linearize=False]
             DTQP: # this may be shared with OpenFAST IEC load cases in the future
                 type: object
                 default: {}
@@ -669,7 +686,8 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.3', '3.1', '3.2', '3.3', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '12.1', 'Custom','AEP','freedecay']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.2', '2.3', '2.4', '3.1', '3.2', '3.3', '4.1',
+                             '4.2', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '9.1', '9.2', '10.1', '10.2', '12.1','steady','step','ramp','AEP','freedecay']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -802,7 +820,7 @@ properties:
                         IEC_WindType:
                             type: string
                             default: NTM
-                            enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG','EWS','Custom']
+                            enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG', 'EWS', 'NWP', 'Steady','Ramp','Step']
                             description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust. Normally the user does not need to define this entry, 'EWS'='extreme wind shear'
                         analysis_time:
                             type: number
@@ -866,44 +884,44 @@ properties:
                                 WrBHHTP:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height turbulence parameters in binary form?  (Generates RootName.bin)
+                                    description: Output hub-height turbulence parameters in binary form  (Generates RootName.bin)
                                 WrFHHTP:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height turbulence parameters in formatted form?  (Generates RootName.dat)
+                                    description: Output hub-height turbulence parameters in formatted form  (Generates RootName.dat)
                                 WrADHH:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height time-series data in AeroDyn form?  (Generates RootName.hh)
+                                    description: Output hub-height time-series data in AeroDyn form  (Generates RootName.hh)
                                 WrADFF:
                                     type: boolean
                                     default: True
-                                    description: Output full-field time-series data in TurbSim/AeroDyn form? (Generates RootName.bts)
+                                    description: Output full-field time-series data in TurbSim/AeroDyn form (Generates RootName.bts)
                                 WrBLFF:
                                     type: boolean
                                     default: False
-                                    description: Output full-field time-series data in BLADED/AeroDyn form?  (Generates RootName.wnd)
+                                    description: Output full-field time-series data in BLADED/AeroDyn form  (Generates RootName.wnd)
                                 WrADTWR:
                                     type: boolean
                                     default: False
-                                    description: Output tower time-series data? (Generates RootName.twr)
+                                    description: Output tower time-series data (Generates RootName.twr)
                                 WrFMTFF:
                                     type: boolean
                                     default: False
-                                    description: Output full-field time-series data in formatted (readable) form?  (Generates RootName.u, RootName.v, RootName.w)
+                                    description: Output full-field time-series data in formatted (readable) form  (Generates RootName.u, RootName.v, RootName.w)
                                 WrACT:
                                     type: boolean
                                     default: False
-                                    description: Output coherent turbulence time steps in AeroDyn form? (Generates RootName.cts)
+                                    description: Output coherent turbulence time steps in AeroDyn form (Generates RootName.cts)
                                 Clockwise:
                                     type: boolean
                                     default: False
-                                    description: Clockwise rotation looking downwind? (used only for full-field binary files - not necessary for AeroDyn)
+                                    description: Clockwise rotation looking downwind (used only for full-field binary files - not necessary for AeroDyn)
                                 ScaleIEC:
                                     type: integer
                                     enum: [0, 1, 2]
                                     default: 0
-                                    description: Scale IEC turbulence models to exact target standard deviation? [0=no additional scaling; 1=use hub scale uniformly; 2=use individual scales]
+                                    description: Scale IEC turbulence models to exact target standard deviation [0=no additional scaling; 1=use hub scale uniformly; 2=use individual scales]
                                 NumGrid_Z:
                                     type: integer
                                     default: 25
@@ -1086,7 +1104,7 @@ properties:
                                 Randomize:
                                     type: boolean
                                     default: True
-                                    description: Randomize the disturbance scale and locations? (true/false)
+                                    description: Randomize the disturbance scale and locations (true/false)
                                 DistScl:
                                     type: number
                                     default: 1.
@@ -1261,4 +1279,4 @@ properties:
             save_error:
                 type: boolean
                 default: True
-                description: Save error timeseries?
+                description: Save error timeseries

@@ -13,7 +13,7 @@ from openfast_io.FAST_reader import InputReader_OpenFAST
 from openfast_io.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper, Turbsim_wrapper, IEC_CoherentGusts
 from pCrunch import AeroelasticOutput, Crunch, FatigueParams, read
-from weis.aeroelasticse.openfast_library import FastLibAPI
+from pyOpenFAST.fast import FastLibAPI
 
 import numpy as np
 
@@ -182,7 +182,7 @@ class runFAST_pywrapper(object):
             os.chdir(FAST_directory)
         
             openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.basename(writer.FAST_InputFileOut)))
-            openfastlib.fast_run()
+            openfastlib.run()
 
             output_dict = {}
             for i, channel in enumerate(openfastlib.output_channel_names):

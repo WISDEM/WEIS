@@ -7,7 +7,6 @@ fname_wt_input = os.path.join(run_dir, "..","..","..","examples","00_setup", "re
 fname_modeling_options = os.path.join(run_dir, "weis_inputs", "modeling_options_all_dlcs.yaml")
 fname_analysis_options = os.path.join(run_dir, "weis_inputs", "analysis_options_all_dlcs.yaml")
 
-print('here')
 # Apply modeling overrides to shorten tests
 
 # Run WEIS for real now

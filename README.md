@@ -9,6 +9,14 @@ WEIS, Wind Energy with Integrated Servo-control, performs multifidelity co-desig
 
 Author: [NREL WISDEM & OpenFAST & Control Teams](mailto:systems.engineering@nrel.gov)
 
+## Part of the WETO Stack
+
+WEIS is primarily developed with the support of the U.S. Department of Energy and is part of the [WETO Software Stack](https://nrel.github.io/WETOStack). For more information and other integrated modeling software, see:
+- [Portfolio Overview](https://nrel.github.io/WETOStack/portfolio_analysis/overview.html)
+- [Entry Guide](https://nrel.github.io/WETOStack/_static/entry_guide/index.html)
+- [Systems Engineering Workshop](https://nrel.github.io/WETOStack/workshops/user_workshops_2024.html#systems-engineering)
+- [OpenFAST Workshop](https://nrel.github.io/WETOStack/workshops/user_workshops_2024.html#openfast-ecosystem)
+
 ## Documentation
 
 See local documentation in the `docs`-directory or access the online version at <https://weis.readthedocs.io/en/latest/>
@@ -53,17 +61,15 @@ The installation instructions below use the environment name, "weis-env," but an
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
         conda env create --name weis-env -f environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-
-
-2. If you are NOT on Kestrel, add in final packages and install the software
-
         conda install -y petsc4py=3.22.2 mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
+
+2. If you are NOT on Kestrel, install the software
+        
         pip install -e .
 
-3. If you are on Kestrel, do:
-
-        module load comp-intel intel-mpi mkl
-        module unload gcc
+3. If you are on Kestrel, first load some modules and then install:
+        
+        module load intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl conda
         pip install --no-deps -e . -v
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Kestrel, make sure to reload the necessary modules

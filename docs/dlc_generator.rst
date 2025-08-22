@@ -1,16 +1,18 @@
+.. _section-dlc_driver:
+
 =========================
 Design Load Cases in WEIS
 =========================
 
 Design load cases (DLCs) specify the conditions that a turbine must operate in safely thorughout its lifetime.
 These load cases are defined in IEC standards.
-We supplement the standards with information from the DTU design load basis (cite).
+We supplement the standards with information from the `DTU design load basis <https://orbit.dtu.dk/files/126478218/DTU_Offshore_Design_Load_Basis_Rev_0.pdf>`_.
 
 --------------------------
 How to Set Up DLCs in WEIS
 --------------------------
 
-DLCs are configured in the modeling options (link). 
+DLCs are configured in the (:ref:`modeling-options`). 
 A full set of input information is contained within the modeling schema.
 An example (a subset of a modeling input) is shown next::
 
@@ -43,9 +45,9 @@ The ``metocean_conditions`` are defined using tables of ``wind_speed``, ``wave_h
 Individual DLCs use these conditions to determine specific sea conditions for each case, but they can also be overwritten in each case.
 
 Users can specify the wind speed bin size (``ws_bin_size``) or the specific wind speeds (``wind_speed``).
-The number of seeds (``n_seed``) and specifics about the turbsim inputs (link?, ``turbulent_wind``) can also be specified.
-``transient_time`` is excluded from timeseries analysis; only ``analysis_time`` is used.
-A complete listing of the DLC options can be found here `DLC options`_ below.
+The number of seeds (``n_seed``) and inputs to TurbSim (``turbulent_wind``) can also be specified.
+``transient_time`` is excluded from time series analysis; only ``analysis_time`` is used.
+A complete listing of the DLC options can be found in the `DLC options`_ below.
 
 -------------------
 Reviewing DLC Cases
@@ -54,7 +56,7 @@ Reviewing DLC Cases
 The DLC Case Matrix
 -------------------
 
-WEIS creates a case matrix for each DLC; this case matrix, is located in the same directory as the openfast runs in both yaml and txt format.
+WEIS creates a case matrix for each DLC; this case matrix, is located in the same directory as the OpenFAST runs in both yaml and txt format.
 The case matrix specifies which inputs are changed for each case.
 An example case matrix is shown next::
 
@@ -65,12 +67,12 @@ An example case matrix is shown next::
     2         1      9.536058651858337    9.189114   9.189114   9.189114      0       7.559987  10.0   0.0      9.7        2        13.6       15.0     1693606511 
     3         1      9.536058651858337    9.189114   9.189114   9.189114      0       7.559987  10.0   0.0      9.7        2        13.6       15.0     680233354  
 
-This case matrix represents DLC 6.1 and shows the initial conditions (BlPitch*, RotSpeed) as well as the sea state (WaveHs, WaveTp) and wind condtions (HWindSpeed, RandSeed1) for each case.
+This case matrix is for DLC 6.1 and shows the initial conditions (BlPitch*, RotSpeed) as well as the sea state (WaveHs, WaveTp) and wind condtions (HWindSpeed, RandSeed1) for each case.
 
 Modeling Option Outputs
 -----------------------
 
-Additionally, the DLC options are outputted in the modeling options of WEIS.
+Additionally, the DLC options are printed in the modeling options of WEIS.
 These outputs can be used as inputs for future runs to exactly reproduce specific cases::
 
   DLC_driver:
@@ -109,16 +111,12 @@ These outputs can be used as inputs for future runs to exactly reproduce specifi
 Expected DLC Outputs in OpenFAST
 --------------------------------
 
-.. For each:
-.. Short description.
-.. Defaults?
-.. Timeseries
 
 Power production (1.X)
 -----------------------
 
 In all the power producing DLCs (1.X), the wind turbine should be running and connected to an electrical load.
-According to the standard, deviations from theoretical operating conditions (like yaw misalignment0 should be considered).
+According to the standard, deviations from theoretical operating conditions (like yaw misalignment should be considered).
 ``yaw_misalign`` is an available option for all these cases; the default is 0 deg. for all 1.X cases.
 DLC 1.X simulations all use a normal turbulence model.  The class and type is set in the ``assembly`` options in the geometry input.
 For DLCs 1.1--1.5, a normal sea state is used, based on the modeling options ``(DLC_driver,metocean_conditions,wave_height_NSS)``.
@@ -130,7 +128,7 @@ DLC 1.1
 -------
 Normal turbulence and sea state, specified using the options described above, with wind speeds spanning the operational wind speeds. 
 Specific wind speeds can be selected with the ``(DLC_driver,DLCs,DLC: "1.1", wind_speed)`` input.
-The default number of seeeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
+The default number of seeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
 
 .. figure:: /images/dlcs/DLC11.png
    :align: center
@@ -151,14 +149,14 @@ DLC 1.2 simulations are very similar to DLC 1.1 simulation.  More metocean combi
         wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
         probabilities: [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]
 
-Note that postprocessing using these probabilities is currently under construction, with an anticipated release in Q2 of 2025.
+Note that postprocessing using these probabilities is currently under construction, with an anticipated release in Q3 of 2025.
 
 
 DLC 1.3
 -------
 
 DLC 1.3 is used for ultimate loading with the extreme turbulence model (ETM) and a normal sea state.
-Note that the standard specifies some guidance for the scaling of this turbulence based on the extrapolation of DLC 1.1 results; this is not yet included in WEIS.
+Note that the standard specifies guidance for the scaling of this turbulence based on the extrapolation of DLC 1.1 results; this is not yet included in WEIS.
 
 .. figure:: /images/dlcs/DLC13.png
    :align: center
@@ -180,7 +178,7 @@ For each of those cases, users can specify the ``n_azimuth`` input to start the 
 
 DLC 1.5
 -------
-In thise case, we model an extreme wind shear (EWS) event.  Both positive and negative direciton shears are generated, along with horizontal and vertical shear.  
+In this case, we model an extreme wind shear (EWS) event.  Both positive and negative direction shears are generated, along with horizontal and vertical shear.  
 
 .. figure:: /images/dlcs/DLC15.png
    :align: center
@@ -208,8 +206,8 @@ Here, we compare a DLC 1.1 simulation with a DLC 1.6 and the extreme waves model
 
 Power production with fault (2.X)
 ---------------------------------
-DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electircal load.
-In additions to the options used to describe power production, DLC 2.X allow foroptions to descibe blade pitch, generator and yaw faults.
+DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electrical load.
+In addition to the options used to describe power production, DLC 2.X allow for options to describe blade pitch, generator and yaw faults.
 The azimuth position for the rotor at the time of a fault may have significant influence on the load levels.
 Therefore, the `azimuth_init` is required for DLC 2.X.
 
@@ -217,9 +215,7 @@ DLC 2.1
 -------
 DLC 2.1 related to normal control system fault or loss of electrical network.
 The faults included in this DLC are: blade pitch fault, yaw position fault and, loss of electrical network.
-What is a pitch 
-'pitchfault_time1','pitchfault_blade1pos'
-This DLC is evaulated for normal sea-state and normal turbulence model.
+This DLC is evaluated for normal sea-state and normal turbulence model.
 The partial safety factor for this DLC is assumed to be 1.35.
 The azimuth position at time of occurrence of the fault is randomly selected.
 
@@ -232,7 +228,7 @@ plot of inflow, control signal, power, one load signal
 DLC 2.3 
 """""""
 DLC 2.3 related to loss of electrical network under gust
-This DLC is evaulated for normal sea-state and extreme operating guest. 
+This DLC is evaluated for normal sea-state and extreme operating guest. 
 The partial safety factor for this DLC is assumed to be 1.35.
 The azimuth position at time of occurrence of the fault is randomly selected.
 
@@ -301,7 +297,7 @@ Users can map generic inputs, like ``mean_sea_level`` to a specific OpenFAST inp
 Users can also map generic inputs to multiple OpenFAST inputs, like ``final_pitch_angle`` which is mapped to ``BlPitchF(1)``, ``BlPitchF(2)``, and ``BlPitchF(3)`` in ServoDyn.
 
 This mapping is helpful for users to define additional groups that will alter individual DLCs or sweep additional parameters.
-Let's consider the following example::
+Consider the following example::
   
   DLCs:
     - DLC: "1.6"

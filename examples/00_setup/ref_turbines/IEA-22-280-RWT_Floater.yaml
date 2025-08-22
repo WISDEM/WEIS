@@ -644,7 +644,6 @@ components:
       lss_wall_thickness: [0.02, 0.02]
       nose_diameter: [2.1, 2.1]
       nose_wall_thickness: [0.035, 0.035]
-      generator_length: 3.047
       bedplate_wall_thickness:
         grid: [0.0, 0.3333333333333333, 0.6666666666666666, 1.0]
         values: [0.1, 0.1, 0.1, 0.1]
@@ -655,19 +654,21 @@ components:
       uptower: true
       lss_material: steel_drive
       bedplate_material: steel
-      generator_rpm_efficiency_user:
-        grid: [1.98, 2.8, 3.47, 3.98, 4.31, 4.49, 5.1, 5.66, 6.39, 7.16]
-        values: [0.7878, 0.9071, 0.941, 0.9526, 0.9566, 0.9582, 0.9614, 0.9622, 0.9608, 0.9541]      
-      generator_mass_user: 508040.0
       distance_hub_mb: 1.8326555998427452
       distance_mb_mb: 0.8714585547144666
-      generator_radius_user: 4.89
       damping_ratio: 0.005
       brake_mass_user: 0.0
       hvac_mass_coefficient: 0.025
       converter_mass_user: 0.0
       transformer_mass_user: 0.0
-      elastic_properties_mb:
+    generator:
+      generator_length: 3.047
+      generator_radius_user: 4.89
+      generator_rpm_efficiency_user:
+        grid: [1.98, 2.8, 3.47, 3.98, 4.31, 4.49, 5.1, 5.66, 6.39, 7.16]
+        values: [0.7878, 0.9071, 0.941, 0.9526, 0.9566, 0.9582, 0.9614, 0.9622, 0.9608, 0.9541]
+      generator_mass_user: 508040.0
+    elastic_properties_mb:
         system_mass: 821009.0477187126
         yaw_mass: 28740.99049474962
         system_inertia: [11242533.974662142, 14539734.272247598, 14648892.347010525, 799429.7807778214, 2997469.283520137, -290639.9124403294]

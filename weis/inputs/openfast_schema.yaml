@@ -226,7 +226,7 @@ properties:
                     TabDelim:
                         type: boolean
                         default: True
-                        description: Use tab delimiters in text tabular output file? (flag) (currently unused)
+                        description: Use tab delimiters in text tabular output file (flag) (currently unused)
                     OutFmt: &outfmt
                         type: string
                         default: 'ES10.3E2'
@@ -238,7 +238,7 @@ properties:
                     CalcSteady:
                         type: boolean
                         default: False
-                        description: Calculate a steady-state periodic operating point before linearization? [unused if Linearize=False] (flag)
+                        description: Calculate a steady-state periodic operating point before linearization [unused if Linearize=False] (flag)
                     TrimCase:
                         type: string
                         enum: ['1','2','3', yaw, Yaw, YAW, torque, Torque, TORQUE, pitch, Pitch, PITCH]
@@ -304,7 +304,7 @@ properties:
                     LinOutMod:
                         type: boolean
                         default: False
-                        description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+                        description: Write module-level linearization output files in addition to output for full system (flag) [unused if Linearize=False]
                     WrVTK:
                         type: integer
                         default: 0
@@ -318,7 +318,7 @@ properties:
                     VTK_fields:
                         type: boolean
                         default: False
-                        description: Write mesh fields to VTK data files? (flag) {true/false} [unused if WrVTK=0]
+                        description: Write mesh fields to VTK data files (flag) {true/false} [unused if WrVTK=0]
                     VTK_fps:
                         type: number
                         default: 10.
@@ -650,23 +650,23 @@ properties:
                     TwrAero:
                         type: boolean
                         default: True
-                        description: Calculate tower aerodynamic loads? (flag)
+                        description: Calculate tower aerodynamic loads (flag)
                     FrozenWake:
                         type: boolean
                         default: False
-                        description: Assume frozen wake during linearization? (flag) [used only when Wake_Mod=1 and when linearizing]
+                        description: Assume frozen wake during linearization (flag) [used only when Wake_Mod=1 and when linearizing]
                     CavitCheck:
                         type: boolean
                         default: False
-                        description: Perform cavitation check? (flag) TRUE will turn off unsteady aerodynamics
+                        description: Perform cavitation check (flag) TRUE will turn off unsteady aerodynamics
                     Buoyancy:
                         type: boolean
                         default: False
-                        description: Include buoyancy effects? (flag)
+                        description: Include buoyancy effects (flag)
                     NacelleDrag:
                         type: boolean
                         default: False
-                        description: Include Nacelle Drag effects? (flag)
+                        description: Include Nacelle Drag effects (flag)
                     CompAA:
                         type: boolean
                         default: False
@@ -710,23 +710,23 @@ properties:
                     TipLoss:
                         type: boolean
                         default: True
-                        description: Use the Prandtl tip-loss model? (flag) [used only when Wake_Mod=1]
+                        description: Use the Prandtl tip-loss model (flag) [used only when Wake_Mod=1]
                     HubLoss:
                         type: boolean
                         default: True
-                        description: Use the Prandtl hub-loss model? (flag) [used only when Wake_Mod=1]
+                        description: Use the Prandtl hub-loss model (flag) [used only when Wake_Mod=1]
                     TanInd:
                         type: boolean
                         default: True
-                        description: Include tangential induction in BEMT calculations? (flag) [used only when Wake_Mod=1]
+                        description: Include tangential induction in BEMT calculations (flag) [used only when Wake_Mod=1]
                     AIDrag:
                         type: boolean
                         default: True
-                        description: Include the drag term in the axial-induction calculation? (flag) [used only when Wake_Mod=1]
+                        description: Include the drag term in the axial-induction calculation (flag) [used only when Wake_Mod=1]
                     TIDrag:
                         type: boolean
                         default: True
-                        description: Include the drag term in the tangential-induction calculation? (flag) [used only when Wake_Mod=1 and TanInd=TRUE]
+                        description: Include the drag term in the tangential-induction calculation (flag) [used only when Wake_Mod=1 and TanInd=TRUE]
                     IndToler:
                         type: number
                         default: 0.0
@@ -987,7 +987,7 @@ properties:
                     UseBlCm:
                         type: boolean
                         default: True
-                        description: Include aerodynamic pitching moment in calculations?  (flag)
+                        description: Include aerodynamic pitching moment in calculations  (flag)
                     VolHub:
                         type: number
                         default: 0
@@ -1484,7 +1484,7 @@ properties:
                     TabDelim:
                         type: boolean
                         default: True
-                        description: Use tab delimiters in text tabular output file? (flag) (currently unused)
+                        description: Use tab delimiters in text tabular output file (flag) (currently unused)
                     OutFmt: *outfmt
                     DecFact:
                         type: integer
@@ -1729,7 +1729,7 @@ properties:
                     RotStates:
                         type: boolean
                         default: True
-                        description: Orient states in the rotating frame during linearization? (flag) [used only when linearizing]
+                        description: Orient states in the rotating frame during linearization (flag) [used only when linearizing]
                     order_elem:
                         type: integer
                         minimum: 0
@@ -2422,7 +2422,7 @@ properties:
                         description: Generator torque constant in Region 2 for simple variable-speed generator control (HSS side) (N-m/rpm^2) [used only when VSContrl=1]
                     VS_SlPc:
                         type: number
-                        default: 99999.
+                        default: 2.
                         minimum: 0.
                         unit: none
                         description: Rated generator slip percentage in Region 2 1/2 for simple variable-speed generator control (%) [used only when VSContrl=1]
@@ -2698,7 +2698,7 @@ properties:
                     TabDelim:
                         type: boolean
                         default: True
-                        description: Use tab delimiters in text tabular output file? (flag) (currently unused)
+                        description: Use tab delimiters in text tabular output file (flag) (currently unused)
                     OutFmt: *outfmt
                     TStart:
                         type: number
@@ -3078,31 +3078,40 @@ properties:
             outlist: &ofoutlist
                 type: object
                 default: {}
+                description: Add additional OpenFAST channels to the output files
                 properties:
                     InflowWind:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     AeroDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     ElastoDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     BeamDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     HydroDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     SubDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     MoorDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
                     ServoDyn:
                         type: object
                         default: {}
+                        description: "Add items here with the format of 'VariableName: True'"
             from_openfast:
                 type: boolean
                 default: False

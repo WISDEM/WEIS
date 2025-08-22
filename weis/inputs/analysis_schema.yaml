@@ -300,11 +300,11 @@ properties:
                                         const_omega:
                                             type: boolean
                                             default: False
-                                            description: Keep the natural frequency constant while the mass changes?
+                                            description: Keep the natural frequency constant while the mass changes
                                         const_zeta:
                                             type: boolean
                                             default: False
-                                            description: Keep the damping ratio constant while the mass changes?
+                                            description: Keep the damping ratio constant while the mass changes
                                 stiffness:
                                     type: object
                                     description: Stiffness optimization of TMD group
@@ -329,7 +329,7 @@ properties:
                                         const_zeta:
                                             type: boolean
                                             default: False
-                                            description: Keep the damping ratio constant while the natural frequency changes?
+                                            description: Keep the damping ratio constant while the natural frequency changes
                                 damping_ratio:
                                     type: object
                                     description: Damping ratio optimization of TMD group
