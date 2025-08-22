@@ -50,13 +50,13 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         Linearize: False
     ElastoDyn:      # DZ: taking level 2 DOFs from here now, let's set linearization DOFs in Level 2 modelling options next
         flag: True
-        FlapDOF1: False
+        FlapDOF1: True
         FlapDOF2: False
-        EdgeDOF: False
+        EdgeDOF: True
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
-        YawDOF: True  
+        YawDOF: False  
         TwFADOF1 : True
         TwFADOF2 : True
         TwSSDOF1 : True
@@ -107,6 +107,12 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 10
+          wind_speed: [16] #[4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
           n_seeds: 1
+<<<<<<< HEAD
+          analysis_time: 10.
+          transient_time: 00.
+=======
           analysis_time: 0.1
           transient_time: 0.
+>>>>>>> 1543b3f0a27e354ff332ea0d4c0101198037707f

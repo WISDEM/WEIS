@@ -1,0 +1,49 @@
+outputDirStructure:
+  dirs: {}
+  files:
+  - fowt_train_1p6
+userOptions:
+  deisgn_of_experiments: false
+  inverse_design: false
+  optimization:
+    status: false
+    type: 0
+  output_fileName: iea15mw
+  output_folder: /home/athulsun/WEIS-MB/examples/02_run_openfast_cases/outputs/fowt_train_1p6
+  sql_recorder: true
+  sql_recorder_file: log_opt.sql
+userPreferences:
+  openfast:
+    file_path:
+      file1: None
+    graph:
+      xaxis: Time
+      yaxis:
+      - Wind1VelX
+      - GenPwr
+      - BldPitch1
+      - GenSpeed
+      - PtfmPitch
+  optimization:
+    convergence:
+      channels:
+      - floating.jointdv_0
+      - floating.jointdv_1
+      - floating.memgrp1.outer_diameter_in
+      - raft.Max_PtfmPitch
+      - floatingse.system_structural_mass
+  wisdem:
+    blade:
+      shape_yaxis:
+      - rotorse.rc.chord_m
+      - rotorse.re.pitch_axis
+      - rotorse.theta_deg
+      struct_yaxis:
+      - rotorse.rhoA_kg/m
+      struct_yaxis_log:
+      - rotorse.EA_N
+      - rotorse.EIxx_N*m**2
+      - rotorse.EIyy_N*m**2
+      - rotorse.GJ_N*m**2
+      xaxis: rotorse.rc.s
+    output_path: /home/athulsun/WEIS-MB/examples/02_run_openfast_cases/outputs/fowt_train_1p6

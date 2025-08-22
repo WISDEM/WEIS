@@ -257,7 +257,7 @@ class BaseMethod:
         if len(self.constraints) > 0:
             for constraint in self.constraints:
                 outputs_to_approximate.append(constraint["name"])
-
+        
         for output_name in outputs_to_approximate:
             differences = outputs_high[output_name] - outputs_low[output_name]
 
@@ -315,6 +315,10 @@ class BaseMethod:
             approximation_functions[output_name] = approximation_function
 
         self.approximation_functions = approximation_functions
+
+        self.outputs_low = outputs_low
+        self.outputs_high = outputs_high
+  
 
     def process_results(self):
         """

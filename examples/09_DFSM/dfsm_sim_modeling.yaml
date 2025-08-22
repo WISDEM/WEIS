@@ -1,0 +1,94 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+
+
+WISDEM:
+    RotorSE:
+        flag: False
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: False
+    from_openfast: True
+    regulation_trajectory: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    simulation:
+        DT: 0.05
+        OutFileFmt: 3
+        CompElast: 1
+    ElastoDyn:
+        FlapDOF1: False 
+        FlapDOF2: False 
+        EdgeDOF: False 
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : False 
+        TwSSDOF1 : False 
+        TwSSDOF2 : False 
+        PtfmSgDOF: True
+        PtfmSwDOF: False 
+        PtfmHvDOF: False 
+        PtfmRDOF : False 
+        PtfmPDOF : True
+        PtfmYDOF : False 
+    HydroDyn:
+        PotMod: 1
+        WaveMod: 5
+        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+    SeaState:
+        WaveMod: 5      # dfsm wrapper will generate wave input and save it
+
+ROSCO:
+    flag: True
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml    
+    
+DFSM:
+    flag: True
+    general_options:
+        dfsm_file: dfsm_models/dfsm_iea15_volturnus.pkl
+        # modeling_data_path: /home/athulsun/DFSM/data/FOWT_1p6  # has openfast simulations, not used
+        save_results: True
+        usecase: closed-loop-simulation  # this is the only option for now
+    model_options: 
+        filter_args:
+            state_filter_flag: [True,True,True]
+            state_filter_type: [[filtfilt],[filtfilt],[filtfilt]]
+            state_filter_tf: [[0.1],[0.1],[0.1]]
+
+    
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+    DLCs:
+        - DLC: "1.6"
+          n_seeds: 1
+          wind_speed: [12]
+          analysis_time: 20.
+          transient_time: 0.

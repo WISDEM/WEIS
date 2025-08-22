@@ -78,17 +78,17 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
         if MPI:
-            if modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']:
+            if modeling_options['OpenFAST']['flag'] or modeling_options['DFSM']['flag'] or modeling_options['OpenFAST_Linear']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
-                if opt_options['driver']['design_of_experiments']['flag']:
+                if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
                     modeling_options['General']['openfast_configuration']['cores'] = 1
                 else:
                     modeling_options['General']['openfast_configuration']['cores'] = nOFp
 
             # Parallel settings for OpenMDAO
-            if opt_options['driver']['design_of_experiments']['flag']:
+            if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
                 wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
             else:
                 wt_opt = om.Problem(model=om.Group(num_par_fd=nFD), comm=comm_i, reports=False)
@@ -106,7 +106,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
             wt_opt = myopt.set_constraints(wt_opt)
 
-            if opt_options['driver']['design_of_experiments']['flag']:
+            if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
                 wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs']
                 wt_opt.driver.options['procs_per_model'] = 1
         wt_opt = myopt.set_recorders(wt_opt)
@@ -206,7 +206,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 fileIO.save_data(froot_out, wt_opt)
 
     if MPI and \
-            (modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']) and \
+            (modeling_options['OpenFAST']['flag'] or modeling_options['DFSM']['flag'] or modeling_options['OpenFAST_Linear']['flag']) and \
             (not opt_options['driver']['design_of_experiments']['flag']):
         # subprocessor ranks spin, waiting for FAST simulations to run.
         sys.stdout.flush()

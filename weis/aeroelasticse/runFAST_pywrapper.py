@@ -126,7 +126,7 @@ class runFAST_pywrapper(object):
         self.keep_time          = False
         self.use_exe            = False  # use openfast executable instead of library, helpful for debugging sometimes
         self.goodman            = False
-        self.magnitude_channels = magnitude_channels_default
+        self.magnitude_channels = magnitude_channels_default;print(self.magnitude_channels['TwrBsM'])
         self.fatigue_channels   = fatigue_channels_default
         self.cruncher           = None # Will be initialized on first run through
         self.allow_fails        = False

@@ -46,6 +46,8 @@ class SimpleTrustRegion(BaseMethod):
         trust_radius=0.2,
         expansion_ratio=2.0,
         contraction_ratio=0.25,
+        optimization_log = False,
+        log_filename = None
     ):
         """
         Initialize the trust region method and store the user-defined options.
@@ -69,6 +71,8 @@ class SimpleTrustRegion(BaseMethod):
             The scalar value multiplied to the trust region size if expanding.
         contraction_ratio : float
             The scalar value multiplied to the trust region size if contracting.
+        optimization_log : Bool
+            If set to true, prints the results of each iteration to a txt file
 
 
         """
@@ -80,6 +84,10 @@ class SimpleTrustRegion(BaseMethod):
         self.trust_radius = trust_radius
         self.expansion_ratio = expansion_ratio
         self.contraction_ratio = contraction_ratio
+        self.optimization_log = optimization_log
+        self.log_filename = log_filename
+
+
 
     def find_next_point(self, num_basinhop_iterations):
         """
@@ -114,7 +122,7 @@ class SimpleTrustRegion(BaseMethod):
         if num_basinhop_iterations:
             minimizer_kwargs = {
                 "method": "SLSQP",
-                "tol": 1e-10,
+                "tol": 1e-5,
                 "bounds": bounds,
                 "constraints": self.list_of_constraints,
                 "options": {"disp": self.disp == 2, "maxiter": 20},
@@ -128,14 +136,15 @@ class SimpleTrustRegion(BaseMethod):
                 minimizer_kwargs=minimizer_kwargs,
             )
         else:
+
             res = minimize(
                 scaled_function,
                 x0,
-                method="SLSQP",
-                tol=1e-10,
+                method="COBYLA",
+                tol=1e-3,
                 bounds=bounds,
                 constraints=self.list_of_constraints,
-                options={"disp": self.disp == 2, "maxiter": 20},
+                options={"disp": self.disp == 2, "maxiter": 50},
             )
         x_new = res.x
 
@@ -149,7 +158,7 @@ class SimpleTrustRegion(BaseMethod):
 
         return x_new, hits_boundary
 
-    def update_trust_region(self, x_new, hits_boundary):
+    def update_trust_region(self, iter, x_new, hits_boundary):
         """
         Either expand or contract the trust region radius based on the
         value of the high-fidelity function at the proposed design point.
@@ -188,7 +197,7 @@ class SimpleTrustRegion(BaseMethod):
             rho = 0.0
         else:
             rho = actual_reduction / predicted_reduction
-
+        
         # 4. Accept or reject the trial point according to that ratio
         # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even.
         # Removed this logic for now, see git blame for this line to retrive it.
@@ -203,14 +212,43 @@ class SimpleTrustRegion(BaseMethod):
             )
         elif rho < self.eta:  # Unclear if this is the best check
             self.trust_radius *= self.contraction_ratio
-
+        
         if self.disp:
             print()
+            print('--------------------------------------------------------')
             print("Predicted reduction:", np.squeeze(predicted_reduction))
             print("Actual reduction:", actual_reduction)
             print("Rho", np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
             print("Best func value:", new_point_high)
+
+        if self.optimization_log:
+            # con_name = self.constraints[0]['name']
+
+            # con_val_old = self.model_high.run(self.design_vectors[-2])[con_name]
+            # con_val_new = self.model_high.run(x_new)[con_name]
+            with open(self.log_filename,'a') as f:
+                f.write("================\n")
+                f.write('Iteration number : '+str(iter+1)+'\n')
+                param_str_new = ", ".join(f"{p:.4f}" for p in x_new)
+                param_str_old = ", ".join(f"{p:.4f}" for p in self.design_vectors[-2])
+                f.write('x_old: '+param_str_old + '\n')
+                f.write('x_new: '+param_str_new + '\n')
+                f.write('LF Model Eval : '+str(self.model_low.n_count)+'\n')
+                f.write('HF Model Eval : '+str(self.model_high.n_count)+'\n')
+                f.write('Actual Obj value at x_old:{:}\n'.format(prev_point_high))
+                f.write('Predicted Obj value at x_old:{:}\n'.format(np.squeeze(prev_point_approx)))
+                f.write('Actual Obj value at x_new:{:}\n'.format(new_point_high))
+                f.write('Predicted Obj value at x_new:{:}\n'.format(np.squeeze(new_point_approx)))
+                # f.write('Constraint Value at x_old:{:}\n'.format(np.squeeze(con_val_old)))
+                # f.write('Constraint Value at x_new:{:}\n'.format(np.squeeze(con_val_new)))
+                if rho >= self.eta:
+                    f.write("Trust region expanded\n")
+                else:
+                    f.write("Trust region contracted\n")
+
+
+
 
     def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False, interp_method="smt"):
         """
@@ -227,6 +265,18 @@ class SimpleTrustRegion(BaseMethod):
         self.construct_approximations(interp_method=interp_method)
         self.process_constraints()
 
+        if self.optimization_log:
+            if self.log_filename == None:
+                log_filename = 'optimization_log_slsqp.txt'
+                self.log_filename = log_filename
+
+            with open(self.log_filename, 'w') as f:
+                f.write("Optimization Log\n")
+                #f.write("================\n")
+                f.write("\n")  # Blank line for spacing
+
+
+
         if plot:
             self.plot_functions()
 
@@ -234,7 +284,7 @@ class SimpleTrustRegion(BaseMethod):
             self.process_constraints()
             x_new, hits_boundary = self.find_next_point(num_basinhop_iterations)
 
-            self.update_trust_region(x_new, hits_boundary)
+            self.update_trust_region(i,x_new, hits_boundary)
 
             self.construct_approximations(interp_method=interp_method)
 
