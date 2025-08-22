@@ -15,19 +15,28 @@ if __name__ == '__main__':
     # get path to this directory
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
+    # 1. DFSM file and the model detials
+    dfsm_file = os.path.join(this_dir,'..', "09_DFSM", "dfsm_models", "dfsm_iea15_volturnus.pkl")
+
     # 2. OpenFAST directory that has all the required files to run an OpenFAST simulations
-    OF_dir = this_dir + os.sep + 'outputs/below_rated_p05' + os.sep + 'openfast_runs'
-    wind_dataset = OF_dir + os.sep + 'wind_dataset.pkl'
+    OF_dir = '/Users/dzalkind/Tools/WEIS-CSU/examples/09_DFSM/outputs/IEA-15/2_for_mf/openfast_runs'
+    wind_dataset = os.path.join(OF_dir, 'wind_dataset.pkl')
+
+    # 3. ROSCO yaml file
+    rosco_yaml = os.path.join(this_dir, '..', "00_setup", "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi", "IEA-15-240-RWT-UMaineSemi_ROSCO.yaml")
+
+    # 4. Startup transients
+    transition_time = 0
 
     fst_files = [os.path.join(OF_dir,f) for f in os.listdir(OF_dir) if valid_extension(f,'*.fst')]
     n_OF_runs = len(fst_files)
 
-    run_sens_study = True
-    
-    bounds = np.array([[1, 3],[0.4,3.0]])
+    # 5. Set design variables
     desvars = {'omega_vs':np.array([2]),'zeta_vs' : np.array([2])}
+    bounds = np.array([[1, 3],[0.4,3.0]])
     npts = 25
 
+    run_sens_study = False
     n_dims = len(desvars.keys())
 
 
@@ -65,16 +74,12 @@ if __name__ == '__main__':
 
     if rank == 0:
 
-        # 1. DFSM file and the model detials
-        dfsm_file = this_dir + os.sep + 'dfsm_iea15_test3.pkl'
+        with open(dfsm_file,'rb') as handle:
+            dfsm = pickle.load(handle)
 
-        reqd_states = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed']
-        reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
-        reqd_outputs = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt']
-
-        
-        # 3. ROSCO yaml file
-        rosco_yaml = this_dir + os.sep + 'IEA-15-240-RWT-UMaineSemi_ROSCO.yaml'
+        reqd_states = dfsm.reqd_states
+        reqd_controls = dfsm.reqd_controls
+        reqd_outputs = dfsm.reqd_outputs
 
     if color_i == 0:
 
@@ -87,7 +92,17 @@ if __name__ == '__main__':
 
             mpi_options = None
         
-        mf_controls = MF_Turbine(dfsm_file,reqd_states,reqd_controls,reqd_outputs,OF_dir,rosco_yaml,mpi_options=mpi_options,transition_time=200,wind_dataset=wind_dataset)
+        mf_controls = MF_Turbine(
+            dfsm_file,
+            reqd_states,
+            reqd_controls,
+            reqd_outputs,
+            OF_dir,
+            rosco_yaml,
+            mpi_options=mpi_options,
+            transition_time=transition_time,
+            wind_dataset=wind_dataset
+        )
         scaling_dict = {'omega_vs':10}
 
         lf_warmstart_file = OF_dir + os.sep +'lf_ws_file_oz_25.dill'

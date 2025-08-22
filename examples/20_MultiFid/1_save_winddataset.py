@@ -14,9 +14,14 @@ if __name__ == '__main__':
     # get path to this directory
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
+    # 1. DFSM file and the model detials
+    dfsm_file = os.path.join(this_dir,'..', "09_DFSM", "dfsm_models", "dfsm_iea15_volturnus.pkl")
+
     # 2. OpenFAST directory that has all the required files to run an OpenFAST simulations
-    fol = 'below_rated_p05'
-    OF_dir = this_dir + os.sep + 'outputs/'+fol + os.sep + 'openfast_runs'
+    OF_dir = '/Users/dzalkind/Tools/WEIS-CSU/examples/09_DFSM/outputs/IEA-15/2_for_mf/openfast_runs'
+
+    # 3. ROSCO yaml file
+    rosco_yaml = os.path.join(this_dir, '..', "00_setup", "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi", "IEA-15-240-RWT-UMaineSemi_ROSCO.yaml")
 
     fst_files = [os.path.join(OF_dir,f) for f in os.listdir(OF_dir) if valid_extension(f,'*.fst')]
     n_OF_runs = len(fst_files)
@@ -55,16 +60,16 @@ if __name__ == '__main__':
 
     if rank == 0:
 
-        # 1. DFSM file and the model detials
-        dfsm_file = this_dir + os.sep + 'dfsm_fowt_1p6.pkl'
+        
 
-        reqd_states = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed']
-        reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
-        reqd_outputs = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt']
+        with open(dfsm_file,'rb') as handle:
+            dfsm = pickle.load(handle)
+
+        reqd_states = dfsm.reqd_states
+        reqd_controls = dfsm.reqd_controls
+        reqd_outputs = dfsm.reqd_outputs
 
         
-        # 3. ROSCO yaml file
-        rosco_yaml = this_dir + os.sep + 'IEA-15-240-RWT-UMaineSemi_ROSCO.yaml'
 
     if color_i == 0:
 
