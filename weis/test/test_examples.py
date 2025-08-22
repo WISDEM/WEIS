@@ -23,6 +23,7 @@ extra_scripts = [
     "04_frequency_domain_analysis_design/oc3_raft_driver",
     "04_frequency_domain_analysis_design/umaine_semi_raft_opt_driver",
     "05_control_optimization/tmd_opt_driver",
+    "09_DFSM/dfsm_sim_driver.py",
     # "08_potential_flow_modeling/openfast_potmod_driver",   #skip this one for now
 ]
 
