@@ -1,5 +1,5 @@
 general:
-    folder_output: /home/athulsun/multifidelity_paper_studies/06_multiobjective/outputs/IEA22
+    folder_output: outputs/IEA-15/0_dfsm_setup
     fname_output: refturb_output
 
 design_variables:

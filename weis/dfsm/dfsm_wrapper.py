@@ -1,12 +1,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import warnings
 import time as timer
-from mat4py import loadmat
 import pickle
 import shutil
 import pandas as pd
+import logging
 
 from rosco.toolbox import control_interface as ROSCO_ci
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -25,6 +24,9 @@ from weis.dfsm.generate_wave_elev import generate_wave_elev
 from wisdem.inputs import load_yaml, write_yaml
 
 from scipy.interpolate import CubicSpline, interp1d
+
+logger = logging.getLogger("wisdem/weis")
+
 
 def compute_rot_avg(u,y,z,t,R,HubHt):
     ''' 
@@ -430,9 +432,6 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
     general_options = modopt['DFSM']['general_options']
     model_options = modopt['DFSM']['model_options']
 
-    reqd_states = model_options['reqd_states']
-    reqd_controls = model_options['reqd_controls']
-    reqd_outputs = model_options['reqd_outputs']
 
     for chan in ['TTDspFA','TTDspSS','NcIMURAys','YawBrTAxp']:
         fst_vt['outlist']['ElastoDyn'][chan] = True
@@ -440,19 +439,22 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
     fst_vt['outlist']['SeaState']['Wave1Elev'] = True
     # set run dir. THis is the directory where OpenFAST files are stored
     general_options['run_dir'] = modopt['General']['openfast_configuration']['OF_run_dir']
+    modopt_dir = os.path.dirname(modopt['fname_input_modeling'])
 
 
     # Extract datapath
     # --this is the folder in which the .outb files are available
-    modeling_data_path = general_options['modeling_data_path']
 
     # load DFSM model
     dfsm_file = general_options['dfsm_file']
 
-    with open(dfsm_file,'rb') as handle:
+    with open(os.path.join(modopt_dir, dfsm_file),'rb') as handle:
         dfsm = pickle.load(handle)
 
-    interp_type = model_options['interp_type']
+    reqd_states =  dfsm.reqd_states
+    reqd_controls = dfsm.reqd_controls
+    reqd_outputs = dfsm.reqd_outputs
+    
     ode_method = model_options['ode_method']
 
     # setup interpolation method for LPV model
@@ -594,7 +596,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                         'num_blade':3,'pitch':15}
 
 
-            if 'Wave1Elev' in model_options['reqd_controls']:
+            if 'Wave1Elev' in reqd_controls:
                 wave_elev = test_data['wave_elev']
                 wave_fun = CubicSpline(time,wave_elev)
 
@@ -618,7 +620,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
             param['args'] = args
             param['param_filename'] = DISCON_file[idx]
             param['w_fun'] = wind_fun
-            if 'Wave1Elev' in model_options['reqd_controls']:
+            if 'Wave1Elev' in reqd_controls:
                 param['wave_fun'] = wave_fun
             else:
                 param['wave_fun'] = None
@@ -685,9 +687,9 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 ax.tick_params(labelsize=fontsize_tick)
                 ax.legend(ncol = 2,fontsize = fontsize_legend)
                 ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-                
-                if general_options['save_results']:       
-                    fig.savefig(dfsm_save_folder +os.sep+ control + '_' + str(icase) +'_comp.pdf')
+
+                if general_options['save_results']:
+                    fig.savefig(os.path.join(dfsm_save_folder, f"{icase}_{control}_comp.pdf"))
 
                 plt.close(fig)
 
@@ -709,8 +711,8 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
                 
                 if general_options['save_results']:
-                        
-                    fig.savefig(dfsm_save_folder +os.sep+ state+ '_'+str(icase) +'_comp.pdf')
+
+                    fig.savefig(os.path.join(dfsm_save_folder, f"{icase}_{state}_comp.pdf"))
 
                 plt.close(fig)
 
@@ -731,8 +733,8 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
                 
                 if general_options['save_results']:
-                        
-                    fig.savefig(dfsm_save_folder +os.sep+ output_+ '_'+str(icase) + '_comp.pdf')
+
+                    fig.savefig(os.path.join(dfsm_save_folder, f"{icase}_{output_}_comp.pdf"))
 
                 plt.close(fig)
 
@@ -740,8 +742,8 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
             case_name = case_names[icase]
 
             # compile results from DFSM
-            OutData = compile_dfsm_results(T_dfsm,states_dfsm,controls_dfsm,outputs_dfsm,model_options['reqd_states'],
-                                            model_options['reqd_controls'],model_options['reqd_outputs'],GB_ratio,TStart[icase])
+            OutData = compile_dfsm_results(T_dfsm,states_dfsm,controls_dfsm,outputs_dfsm,reqd_states,
+                                            reqd_controls,reqd_outputs,GB_ratio,TStart[icase])
 
             ct.append(OutData)
 
