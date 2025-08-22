@@ -1,13 +1,29 @@
 ## Requirements
 The DFSM construction uses matlab, so the matlab engine is requred: https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html.  The MATLAB optimization toolbox is required.
 
-## Usage
+## DFSM Simulation Usage
 
 0. Run OpenFAST simulations in operational DLCs (ideally 1.6, 6 seeds), across the wind speeds you want to simulate. Only enable the DOFs that you want to include in the DFSM.  Ensure that NcIMURAys is in the openfast outputs so it can be used by the rosco control interface.
 
 1. Run python construct_LPV_matlab.py.  The MATLAB optimization toolbox is required.  This process is not yet tested, but several DFSM pickles are available in ``dfsm_models/``.
 
 2. Use DFSM models within WEIS.  See the modeling options under ``DFSM`` for an example.  
+
+
+## Multifidelity Optimization Usage
+
+0. Run DFSM and genrate an initial set of openfast _inputs_ to pre-determine cases; ``../09_DFSM/dfsm_sim_driver.py`` works for this. Running SeaState with WaveMod 5 so will ensure that the same wave elevation is used for both.
+
+1. Run 1_save_winddataset.py; it runs OpenFAST simulations and saves rotor average wind speeds, so both fidelities use the same wind/wave inputs.
+
+2. Run 2_run_comparison.py: it compares the outputs between both simulation types.  Check ``plot_comp/`` folder in OpenFAST output directory
+
+3. Run 3_run_multifidelity.py to do MF optimization.
+
+## Developer Notes
+
+ - Wave files are generated in dfsm_wrapper
+ - ``mf_controls.py`` will set up openfast runs
 
 
 ## Overview

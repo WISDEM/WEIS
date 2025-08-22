@@ -1,8 +1,8 @@
 import numpy as np
 import os,sys
 import matplotlib.pyplot as plt
-from models.mf_controls import MF_Turbine,compute_outputs,valid_extension
-from models.prod_functions import LFTurbine,HFTurbine
+from mf_models.mf_controls import MF_Turbine,compute_outputs,valid_extension
+from mf_models.prod_functions import LFTurbine,HFTurbine
 from weis.glue_code.mpi_tools import MPI
 import pickle
 
@@ -15,10 +15,10 @@ if __name__ == '__main__':
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
     # 1. DFSM file and the model detials
-    dfsm_file = os.path.join(this_dir,'..', "09_DFSM", "dfsm_models", "dfsm_iea15_volturnus.pkl")
+    dfsm_file = os.path.join(this_dir, "dfsm_models", "dfsm_iea15_volturnus.pkl")
 
     # 2. OpenFAST directory that has all the required files to run an OpenFAST simulations
-    OF_dir = '/Users/dzalkind/Tools/WEIS-CSU/examples/09_DFSM/outputs/IEA-15/2_for_mf/openfast_runs'
+    OF_dir = os.path.join(this_dir, 'outputs' ,'IEA-15', '2_for_mf', 'openfast_runs')
 
     # 3. ROSCO yaml file
     rosco_yaml = os.path.join(this_dir, '..', "00_setup", "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi", "IEA-15-240-RWT-UMaineSemi_ROSCO.yaml")
