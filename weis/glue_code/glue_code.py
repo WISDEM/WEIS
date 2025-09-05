@@ -231,7 +231,8 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
             
             # Peak shaving DV should also influence rotor power in WISDEM
-            self.connect(f'tune_rosco_ivc.ps_percent', "rotorse.rp.powercurve.ps_percent")
+            if not modeling_options['OpenFAST']['from_openfast']:
+                self.connect(f'tune_rosco_ivc.ps_percent', "rotorse.rp.powercurve.ps_percent")
 
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
