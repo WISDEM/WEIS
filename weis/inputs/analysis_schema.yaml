@@ -246,6 +246,23 @@ properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
                                         initial: *initial
+    driver:
+        type: object
+        default: {}
+        properties:
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    skip_doe_if_results_exist:
+                        type: boolean
+                        default: False
+                        description: Toggle skipping the design of experiments if extracted results (fname_output-doedata.yaml) exist
+                    skip_training_if_sm_exist:
+                        type: boolean
+                        default: False
+                        description: Toggle skipping the surrogate model training if trained results are provided.
     constraints:
         # GB: These all need gammas or safety factors
         type: object
@@ -408,7 +425,14 @@ properties:
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
 
-    
+    recorder:
+        type: object
+        default: {}
+        properties:
+            surrogate_model_outputs:
+                type: array
+                description: List of output variables to include in addition to model constraints.
+                default: []
 
     merit_figure:
         type: [string, array]
