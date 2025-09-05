@@ -71,10 +71,30 @@ DLC_driver:
           wind_speed: [9., 11.]
         - DLC: "1.6"
           user_group:
-            - mean_sea_level: [1.0, 2.0]
-              current_speed: [.25, .5]
+            - current_speed: [.25, .5]
+            # - mean_sea_level: [1.0, 2.0]   # skip this one because it needs to be run with strip-theory only, no WAMIT
             - current_model: 1
         - DLC: "1.5"
+        - DLC: "1.6"
+        - DLC: "2.1"
+          genfault_time: 0.1
+        - DLC: "2.2"
+          pitchfault_time1: 0.1
+          pitchfault_blade1pos: 20
+        - DLC: "2.3"
+          genfault_time: 0.1
+          gust_wait_time: 0.1
+        - DLC: "2.4"
+          genfault_time: 0.1
+        - DLC: "3.1"
+        - DLC: "3.2"
+        - DLC: "3.3"
+        - DLC: "4.1"
+          analysis_time: 0.1
+          normal_shutdown_time: 0.1
+        - DLC: "4.2"
+          normal_shutdown_time: 0.1
+          gust_wait_time: 0.1
         - DLC: "5.1"
           n_seeds: 1
           n_azimuth: 3
@@ -90,11 +110,41 @@ DLC_driver:
             GridWidth: 275
             PLExp: 0.14
             IECturbc: 0.12
+        - DLC: "6.2"
+          yaw_misalign: [0.0]
         - DLC: "6.3"
         - DLC: "6.4" #idling 
           ws_bin_size: 10
+        - DLC: "7.1"
+          yawfault_time: 0.5
+          yawfault_yawpos: 15
+          yaw_misalign: [0.0]
+        - DLC: "7.2"
+          yawfault_time: 0.5
+          yawfault_yawpos: 15
+        - DLC: "9.1"
+          mooring_failurepoint: [['1']]
+          mooring_failureline: [[[1]]]
+          mooring_failuretime: [[0.1]]
+        - DLC: "9.2"
+          mooring_failurepoint: [['1']]
+          mooring_failureline: [[[1]]]
+        - DLC: "10.1"
+          mooring_failurepoint: [['1']]
+          mooring_failureline: [[[1]]]
+          mooring_failuretime: [[0.1]]
+        - DLC: "10.2"
+          mooring_failurepoint: [['1']]
+          mooring_failureline: [[[1]]]
+        - DLC: "steady"
+        - DLC: "ramp"
+          analysis_time: 0.1
+          ramp_speeddelta: 5
+          ramp_duration: 0.1
+        - DLC: "step"
+          analysis_time: 0.1
+          step_speeddelta: 5
+          step_time: 0.1
         - DLC: "freedecay"
           transient_time: 0.0
           initial_platform_roll: 5.0
-              
-              
