@@ -33,7 +33,7 @@ openfast_input_map = {
     'rot_speed_initial': ("ElastoDyn","RotSpeed"),
     'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
     'azimuth_init': ("ElastoDyn","Azimuth"),
-    'yaw_misalign': ("ElastoDyn","NacYaw"),
+    'yaw_misalign': [("ElastoDyn","NacYaw"), ("ServoDyn", "YawNeut")],
 
     'compute_aerodynamics': ("Fst", "CompAero"),
     'compute_inflow': ("Fst", "CompInflow"),
