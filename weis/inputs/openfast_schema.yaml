@@ -2285,6 +2285,17 @@ properties:
                         minimum: 0.0
                         maximum: 1.0
                         description: Threshold for IC convergence (-)
+                    NumSegs:
+                        type: [number, array]
+                        unit: none
+                        items:
+                            type: number
+                            minimum: 1
+                            maximum: 50
+                        default: 20
+                        minimum: 1
+                        maximum: 50
+                        description: NumSegs in MoorDyn input for modeling mooring lines.  If array, should match number of lines.
             ServoDyn: &ofservodyn
                 type: object
                 default: {}

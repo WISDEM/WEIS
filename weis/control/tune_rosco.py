@@ -1,8 +1,5 @@
 '''
-Controller tuning script.
-
-Nikhar J. Abbas
-January 2020
+Controller tuning script.  OpenMDAO wrapper for ROSCO toolbox
 '''
 
 from rosco.toolbox import controller as ROSCO_controller
@@ -98,9 +95,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('vs_minspd',         val=0.0,        units='rad/s',          desc='') 
-        self.add_input('ss_vsgain',         val=0.0,                                desc='')
-        self.add_input('ss_pcgain',         val=0.0,                                desc='')
-        self.add_input('ps_percent',        val=0.0,                                desc='')
+
         # Rotor Power
         if self.modeling_options['WISDEM']['RotorSE']['flag']:
             self.n_pitch    = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
@@ -156,27 +151,54 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('usecd',        val=True,                                       desc='use drag coefficient in computing induction factors')
 
         # Controller Tuning Parameters
+        
+        # Generic inputs
+        rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
+
+        for dv in rosco_tuning_dvs:
+            # TODO: support arrays
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'desc' in dv:
+                ivc_desc = dv['desc']
+
+            self.add_input(dv['name'], val=dv['start'], units=ivc_units, desc=ivc_desc)
+
+        # Generic DISCON inputs
+        discon_dvs = self.opt_options['design_variables']['control']['discon']
+        for dv in discon_dvs:
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'description' in dv:
+                ivc_desc = dv['description']
+
+            self.add_input(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+
+        
+        
         if rosco_init_options['linmodel_tuning']['type'] == 'robust':
             n_PC = 1
         else:
             n_PC = len(rosco_init_options['U_pc'])
-        self.add_input('zeta_pc',           val=np.zeros(n_PC),                                 desc='Pitch controller damping ratio')
-        self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',           desc='Pitch controller natural frequency')
+        
+        # Specific inputs, hardcoded
         self.add_input('stability_margin',  val=0.0,                                            desc='Maximum stability margin for robust scheduling')
         self.add_input('omega_pc_max',      val=0.0,                                            desc='Maximum allowable omega margin for robust scheduling')
         self.add_input('twr_freq',          val=0.0,        units='Hz',                         desc='Tower natural frequency')
-        self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
-        self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
-        self.add_output('VS_Ki',            val=0.0,                                            desc='Generator torque control integral gain at first point in schedule')
-        self.add_input('Kp_float',          val=0.0,        units='s',                          desc='Floating feedback gain')
-        self.add_input('zeta_vs',           val=0.0,                                            desc='Generator torque controller damping ratio')
-        self.add_input('omega_vs',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
+
         if rosco_init_options['Flp_Mode'] > 0:
             self.add_input('flp_kp_norm',   val=0.0,                                    desc='Flap controller normalized gain')
             self.add_input('flp_tau',       val=0.0,            units='s',              desc='Flap controller integral gain time constant')
-        self.add_input('IPC_Kp1p',          val=0.0,            units='s',              desc='Individual pitch controller 1p proportional gain')
-        self.add_input('IPC_Ki1p',          val=0.0,                                    desc='Individual pitch controller 1p integral gain')
+
         # Outputs for constraints and optimizations
+        self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
+        self.add_output('VS_Ki',            val=0.0,                                            desc='Generator torque control integral gain at first point in schedule')
         self.add_output('flptune_coeff1',   val=0.0,            units='rad/s',          desc='First coefficient in denominator of flap controller tuning model')
         self.add_output('flptune_coeff2',   val=0.0,            units='(rad/s)**2',     desc='Second coefficient in denominator of flap controller tuning model')
         self.add_output('PC_Kp',            val=0.0,            units='rad',            desc='Pitch control proportional gain at first pitch angle in schedule')
@@ -197,34 +219,37 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = inputs['omega_pc'].tolist()
-        rosco_init_options['zeta_pc']     = inputs['zeta_pc'].tolist()
-        rosco_init_options['omega_vs']    = float(inputs['omega_vs'][0])
-        rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'][0])
+
+        # Speicifc parameters
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_kp_norm'] = float(inputs['flp_kp_norm'][0])
             rosco_init_options['flp_tau']  = float(inputs['flp_tau'][0])
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
-        rosco_init_options['max_pitch']   = float(inputs['max_pitch'][0])
-        rosco_init_options['min_pitch']   = float(inputs['min_pitch'][0])
-        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'][0])
-        rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'][0])
-        rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'][0])
-        rosco_init_options['ps_percent']  = float(inputs['ps_percent'][0])
-        rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p'][0]))
-        rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p'][0]))
-        rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
-        rosco_init_options['IPC_Kp2p']    = 0.0
+        rosco_init_options['max_pitch']   = float(inputs['max_pitch'])
+        rosco_init_options['min_pitch']   = float(inputs['min_pitch'])
+        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'])
+        rosco_init_options['twr_freq']    = float(inputs['twr_freq']) * 2 * np.pi
 
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'][0])
 
-        # If Kp_float is a design variable, do not automatically tune i
-        if self.opt_options['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
-            rosco_init_options['Kp_float'] = float(inputs['Kp_float'][0])
+        # If Kp_float is a design variable, do not automatically tune it
+        dv_names = [dv['name'] for dv in self.opt_options['design_variables']['control']['rosco_tuning']]
+        if 'Kp_float' in dv_names:
             rosco_init_options['tune_Fl'] = False
+
+        # Generic inputs
+        rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
+        for dv in rosco_tuning_dvs:
+            # TODO: support arrays, figure out casting
+            rosco_init_options[dv['name']] = inputs[dv['name']][0]
+
+        # Generic DISCON Inputs
+        discon_dvs = self.opt_options['design_variables']['control']['discon']
+        for dv in discon_dvs:
+            rosco_init_options['DISCON'][dv['name']] = inputs[f'discon:{dv["name"]}']
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
@@ -250,10 +275,6 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'][0])
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq'][0]) * 2 * np.pi
         
-        # Floating Feedback Filters
-        if self.controller_params['Fl_Mode']:
-            rosco_init_options['twr_freq'] = float(inputs['twr_freq'][0]) * 2 * np.pi
-            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'][0])
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
@@ -525,7 +546,7 @@ class ROSCO_Turbine(ExplicitComponent):
         
         parameter_filename = modeling_options['ROSCO']['tuning_yaml']
         if parameter_filename == 'none':
-            raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if from_OpenFAST is True')
+            raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if tuning rosco from an OpenFAST model')
 
         inps = load_rosco_yaml(parameter_filename, rank_0=True)
         self.turbine_params         = inps['turbine_params']

@@ -1,0 +1,3 @@
+general:
+    folder_output: outputs/19_OrcaModel/0_pcrunch_info
+    fname_output: refturb_output

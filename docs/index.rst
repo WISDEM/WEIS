@@ -73,6 +73,15 @@ WEIS Visualization Application
 
    how_weis_viz_works
 
+
+Formulation Toolbox for WEIS
+=============================
+
+.. toctree::
+   :maxdepth: 2
+
+   ftw_overview
+
 Developer Documentation
 =========================
 

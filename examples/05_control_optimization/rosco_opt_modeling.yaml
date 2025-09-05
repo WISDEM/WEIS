@@ -41,7 +41,10 @@ ROSCO:
 DLC_driver:
     DLCs:
         - DLC: "1.1"
-          n_seeds: 3
+          n_seeds: 1
+          wind_speed: [14]
+          transient_time: 60
+          analysis_time: 100
               
 
               
