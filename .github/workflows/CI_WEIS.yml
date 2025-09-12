@@ -42,7 +42,7 @@ jobs:
       
       - name: WISDEM for windio2
         run: |
-          conda remove -f wisdem
+          conda remove --force wisdem
           pip install https://github.com/WISDEM/WISDEM/archive/windIO_2p0.zip
 
       - name: Add dependencies ubuntu specific
