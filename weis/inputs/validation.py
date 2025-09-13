@@ -70,7 +70,7 @@ def write_modeling_yaml(instance, foutput):
     instance2 = wisval.simple_types(instance)
     instance2 = remove_numpy(instance2)
 
-    wisval._validate(instance2, weis_schema, restrictive=True, removal=True, defaults=False, rank_0=True)
+    wisval._validate(instance2, weis_schema, restrictive=False, removal=True, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
