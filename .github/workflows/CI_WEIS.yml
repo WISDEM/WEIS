@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
-        python-version: ["3.11","3.12"]
+        python-version: ["3.11","3.12","3.13"]
         
     steps:
       - uses: actions/checkout@v4
