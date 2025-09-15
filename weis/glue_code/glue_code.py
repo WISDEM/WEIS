@@ -529,6 +529,9 @@ class WindPark(om.Group):
                         idx = modeling_options["floating"]["members"]["name2idx"][kname]
                         self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}_{kname}:s")
                         self.connect(f"floatingse.member{k}_{kname}.wall_thickness", f"aeroelastic.member{k}_{kname}:wall_thickness")
+                        self.connect(f"floatingse.member{k}_{kname}.rho", f"aeroelastic.member{k}_{kname}:rho")
+                        self.connect(f"floatingse.member{k}_{kname}.E", f"aeroelastic.member{k}_{kname}:E")
+                        self.connect(f"floatingse.member{k}_{kname}.G", f"aeroelastic.member{k}_{kname}:G")
 
                         # Member coefficients
                         if modeling_options['floating']['members']['outer_shape'][k] == "circular":

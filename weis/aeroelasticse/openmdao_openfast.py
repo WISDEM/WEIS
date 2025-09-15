@@ -268,6 +268,9 @@ class FASTLoadCases(ExplicitComponent):
                     self.add_input(f"member{k}_{kname}:s_ghost1", 0.0)
                     self.add_input(f"member{k}_{kname}:s_ghost2", 0.0)
                     self.add_input(f"member{k}_{kname}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+                    self.add_input(f"member{k}_{kname}:E", np.zeros(n_height_mem-1), units="Pa")
+                    self.add_input(f"member{k}_{kname}:G", np.zeros(n_height_mem-1), units="Pa")
+                    self.add_input(f"member{k}_{kname}:rho", np.zeros(n_height_mem-1), units="kg/m**3")
 
                     if modopt["floating"]["members"]["outer_shape"][k] == "circular":
                         self.add_input(f"member{k}_{kname}:outer_diameter", val=np.zeros(n_height_mem), units="m")
@@ -1333,145 +1336,13 @@ class FASTLoadCases(ExplicitComponent):
         if len(np.unique(self.Z_out_ED_twr)) < len(self.Z_out_ED_twr):
             raise Exception('The minimum number of tower nodes for WEIS to compute forces along the tower height is 11.')
 
-        # SubDyn inputs- monopile and floating
-        if modopt['flags']['monopile']:
-            mono_d = inputs['monopile_outer_diameter']
-            mono_t = inputs['monopile_wall_thickness']
-            mono_elev = inputs['monopile_z']
-            n_joints = len(mono_d[1:]) # Omit submerged pile
-            n_members = n_joints - 1
-            itrans = n_joints - 1
-            fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointZss'] = mono_elev[1:]
-            fst_vt['SubDyn']['NReact'] = 1
-            fst_vt['SubDyn']['RJointID'] = [1]
-            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
-            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
-            fst_vt['SubDyn']['NInterf'] = 1
-            fst_vt['SubDyn']['IJointID'] = [n_joints]
-            fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
-            
-            # Circular cross-section properties
-            fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
-            fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
-            fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
-            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(mono_d[1:])[0] # Don't need deriv
-            fst_vt['SubDyn']['XsecT'] = mono_t[1:]
-            
-            # Find the members where the 9 channels of SubDyn should be placed
-            grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
-            n_channels = 9
-            grid_target = np.linspace(0., 0.999999999, n_channels)
-            idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
-            idx_out = np.unique(idx_out)
-            fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
-            fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
-            fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
-            fst_vt['SubDyn']['NodeCnt'] = [np.array([1]) for _ in fst_vt['SubDyn']['MemberID_out']] # Since NodeCnt can be a list of nodes defined by NOutCnt, we cant use integers here
-            fst_vt['SubDyn']['NodeCnt'][-1] = np.array([2])
-            self.Z_out_SD_mpl = [grid_joints_monopile[i] for i in idx_out]
-
-            # Add SubDyn output channels for monopile
-            for i in range(fst_vt['SubDyn']['NMOutputs']):
-                for j in fst_vt['SubDyn']['NodeCnt'][i]:
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKxe'] = True
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKye'] = True
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKze'] = True
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKxe'] = True
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKye'] = True
-                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKze'] = True
-
-        elif modopt['flags']['floating']:
-            joints_xyz = inputs["platform_nodes"]
-            n_joints = np.where(joints_xyz[:, 0] == NULL)[0][0]
-            joints_xyz = joints_xyz[:n_joints, :]
-            itrans = util.closest_node(joints_xyz, inputs["transition_node"])
-
-            N1 = np.int_(inputs["platform_elem_n1"])
-            n_members = np.where(N1 == NULL)[0][0]
-            N1 = N1[:n_members]
-            N2 = np.int_(inputs["platform_elem_n2"][:n_members])
-
-            fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
-            fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
-            fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
-            fst_vt['SubDyn']['NReact'] = 0
-            fst_vt['SubDyn']['RJointID'] = []
-            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = []
-            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = []
-            if modopt['floating']['transition_joint'] is None:
-                fst_vt['SubDyn']['NInterf'] = 0
-                fst_vt['SubDyn']['IJointID'] = []
-            else:
-                fst_vt['SubDyn']['NInterf'] = 1
-                fst_vt['SubDyn']['IJointID'] = [itrans+1]
-            fst_vt['SubDyn']['MJointID1'] = N1+1
-            fst_vt['SubDyn']['MJointID2'] = N2+1
-
-            fst_vt['SubDyn']['YoungE1'] = inputs["platform_elem_E"][:n_members]
-            fst_vt['SubDyn']['ShearG1'] = inputs["platform_elem_G"][:n_members]
-            fst_vt['SubDyn']['MatDens1'] = inputs["platform_elem_rho"][:n_members]
-            fst_vt['SubDyn']['XsecD'] = inputs["platform_elem_D"][:n_members]
-            fst_vt['SubDyn']['XsecT'] = inputs["platform_elem_t"][:n_members]
-
-        # SubDyn inputs- offshore generic
-        if modopt['flags']['offshore']:
-            mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
-            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
-            fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
-            fst_vt['SubDyn']['Rct_SoilFile'] = [""]*fst_vt['SubDyn']['NReact']
-            fst_vt['SubDyn']['NJoints'] = n_joints
-            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
-            fst_vt['SubDyn']['JointType'] = np.ones( n_joints, dtype=np.int_)
-            fst_vt['SubDyn']['JointDirX'] = fst_vt['SubDyn']['JointDirY'] = fst_vt['SubDyn']['JointDirZ'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointStiff'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
-            fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
-            fst_vt['SubDyn']['NMembers'] = n_members
-            fst_vt['SubDyn']['MemberID'] = np.arange( n_members, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MType'] = np.ones( n_members, dtype=np.int_ )
-            fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
-            fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
-            
-            # Circular beam cross-section properties
-            fst_vt['SubDyn']['NBCPropSets'] = n_members
-            fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
-            
-            # Rectangular beam cross-section properties (not yet supported)
-            fst_vt['SubDyn']['NBRPropSets'] = 0
-            
-            fst_vt['SubDyn']['NCablePropSets'] = 0
-            fst_vt['SubDyn']['NRigidPropSets'] = 0
-            fst_vt['SubDyn']['NSpringPropSets'] = 0
-            fst_vt['SubDyn']['NCOSMs'] = 0
-            fst_vt['SubDyn']['NXPropSets'] = 0
-            fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
-            fst_vt['SubDyn']['CMJointID'] = [itrans+1]
-            fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'][0])]
-            fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
-            fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
-            fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
-            fst_vt['SubDyn']['JMXY'] = fst_vt['SubDyn']['JMXZ'] = fst_vt['SubDyn']['JMYZ'] = [0.0]
-            fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
-            if mgrav > 0.0:
-                fst_vt['SubDyn']['CMJointID'] += [1]
-                fst_vt['SubDyn']['JMass'] += [mgrav]
-                fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
-                fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
-                fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
-                fst_vt['SubDyn']['JMXY'] += [0.0]
-                fst_vt['SubDyn']['JMXZ'] += [0.0]
-                fst_vt['SubDyn']['JMYZ'] += [0.0]
-                fst_vt['SubDyn']['MCGX'] += [0.0]
-                fst_vt['SubDyn']['MCGY'] += [0.0]
-                fst_vt['SubDyn']['MCGZ'] += [0.0]
 
 
         # HydroDyn inputs
         if modopt['flags']['monopile']:
+            mono_d = inputs['monopile_outer_diameter']
+            mono_t = inputs['monopile_wall_thickness']
+            mono_elev = inputs['monopile_z']
             z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
             # Don't want any nodes near zero for annoying hydrodyn errors
             idx0 = np.intersect1d(np.where(z_coarse>-0.5), np.where(z_coarse<0.5))
@@ -1500,6 +1371,13 @@ class FASTLoadCases(ExplicitComponent):
             Cay_coarse = np.array([])
             Cdy_coarse = np.array([])
             MSecGeom = np.array([], dtype=np.int_)  # 1 for circular, 2 for rectangular
+            E_coarse = np.array([])
+            G_coarse = np.array([])
+            rho_coarse = np.array([])
+            rigid_links_xyz = np.empty((0, 3))
+            rigid_links_N1 = np.array([], dtype=np.int_)
+            rigid_links_N2 = np.array([], dtype=np.int_)
+
 
             idx_circular_member = [i for i, shape in enumerate(modopt['floating']['members']['outer_shape']) if shape == 'circular']
             idx_rectangular_member = [i for i, shape in enumerate(modopt['floating']['members']['outer_shape']) if shape == 'rectangular']
@@ -1527,6 +1405,9 @@ class FASTLoadCases(ExplicitComponent):
                 s_coarse = make_coarse_grid(s_grid, i_dim)
                 s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}_{kname}:s_ghost1"]), inputs[f"member{k}_{kname}:s_ghost2"]) )
                 it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:wall_thickness"])
+                i_E_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:E"])
+                i_G_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:G"])
+                i_rho_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:rho"])
                 xyz0 = inputs[f"member{k}_{kname}:joint1"]
                 xyz1 = inputs[f"member{k}_{kname}:joint2"]
                 dxyz = xyz1 - xyz0
@@ -1539,10 +1420,21 @@ class FASTLoadCases(ExplicitComponent):
                 t_coarse = np.append(t_coarse, it_coarse)  
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
 
+                # Save rigid links - they are likely to be saved at the joint locations already, but saving now so we can find the indices/jointID later because they are likely on different members and only used for subDyn
+                if inputs[f"member{k}_{kname}:s_ghost1"] > 0.0:
+                    ghost1_xyz = xyz0 + dxyz * inputs[f"member{k}_{kname}:s_ghost1"]
+                    rigid_links_xyz = np.append(rigid_links_xyz, np.vstack([inputs[f"member{k}_{kname}:joint1"], ghost1_xyz]), axis=0)
+                if inputs[f"member{k}_{kname}:s_ghost2"] < s_grid[-1]:
+                    ghost2_xyz = xyz0 + dxyz * inputs[f"member{k}_{kname}:s_ghost2"]
+                    rigid_links_xyz = np.append(rigid_links_xyz, np.vstack([inputs[f"member{k}_{kname}:joint2"], ghost2_xyz]), axis=0)
+
                 # Collect member coefficients
                 # These are common for all members, so we can just append them
                 Ca_grid_mem = inputs[f"member{k}_{kname}:Ca"]
                 Cd_grid_mem = inputs[f"member{k}_{kname}:Cd"]
+                E_grid_mem = inputs[f"member{k}_{kname}:E"]
+                G_grid_mem = inputs[f"member{k}_{kname}:G"]
+                rho_grid_mem = inputs[f"member{k}_{kname}:rho"]
 
                 # There's some bug/feature in WISDEM that doesn't allow 0 Ca, Cd, this fixes that
                 zero_ind = Ca_grid_mem < 0
@@ -1555,8 +1447,15 @@ class FASTLoadCases(ExplicitComponent):
                 i_Ca_coarse = np.interp(s_coarse, s_grid, Ca_grid_mem)
                 i_Cd_coarse = np.interp(s_coarse, s_grid, Cd_grid_mem)
 
+
                 Ca_coarse = np.append(Ca_coarse, i_Ca_coarse)  
                 Cd_coarse = np.append(Cd_coarse, i_Cd_coarse)  
+                # Structural properties
+                E_coarse = np.append(E_coarse, i_E_coarse)
+                G_coarse = np.append(G_coarse, i_G_coarse)
+                rho_coarse = np.append(rho_coarse, i_rho_coarse)
+
+
 
                 # Start assigning member-shape dependent properties
                 if member_shape == 'circular':
@@ -1822,6 +1721,352 @@ class FASTLoadCases(ExplicitComponent):
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
+
+
+        # SubDyn inputs- monopile and floating YL: move it down so can reuse the coarsened discretization from hydrodyn 08-27-2025
+        if modopt['flags']['monopile']:
+
+            n_joints = len(mono_d[1:]) # Omit submerged pile
+            itrans = n_joints - 1
+            fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['JointZss'] = z_coarse
+            fst_vt['SubDyn']['NReact'] = 1
+            fst_vt['SubDyn']['RJointID'] = [1]
+            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
+            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
+            fst_vt['SubDyn']['NInterf'] = 1
+            fst_vt['SubDyn']['IJointID'] = [n_joints]
+            fst_vt['SubDyn']['MJointID1'] = N1
+            fst_vt['SubDyn']['MJointID2'] = N2
+            
+            # Circular cross-section properties
+            E_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_E'][1:])
+            fst_vt['SubDyn']['YoungE1'] = E_coarse
+            G_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_G'][1:])
+            fst_vt['SubDyn']['ShearG1'] = G_coarse
+            rho_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_rho'][1:])
+            fst_vt['SubDyn']['MatDens1'] = rho_coarse
+            fst_vt['SubDyn']['XsecD'] = d_coarse
+            fst_vt['SubDyn']['XsecT'] = t_coarse
+
+            # Find the members where the 9 channels of SubDyn should be placed
+            grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
+            n_channels = 9
+            grid_target = np.linspace(0., 0.999999999, n_channels)
+            idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
+            idx_out = np.unique(idx_out)
+            fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
+            fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
+            fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
+            fst_vt['SubDyn']['NodeCnt'] = [np.array([1]) for _ in fst_vt['SubDyn']['MemberID_out']] # Since NodeCnt can be a list of nodes defined by NOutCnt, we cant use integers here
+            fst_vt['SubDyn']['NodeCnt'][-1] = np.array([2])
+            self.Z_out_SD_mpl = [grid_joints_monopile[i] for i in idx_out]
+
+            # Find rigid links indices and append to the jointID
+            # Loop every two nodes (two ends of the rigid links)
+            for i_rigid in range(0, len(rigid_links_xyz), 2):
+                dist = np.linalg.norm(joints_xyz - rigid_links_xyz[i_rigid:i_rigid+2,:], axis=1)
+                # Find the idx if dist < 1e-6
+                j = None
+                j = np.where(dist < 1e-6)[0]
+                if j is not None and len(j) == 2:
+                    fst_vt['SubDyn']['MJointID1'] = np.append(fst_vt['SubDyn']['JointID'], j[0]+1)
+                    fst_vt['SubDyn']['MJointID2'] = np.append(fst_vt['SubDyn']['JointID'], j[1]+1)
+                else:
+                    raise Exception('Rigid link specified in the platform that does not correspond to a existing joint location.')
+
+            # Add SubDyn output channels for monopile
+            for i in range(fst_vt['SubDyn']['NMOutputs']):
+                for j in fst_vt['SubDyn']['NodeCnt'][i]:
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKxe'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKye'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKze'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKxe'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKye'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKze'] = True
+
+        elif modopt['flags']['floating']:
+
+            itrans = util.closest_node(joints_xyz, inputs["transition_node"])
+
+            # fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
+            # fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
+            # fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
+            fst_vt['SubDyn']['NReact'] = 0
+            fst_vt['SubDyn']['RJointID'] = []
+            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = []
+            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = []
+            if modopt['floating']['transition_joint'] is None:
+                fst_vt['SubDyn']['NInterf'] = 0
+                fst_vt['SubDyn']['IJointID'] = []
+            else:
+                fst_vt['SubDyn']['NInterf'] = 1
+                fst_vt['SubDyn']['IJointID'] = [itrans+1]
+
+
+
+
+            # Find rigid links indices and append to the jointID
+            # Loop every two nodes (two ends of the rigid links)
+            # Also determine if any end points of the rigid links lie in the middle of another member, if so, member needs to be split
+
+            # Compute these before adding any rigid link joints and members
+            member_end_A = joints_xyz[N1-1,:]
+            member_end_B = joints_xyz[N2-1,:]
+            member_vec = member_end_B - member_end_A
+            rigid_link_N1 = np.array([],dtype=np.int_)
+            rigid_link_N2 = np.array([],dtype=np.int_)
+            propID1 = copy.deepcopy(N1) # Start with same property ID as member start node
+            propID2 = copy.deepcopy(N2) # Start with same property ID as member end node
+            sub_N1 = copy.deepcopy(N1)
+            sub_N2 = copy.deepcopy(N2)
+
+
+            for i_rigid in range(0, len(rigid_links_xyz), 2):
+
+                dist1 = np.linalg.norm(joints_xyz - rigid_links_xyz[i_rigid,:], axis=1)
+                # Find the idx if dist < 1e-6
+                j1 = np.where(dist1 < 1e-6)[0]
+                dist2 = np.linalg.norm(joints_xyz - rigid_links_xyz[i_rigid+1,:], axis=1)
+                j2 = np.where(dist2 < 1e-6)[0]
+                
+                if len(j1) == 0:
+                    # fst_vt['SubDyn']['JointXss'] = np.append(fst_vt['SubDyn']['JointXss'], rigid_links_xyz[i_rigid,0])
+                    # fst_vt['SubDyn']['JointYss'] = np.append(fst_vt['SubDyn']['JointYss'], rigid_links_xyz[i_rigid,1])
+                    # fst_vt['SubDyn']['JointZss'] = np.append(fst_vt['SubDyn']['JointZss'], rigid_links_xyz[i_rigid,2])
+                    joints_xyz = np.vstack((joints_xyz, rigid_links_xyz[i_rigid,:]))
+                    # fst_vt['SubDyn']['MJointID1'] = np.append(fst_vt['SubDyn']['MJointID1'], len(joints_xyz)) # New joint at the end
+                    rigid_link_N1 = np.append(rigid_link_N1, len(joints_xyz))
+                else:
+                    rigid_link_N1 = np.append(rigid_link_N1, j1[0]+1) # Existing joint index
+
+                if len(j2) == 0:
+                    # fst_vt['SubDyn']['JointXss'] = np.append(fst_vt['SubDyn']['JointXss'], rigid_links_xyz[i_rigid+1,0])
+                    # fst_vt['SubDyn']['JointYss'] = np.append(fst_vt['SubDyn']['JointYss'], rigid_links_xyz[i_rigid+1,1])
+                    # fst_vt['SubDyn']['JointZss'] = np.append(fst_vt['SubDyn']['JointZss'], rigid_links_xyz[i_rigid+1,2])
+                    joints_xyz = np.vstack( (joints_xyz, rigid_links_xyz[i_rigid+1,:]) )
+                    # fst_vt['SubDyn']['MJointID2'] = np.append(fst_vt['SubDyn']['MJointID2'], len(joints_xyz))
+                    rigid_link_N2 = np.append(rigid_link_N2, len(joints_xyz))  
+                else:
+                    rigid_link_N2 = np.append(rigid_link_N2, j2[0]+1)
+
+                # The splitting needs to be done after appending the rigid link joints and members because a new property set may be needed
+                if len(j1) == 0:
+                    # Determine if this joint of the rigid link lies in the middle of another member
+                    d2A = rigid_links_xyz[i_rigid,:] - member_end_A
+                    d2line = np.ones(len(member_vec))*1e6
+                    # Compute the distance from point to line for each member
+                    for k in range(len(member_vec)):
+                        if np.linalg.norm(member_vec[k,:]) > 1e-6:
+                            d2line[k] = np.linalg.norm(np.cross(member_vec[k,:], d2A[k,:]) / np.linalg.norm(member_vec[k,:]))
+                    # Find the indices of the members where d2line < 1e-6
+                    k1 = np.where(d2line < 1e-6)[0]
+                    if len(k1) >0:
+                        # Keep the MJointID1 on A but change the MJointID2 to the new joint
+                        for k in k1:
+                            # Compute the nondimensional projected point of d on member_vec
+                            d_proj = np.dot(d2A[k,:], member_vec[k,:]) / np.linalg.norm(member_vec[k,:])**2
+                            if d_proj <1 and d_proj > 0:
+                                # interpolate to find the property set at this location
+                                rho_temp = np.interp(d_proj, [0., 1.], [rho_coarse[N1[k]-1], rho_coarse[N2[k]-1]])
+                                E_temp = np.interp(d_proj, [0., 1.], [E_coarse[N1[k]-1], E_coarse[N2[k]-1]])
+                                G_temp = np.interp(d_proj, [0., 1.], [G_coarse[N1[k]-1], G_coarse[N2[k]-1]])
+                                d_temp = np.interp(d_proj, [0., 1.], [d_coarse[N1[k]-1], d_coarse[N2[k]-1]])
+                                t_temp = np.interp(d_proj, [0., 1.], [t_coarse[N1[k]-1], t_coarse[N2[k]-1]])
+                                a_temp = np.interp(d_proj, [0., 1.], [a_coarse[N1[k]-1], a_coarse[N2[k]-1]])
+                                b_temp = np.interp(d_proj, [0., 1.], [b_coarse[N1[k]-1], b_coarse[N2[k]-1]])
+
+                                rho_coarse = np.append(rho_coarse, rho_temp)
+                                E_coarse = np.append(E_coarse, E_temp)
+                                G_coarse = np.append(G_coarse, G_temp)
+                                d_coarse = np.append(d_coarse, d_temp)
+                                t_coarse = np.append(t_coarse, t_temp)
+                                a_coarse = np.append(a_coarse, a_temp)
+                                b_coarse = np.append(b_coarse, b_temp)
+                                
+                                propsetID = len(rho_coarse) # New propset ID
+                                old_propsetID = copy.deepcopy(propID2[k])
+
+                                propID2[k] = propsetID  # Change the second prop set to the new one
+                                propID1 = np.append(propID1, propsetID)  # The first prop set of the new member is the new inserted one
+                                propID2 = np.append(propID2, old_propsetID)  # The second prop set of the new member is the old second prop set
+
+                                # Change the joint ID
+                                temp_ID = sub_N2[k]
+                                sub_N2[k] = rigid_link_N1[-1]  # Change the end joint of the existing member to the new joint
+                                sub_N1 = np.append(sub_N1, rigid_link_N1[-1])  # The start joint of the new member is the new inserted joint
+                                sub_N2 = np.append(sub_N2, temp_ID)  # The end joint of the new member is the old end joint
+
+                                # Add new propset
+                                if k in idx_circular_member:
+                                    idx_circular_member = np.append(idx_circular_member, len(propID1)-1)
+                                elif k in idx_rectangular_member:
+                                    idx_rectangular_member = np.append(idx_rectangular_member, len(propID1)-1)
+
+                if len(j2) == 0:
+                    # Determine if this joint of the rigid link lies in the middle of another member
+                    d2A = rigid_links_xyz[i_rigid+1,:] - member_end_A
+                    d2line = np.ones(len(member_vec))*1e6
+                    # Compute the distance from point to line for each member
+                    for k in range(len(member_vec)):
+                        if np.linalg.norm(member_vec[k,:]) > 1e-6:
+                            d2line[k] = np.linalg.norm(np.cross(member_vec[k,:], d2A[k,:]) / np.linalg.norm(member_vec[k,:]))
+                    # Find the indices of the members where d2line < 1e-6
+                    k1 = np.where(d2line < 1e-6)[0]
+                    if len(k1) >0:
+                        # Keep the MJointID1 on A but change the MJointID2 to the new joint
+                        for k in k1:
+                            # Compute the nondimensional projected point of d on member_vec
+                            d_proj = np.dot(d2A[k,:], member_vec[k,:]) / np.linalg.norm(member_vec[k,:])**2
+                            if d_proj <1 and d_proj > 0:
+                                # interpolate to find the property set at this location
+                                rho_temp = np.interp(d_proj, [0., 1.], [rho_coarse[N1[k]-1], rho_coarse[N2[k]-1]])
+                                E_temp = np.interp(d_proj, [0., 1.], [E_coarse[N1[k]-1], E_coarse[N2[k]-1]])
+                                G_temp = np.interp(d_proj, [0., 1.], [G_coarse[N1[k]-1], G_coarse[N2[k]-1]])
+                                d_temp = np.interp(d_proj, [0., 1.], [d_coarse[N1[k]-1], d_coarse[N2[k]-1]])
+                                t_temp = np.interp(d_proj, [0., 1.], [t_coarse[N1[k]-1], t_coarse[N2[k]-1]])
+                                a_temp = np.interp(d_proj, [0., 1.], [a_coarse[N1[k]-1], a_coarse[N2[k]-1]])
+                                b_temp = np.interp(d_proj, [0., 1.], [b_coarse[N1[k]-1], b_coarse[N2[k]-1]])
+
+                                rho_coarse = np.append(rho_coarse, rho_temp)
+                                E_coarse = np.append(E_coarse, E_temp)
+                                G_coarse = np.append(G_coarse, G_temp)
+                                d_coarse = np.append(d_coarse, d_temp)
+                                t_coarse = np.append(t_coarse, t_temp)
+                                a_coarse = np.append(a_coarse, a_temp)
+                                b_coarse = np.append(b_coarse, b_temp)
+                                
+                                propsetID = len(rho_coarse) # New propset ID
+                                old_propsetID = copy.deepcopy(propID2[k])
+
+                                propID2[k] = propsetID  # Change the second prop set to the new one
+                                propID1 = np.append(propID1, propsetID)  # The first prop set of the new member is the new inserted one
+                                propID2 = np.append(propID2, old_propsetID)  # The second prop set of the new member is the old second prop set
+
+                                # Change the joint ID
+                                temp_ID = sub_N2[k]
+                                sub_N2[k] = rigid_link_N1[-1]  # Change the end joint of the existing member to the new joint
+                                sub_N1 = np.append(sub_N1, rigid_link_N2[-1])  # The start joint of the new member is the new inserted joint
+                                sub_N2 = np.append(sub_N2, temp_ID)  # The end joint of the new member is the old end joint
+
+                                # Add new propset
+                                if k in idx_circular_member:
+                                    idx_circular_member = np.append(idx_circular_member, len(propID1)-1)
+                                elif k in idx_rectangular_member:
+                                    idx_rectangular_member = np.append(idx_rectangular_member, len(propID1)-1)
+                                
+
+            fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
+            fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
+            fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
+            n_joints = len(fst_vt['SubDyn']['JointXss'])
+            # Append rigid link members at the end
+            sub_N1 = np.append(sub_N1, rigid_link_N1)
+            sub_N2 = np.append(sub_N2, rigid_link_N2)
+            fst_vt['SubDyn']['MJointID1'] = sub_N1
+            fst_vt['SubDyn']['MJointID2'] = sub_N2
+            n_members = len(sub_N1)
+            imembers = np.arange( n_members, dtype=np.int_ ) + 1
+
+
+            # Get indices for circular and rectangular members
+            idx_circular = np.where(d_coarse > 0.0)[0]
+            idx_rectangular = np.where(a_coarse > 0.0)[0]
+
+            # Circular properties
+            fst_vt['SubDyn']['XsecD'] = d_coarse[idx_circular]
+            fst_vt['SubDyn']['XsecT'] = t_coarse[idx_circular]
+            fst_vt['SubDyn']['YoungE1'] = E_coarse[idx_circular]
+            fst_vt['SubDyn']['ShearG1'] = G_coarse[idx_circular]
+            fst_vt['SubDyn']['MatDens1'] = rho_coarse[idx_circular]
+
+            # Rectangular properties
+            fst_vt['SubDyn']['XsecSa'] = a_coarse[idx_rectangular]
+            fst_vt['SubDyn']['XsecSb'] = b_coarse[idx_rectangular]
+            fst_vt['SubDyn']['XsecT2'] = t_coarse[idx_rectangular]
+            fst_vt['SubDyn']['YoungE2'] = E_coarse[idx_rectangular]
+            fst_vt['SubDyn']['ShearG2'] = G_coarse[idx_rectangular]
+            fst_vt['SubDyn']['MatDens2'] = rho_coarse[idx_rectangular]
+
+            # Update the member numbers
+            n_circular = len(idx_circular)
+            n_rectangular = len(idx_rectangular)
+            n_properties = n_circular + n_rectangular
+            i_properties = np.arange( n_properties, dtype=np.int_ ) + 1
+            iprop_circular = i_properties[idx_circular]
+            iprop_rectangular = i_properties[idx_rectangular]
+
+        # SubDyn inputs- offshore generic
+        if modopt['flags']['offshore']:
+            mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
+            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
+            fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
+            fst_vt['SubDyn']['Rct_SoilFile'] = [""]*fst_vt['SubDyn']['NReact']
+            fst_vt['SubDyn']['NJoints'] = n_joints
+            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
+            fst_vt['SubDyn']['JointType'] = np.ones( n_joints, dtype=np.int_)
+            fst_vt['SubDyn']['JointDirX'] = fst_vt['SubDyn']['JointDirY'] = fst_vt['SubDyn']['JointDirZ'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['JointStiff'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
+            fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
+            fst_vt['SubDyn']['NMembers'] = n_members 
+            fst_vt['SubDyn']['MemberID'] = imembers 
+            fst_vt['SubDyn']['MPropSetID1'] = propID1
+            fst_vt['SubDyn']['MPropSetID2'] = propID2
+            mtype = np.ones( n_members, dtype=np.int_ )
+            mtype[idx_rectangular_member] = -1
+            fst_vt['SubDyn']['MType'] = mtype
+            fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
+            fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
+
+
+            # Circular beam cross-section properties
+            fst_vt['SubDyn']['NBCPropSets'] = n_circular
+            fst_vt['SubDyn']['PropSetID1'] = iprop_circular
+
+            # Rectangular beam cross-section properties (not yet supported)
+            fst_vt['SubDyn']['NBRPropSets'] = n_rectangular
+            fst_vt['SubDyn']['PropSetID2'] = iprop_rectangular
+
+            fst_vt['SubDyn']['NCablePropSets'] = 0
+            fst_vt['SubDyn']['NRigidPropSets'] = 0
+            fst_vt['SubDyn']['NSpringPropSets'] = 0
+            fst_vt['SubDyn']['NCOSMs'] = 0
+            fst_vt['SubDyn']['NXPropSets'] = 0
+            fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
+            fst_vt['SubDyn']['CMJointID'] = [itrans+1]
+            fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'][0])]
+            fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
+            fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
+            fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
+            fst_vt['SubDyn']['JMXY'] = fst_vt['SubDyn']['JMXZ'] = fst_vt['SubDyn']['JMYZ'] = [0.0]
+            fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
+
+            if len(rigid_links_xyz) > 0:
+                fst_vt['SubDyn']['MPropSetID1'] = np.append(fst_vt['SubDyn']['MPropSetID1'], (sub_N2[-1]+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_)) # New property set for rigid links
+                fst_vt['SubDyn']['MPropSetID2'] = np.append(fst_vt['SubDyn']['MPropSetID2'], (sub_N2[-1]+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_))
+                fst_vt['SubDyn']['MType'] = np.append(fst_vt['SubDyn']['MType'], 3*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) # Rigid link type
+                fst_vt['SubDyn']['M_Spin'] = np.append(fst_vt['SubDyn']['M_Spin'], -1*np.ones(len(rigid_links_xyz)//2))
+                fst_vt['SubDyn']['M_COSMID'] = np.append(fst_vt['SubDyn']['M_COSMID'], -1*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) 
+                fst_vt['SubDyn']['RigidPropSetID'] = np.array([n_rectangular + n_circular + 1])
+                fst_vt['SubDyn']['NRigidPropSets'] = 1
+                fst_vt['SubDyn']['RigidMatDens'] = np.zeros(1)
+
+
+            if mgrav > 0.0:
+                fst_vt['SubDyn']['CMJointID'] += [1]
+                fst_vt['SubDyn']['JMass'] += [mgrav]
+                fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
+                fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
+                fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
+                fst_vt['SubDyn']['JMXY'] += [0.0]
+                fst_vt['SubDyn']['JMXZ'] += [0.0]
+                fst_vt['SubDyn']['JMYZ'] += [0.0]
+                fst_vt['SubDyn']['MCGX'] += [0.0]
+                fst_vt['SubDyn']['MCGY'] += [0.0]
+                fst_vt['SubDyn']['MCGZ'] += [0.0]
+
 
         # Moordyn inputs
         if modopt["flags"]["mooring"]:
