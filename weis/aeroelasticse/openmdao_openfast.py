@@ -2640,6 +2640,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs['pitch_out'] = np.sum(prob * sum_stats['BldPitch1']['mean'])
         if self.fst_vt['Fst']['CompServo'] == 1:
             outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
+            outputs['P_out_std'] = np.sum(prob * sum_stats['GenPwr']['std']) * 1e3
 
         return outputs
 
