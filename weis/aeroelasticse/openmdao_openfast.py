@@ -1984,7 +1984,7 @@ class FASTLoadCases(ExplicitComponent):
         # Estimate initial tower top displacement from rotor thrust. 
         # Assume that at rated thrust tower top deflection is 4% of hub height
         thrust = 0.5 * np.array(Ct_aero_interp) * inputs['Rtip'][0]**2 * np.pi * inputs['rho'][0] * np.array(U_interp)**2
-        initial_condition_table['TTFAdisp_initial'] = thrust / np.max(thrust) * hub_height * 0.04
+        initial_condition_table['TTFAdisp_initial'] = thrust / np.max(thrust) * hub_height * 0.03
 
         dlc_generator = DLCGenerator(
             cut_in, 
