@@ -49,6 +49,58 @@ def make_coarse_grid(s_grid, diam):
     s_coarse.append(s_grid[-1])
     return np.array(s_coarse)
 
+def split_members(node_xyz, node, member_end_A, member_vec, rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member):
+    d2A = node_xyz - member_end_A
+    d2line = np.ones(len(member_vec))*1e6
+    # Compute the distance from point to line for each member
+    for k in range(len(member_vec)):
+        if np.linalg.norm(member_vec[k,:]) > 1e-6:
+            d2line[k] = np.linalg.norm(np.cross(member_vec[k,:], d2A[k,:]) / np.linalg.norm(member_vec[k,:]))
+    # Find the indices of the members where d2line < 1e-6
+    k1 = np.where(d2line < 1e-6)[0]
+    if len(k1) >0:
+        # Keep the MJointID1 on A but change the MJointID2 to the new joint
+        for k in k1:
+            # Compute the nondimensional projected point of d on member_vec
+            d_proj = np.dot(d2A[k,:], member_vec[k,:]) / np.linalg.norm(member_vec[k,:])**2
+            if d_proj <1 and d_proj > 0:
+                # interpolate to find the property set at this location
+                rho_temp = np.interp(d_proj, [0., 1.], [rho_coarse[sub_N1[k]-1], rho_coarse[sub_N2[k]-1]])
+                E_temp = np.interp(d_proj, [0., 1.], [E_coarse[sub_N1[k]-1], E_coarse[sub_N2[k]-1]])
+                G_temp = np.interp(d_proj, [0., 1.], [G_coarse[sub_N1[k]-1], G_coarse[sub_N2[k]-1]])
+                d_temp = np.interp(d_proj, [0., 1.], [d_coarse[sub_N1[k]-1], d_coarse[sub_N2[k]-1]])
+                t_temp = np.interp(d_proj, [0., 1.], [t_coarse[sub_N1[k]-1], t_coarse[sub_N2[k]-1]])
+                a_temp = np.interp(d_proj, [0., 1.], [a_coarse[sub_N1[k]-1], a_coarse[sub_N2[k]-1]])
+                b_temp = np.interp(d_proj, [0., 1.], [b_coarse[sub_N1[k]-1], b_coarse[sub_N2[k]-1]])
+
+                rho_coarse = np.append(rho_coarse, rho_temp)
+                E_coarse = np.append(E_coarse, E_temp)
+                G_coarse = np.append(G_coarse, G_temp)
+                d_coarse = np.append(d_coarse, d_temp)
+                t_coarse = np.append(t_coarse, t_temp)
+                a_coarse = np.append(a_coarse, a_temp)
+                b_coarse = np.append(b_coarse, b_temp)
+                
+                propsetID = len(rho_coarse) # New propset ID
+                old_propsetID = copy.deepcopy(propID2[k])
+
+                propID2[k] = propsetID  # Change the second prop set to the new one
+                propID1 = np.append(propID1, propsetID)  # The first prop set of the new member is the new inserted one
+                propID2 = np.append(propID2, old_propsetID)  # The second prop set of the new member is the old second prop set
+
+                # Change the joint ID
+                temp_ID = sub_N2[k]
+                sub_N2[k] = node[-1]  # Change the end joint of the existing member to the new joint
+                sub_N1 = np.append(sub_N1, node[-1])  # The start joint of the new member is the new inserted joint
+                sub_N2 = np.append(sub_N2, temp_ID)  # The end joint of the new member is the old end joint
+
+                # Add new propset
+                if k in idx_circular_member:
+                    idx_circular_member = np.append(idx_circular_member, len(propID1)-1)
+                elif k in idx_rectangular_member:
+                    idx_rectangular_member = np.append(idx_rectangular_member, len(propID1)-1)
+
+    return rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member
     
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
@@ -1790,9 +1842,7 @@ class FASTLoadCases(ExplicitComponent):
 
             itrans = util.closest_node(joints_xyz, inputs["transition_node"])
 
-            # fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
-            # fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
-            # fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
+
             fst_vt['SubDyn']['NReact'] = 0
             fst_vt['SubDyn']['RJointID'] = []
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = []
@@ -1805,8 +1855,6 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['SubDyn']['IJointID'] = [itrans+1]
 
 
-
-
             # Find rigid links indices and append to the jointID
             # Loop every two nodes (two ends of the rigid links)
             # Also determine if any end points of the rigid links lie in the middle of another member, if so, member needs to be split
@@ -1817,6 +1865,8 @@ class FASTLoadCases(ExplicitComponent):
             member_vec = member_end_B - member_end_A
             rigid_link_N1 = np.array([],dtype=np.int_)
             rigid_link_N2 = np.array([],dtype=np.int_)
+            # Copy these so the Hydrodyn nodes are not affected
+            # Previously the propID and jointID were the same, but now they can be different
             propID1 = copy.deepcopy(N1) # Start with same property ID as member start node
             propID2 = copy.deepcopy(N2) # Start with same property ID as member end node
             sub_N1 = copy.deepcopy(N1)
@@ -1832,129 +1882,25 @@ class FASTLoadCases(ExplicitComponent):
                 j2 = np.where(dist2 < 1e-6)[0]
                 
                 if len(j1) == 0:
-                    # fst_vt['SubDyn']['JointXss'] = np.append(fst_vt['SubDyn']['JointXss'], rigid_links_xyz[i_rigid,0])
-                    # fst_vt['SubDyn']['JointYss'] = np.append(fst_vt['SubDyn']['JointYss'], rigid_links_xyz[i_rigid,1])
-                    # fst_vt['SubDyn']['JointZss'] = np.append(fst_vt['SubDyn']['JointZss'], rigid_links_xyz[i_rigid,2])
                     joints_xyz = np.vstack((joints_xyz, rigid_links_xyz[i_rigid,:]))
-                    # fst_vt['SubDyn']['MJointID1'] = np.append(fst_vt['SubDyn']['MJointID1'], len(joints_xyz)) # New joint at the end
                     rigid_link_N1 = np.append(rigid_link_N1, len(joints_xyz))
                 else:
                     rigid_link_N1 = np.append(rigid_link_N1, j1[0]+1) # Existing joint index
 
                 if len(j2) == 0:
-                    # fst_vt['SubDyn']['JointXss'] = np.append(fst_vt['SubDyn']['JointXss'], rigid_links_xyz[i_rigid+1,0])
-                    # fst_vt['SubDyn']['JointYss'] = np.append(fst_vt['SubDyn']['JointYss'], rigid_links_xyz[i_rigid+1,1])
-                    # fst_vt['SubDyn']['JointZss'] = np.append(fst_vt['SubDyn']['JointZss'], rigid_links_xyz[i_rigid+1,2])
                     joints_xyz = np.vstack( (joints_xyz, rigid_links_xyz[i_rigid+1,:]) )
-                    # fst_vt['SubDyn']['MJointID2'] = np.append(fst_vt['SubDyn']['MJointID2'], len(joints_xyz))
                     rigid_link_N2 = np.append(rigid_link_N2, len(joints_xyz))  
                 else:
                     rigid_link_N2 = np.append(rigid_link_N2, j2[0]+1)
 
                 # The splitting needs to be done after appending the rigid link joints and members because a new property set may be needed
                 if len(j1) == 0:
-                    # Determine if this joint of the rigid link lies in the middle of another member
-                    d2A = rigid_links_xyz[i_rigid,:] - member_end_A
-                    d2line = np.ones(len(member_vec))*1e6
-                    # Compute the distance from point to line for each member
-                    for k in range(len(member_vec)):
-                        if np.linalg.norm(member_vec[k,:]) > 1e-6:
-                            d2line[k] = np.linalg.norm(np.cross(member_vec[k,:], d2A[k,:]) / np.linalg.norm(member_vec[k,:]))
-                    # Find the indices of the members where d2line < 1e-6
-                    k1 = np.where(d2line < 1e-6)[0]
-                    if len(k1) >0:
-                        # Keep the MJointID1 on A but change the MJointID2 to the new joint
-                        for k in k1:
-                            # Compute the nondimensional projected point of d on member_vec
-                            d_proj = np.dot(d2A[k,:], member_vec[k,:]) / np.linalg.norm(member_vec[k,:])**2
-                            if d_proj <1 and d_proj > 0:
-                                # interpolate to find the property set at this location
-                                rho_temp = np.interp(d_proj, [0., 1.], [rho_coarse[N1[k]-1], rho_coarse[N2[k]-1]])
-                                E_temp = np.interp(d_proj, [0., 1.], [E_coarse[N1[k]-1], E_coarse[N2[k]-1]])
-                                G_temp = np.interp(d_proj, [0., 1.], [G_coarse[N1[k]-1], G_coarse[N2[k]-1]])
-                                d_temp = np.interp(d_proj, [0., 1.], [d_coarse[N1[k]-1], d_coarse[N2[k]-1]])
-                                t_temp = np.interp(d_proj, [0., 1.], [t_coarse[N1[k]-1], t_coarse[N2[k]-1]])
-                                a_temp = np.interp(d_proj, [0., 1.], [a_coarse[N1[k]-1], a_coarse[N2[k]-1]])
-                                b_temp = np.interp(d_proj, [0., 1.], [b_coarse[N1[k]-1], b_coarse[N2[k]-1]])
 
-                                rho_coarse = np.append(rho_coarse, rho_temp)
-                                E_coarse = np.append(E_coarse, E_temp)
-                                G_coarse = np.append(G_coarse, G_temp)
-                                d_coarse = np.append(d_coarse, d_temp)
-                                t_coarse = np.append(t_coarse, t_temp)
-                                a_coarse = np.append(a_coarse, a_temp)
-                                b_coarse = np.append(b_coarse, b_temp)
-                                
-                                propsetID = len(rho_coarse) # New propset ID
-                                old_propsetID = copy.deepcopy(propID2[k])
-
-                                propID2[k] = propsetID  # Change the second prop set to the new one
-                                propID1 = np.append(propID1, propsetID)  # The first prop set of the new member is the new inserted one
-                                propID2 = np.append(propID2, old_propsetID)  # The second prop set of the new member is the old second prop set
-
-                                # Change the joint ID
-                                temp_ID = sub_N2[k]
-                                sub_N2[k] = rigid_link_N1[-1]  # Change the end joint of the existing member to the new joint
-                                sub_N1 = np.append(sub_N1, rigid_link_N1[-1])  # The start joint of the new member is the new inserted joint
-                                sub_N2 = np.append(sub_N2, temp_ID)  # The end joint of the new member is the old end joint
-
-                                # Add new propset
-                                if k in idx_circular_member:
-                                    idx_circular_member = np.append(idx_circular_member, len(propID1)-1)
-                                elif k in idx_rectangular_member:
-                                    idx_rectangular_member = np.append(idx_rectangular_member, len(propID1)-1)
+                    rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member = split_members(rigid_links_xyz[i_rigid,:], rigid_link_N1, member_end_A, member_vec, rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member)
 
                 if len(j2) == 0:
-                    # Determine if this joint of the rigid link lies in the middle of another member
-                    d2A = rigid_links_xyz[i_rigid+1,:] - member_end_A
-                    d2line = np.ones(len(member_vec))*1e6
-                    # Compute the distance from point to line for each member
-                    for k in range(len(member_vec)):
-                        if np.linalg.norm(member_vec[k,:]) > 1e-6:
-                            d2line[k] = np.linalg.norm(np.cross(member_vec[k,:], d2A[k,:]) / np.linalg.norm(member_vec[k,:]))
-                    # Find the indices of the members where d2line < 1e-6
-                    k1 = np.where(d2line < 1e-6)[0]
-                    if len(k1) >0:
-                        # Keep the MJointID1 on A but change the MJointID2 to the new joint
-                        for k in k1:
-                            # Compute the nondimensional projected point of d on member_vec
-                            d_proj = np.dot(d2A[k,:], member_vec[k,:]) / np.linalg.norm(member_vec[k,:])**2
-                            if d_proj <1 and d_proj > 0:
-                                # interpolate to find the property set at this location
-                                rho_temp = np.interp(d_proj, [0., 1.], [rho_coarse[N1[k]-1], rho_coarse[N2[k]-1]])
-                                E_temp = np.interp(d_proj, [0., 1.], [E_coarse[N1[k]-1], E_coarse[N2[k]-1]])
-                                G_temp = np.interp(d_proj, [0., 1.], [G_coarse[N1[k]-1], G_coarse[N2[k]-1]])
-                                d_temp = np.interp(d_proj, [0., 1.], [d_coarse[N1[k]-1], d_coarse[N2[k]-1]])
-                                t_temp = np.interp(d_proj, [0., 1.], [t_coarse[N1[k]-1], t_coarse[N2[k]-1]])
-                                a_temp = np.interp(d_proj, [0., 1.], [a_coarse[N1[k]-1], a_coarse[N2[k]-1]])
-                                b_temp = np.interp(d_proj, [0., 1.], [b_coarse[N1[k]-1], b_coarse[N2[k]-1]])
 
-                                rho_coarse = np.append(rho_coarse, rho_temp)
-                                E_coarse = np.append(E_coarse, E_temp)
-                                G_coarse = np.append(G_coarse, G_temp)
-                                d_coarse = np.append(d_coarse, d_temp)
-                                t_coarse = np.append(t_coarse, t_temp)
-                                a_coarse = np.append(a_coarse, a_temp)
-                                b_coarse = np.append(b_coarse, b_temp)
-                                
-                                propsetID = len(rho_coarse) # New propset ID
-                                old_propsetID = copy.deepcopy(propID2[k])
-
-                                propID2[k] = propsetID  # Change the second prop set to the new one
-                                propID1 = np.append(propID1, propsetID)  # The first prop set of the new member is the new inserted one
-                                propID2 = np.append(propID2, old_propsetID)  # The second prop set of the new member is the old second prop set
-
-                                # Change the joint ID
-                                temp_ID = sub_N2[k]
-                                sub_N2[k] = rigid_link_N1[-1]  # Change the end joint of the existing member to the new joint
-                                sub_N1 = np.append(sub_N1, rigid_link_N2[-1])  # The start joint of the new member is the new inserted joint
-                                sub_N2 = np.append(sub_N2, temp_ID)  # The end joint of the new member is the old end joint
-
-                                # Add new propset
-                                if k in idx_circular_member:
-                                    idx_circular_member = np.append(idx_circular_member, len(propID1)-1)
-                                elif k in idx_rectangular_member:
-                                    idx_rectangular_member = np.append(idx_rectangular_member, len(propID1)-1)
+                    rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member = split_members(rigid_links_xyz[i_rigid+1,:], rigid_link_N2, member_end_A, member_vec, rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member)
                                 
 
             fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
