@@ -1815,18 +1815,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NodeCnt'][-1] = np.array([2])
             self.Z_out_SD_mpl = [grid_joints_monopile[i] for i in idx_out]
 
-            # Find rigid links indices and append to the jointID
-            # Loop every two nodes (two ends of the rigid links)
-            for i_rigid in range(0, len(rigid_links_xyz), 2):
-                dist = np.linalg.norm(joints_xyz - rigid_links_xyz[i_rigid:i_rigid+2,:], axis=1)
-                # Find the idx if dist < 1e-6
-                j = None
-                j = np.where(dist < 1e-6)[0]
-                if j is not None and len(j) == 2:
-                    fst_vt['SubDyn']['MJointID1'] = np.append(fst_vt['SubDyn']['JointID'], j[0]+1)
-                    fst_vt['SubDyn']['MJointID2'] = np.append(fst_vt['SubDyn']['JointID'], j[1]+1)
-                else:
-                    raise Exception('Rigid link specified in the platform that does not correspond to a existing joint location.')
+            # No rigid links or splitting members for monopile.
 
             # Add SubDyn output channels for monopile
             for i in range(fst_vt['SubDyn']['NMOutputs']):
