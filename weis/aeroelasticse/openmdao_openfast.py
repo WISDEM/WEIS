@@ -280,8 +280,8 @@ class FASTLoadCases(ExplicitComponent):
 
             # Initial conditions
             self.add_input('U', val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-            self.add_input('Omega', val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-            self.add_input('pitch', val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input('Omega', val=np.zeros(n_pc), units='rpm', desc='rotation speeds')
+            self.add_input('pitch', val=np.zeros(n_pc), units='deg', desc='pitch angles')
             self.add_input("Ct_aero", val=np.zeros(n_pc), desc="rotor aerodynamic thrust coefficient")
 
             # Cp-Ct-Cq surfaces
@@ -459,10 +459,15 @@ class FASTLoadCases(ExplicitComponent):
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
         self.add_output('P_out', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
+        self.add_output('P_out_std', val=np.zeros(n_ws_aep), units='W', desc='standard deviation of rotor electrical power')
         self.add_output('Cp_out', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
         self.add_output('Ct_out', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
-        self.add_output('Omega_out', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds to run')
-        self.add_output('pitch_out', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles to run')
+        self.add_output('Omega_out', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds')
+        self.add_output('Omega_out_std', val=np.zeros(n_ws_aep), units='rpm', desc='standard deviation of rotation speeds')
+        self.add_output('pitch_out', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles')
+        self.add_output('pitch_out_std', val=np.zeros(n_ws_aep), units='deg', desc='standard deviation of pitch angles')
+        self.add_output('Thrust_out', val=np.zeros(n_ws_aep), units='N', desc='rotor thrust')
+        self.add_output('Thrust_out_std', val=np.zeros(n_ws_aep), units='N', desc='standard deviation of rotor thrust')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
@@ -2637,7 +2642,11 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Cp_out'] = np.sum(prob * sum_stats['RtFldCp']['mean'])
         outputs['Ct_out'] = np.sum(prob * sum_stats['RtFldCt']['mean'])
         outputs['Omega_out'] = np.sum(prob * sum_stats['RotSpeed']['mean'])
+        outputs['Omega_out_std'] = np.sum(prob * sum_stats['RotSpeed']['std'])
         outputs['pitch_out'] = np.sum(prob * sum_stats['BldPitch1']['mean'])
+        outputs['pitch_out_std'] = np.sum(prob * sum_stats['BldPitch1']['std'])
+        outputs['Thrust_out'] = np.sum(prob * sum_stats['RotThrust']['mean'])
+        outputs['Thrust_out_std'] = np.sum(prob * sum_stats['RotThrust']['std'])
         if self.fst_vt['Fst']['CompServo'] == 1:
             outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
             outputs['P_out_std'] = np.sum(prob * sum_stats['GenPwr']['std']) * 1e3
