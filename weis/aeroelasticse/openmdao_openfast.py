@@ -67,15 +67,17 @@ class FASTLoadCases(ExplicitComponent):
         self.n_pc          = n_pc      = rotorse_options['n_pc']
 
         # Environmental Conditions needed regardless of where model comes from
-        self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
-        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
-        self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
-        self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
+        self.add_input('V_cutin', val=0.0, units='m/s', desc='Minimum wind speed where turbine operates (cut-in)')
+        self.add_input('V_cutout', val=0.0, units='m/s', desc='Maximum wind speed where turbine operates (cut-out)')
+        self.add_input('Vrated', val=0.0, units='m/s', desc='rated wind speed')
+        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
-        self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        self.add_discrete_input('turbine_class', val='I', desc='IEC turbine class')
+        self.add_input('Rtip', val=0.0, units='m', desc='dimensional radius of tip')
+        self.add_input('shearExp', val=0.0, desc='shear exponent')
         self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
+        self.add_input('rho', val=1.225, units='kg/m**3', desc='density of air')
+
 
         if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
@@ -299,7 +301,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
             self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
             
-            self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
             self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
             self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
             self.add_input(
