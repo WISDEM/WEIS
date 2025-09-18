@@ -2643,7 +2643,10 @@ class FASTLoadCases(ExplicitComponent):
         # Average across turbulent seeds for each wind speed
         def avg_seeds(vec):
             vec = np.asarray(vec)
-            return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
+            if n_seeds_AEP > 1:
+                return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
+            else:
+                return vec
         outputs['Cp'] = avg_seeds(sum_stats['RtFldCp']['mean'])
         outputs['Ct'] = avg_seeds(sum_stats['RtFldCt']['mean'])
         outputs['Omega'] = avg_seeds(sum_stats['RotSpeed']['mean'])
