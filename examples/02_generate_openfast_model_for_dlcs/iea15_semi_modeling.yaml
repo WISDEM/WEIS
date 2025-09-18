@@ -43,7 +43,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompAero: 2
         CompServo: 1
         CompHydro: 1
-        CompSub: 0
+        CompSub: 1 # to use subdyn
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
@@ -79,12 +79,12 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
-        PotMod: 1
-        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotMod: 0
+        # PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 RAFT:
     flag: False
-    potential_model_override: 2
+    potential_model_override: 1
 
 ROSCO:
     flag: True

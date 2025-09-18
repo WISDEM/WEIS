@@ -769,12 +769,10 @@ components:
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
               Ca: [1.0, 1.0]
+              Cay: [1.0, 1.0]
               Cd: [0.8, 0.8]
+              Cdy: [0.8, 0.8]
               outer_shape: &pontlow_out
-                # shape: circular
-                # outer_diameter:
-                #     grid: [0.0, 1.0]
-                #     values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
                 shape: rectangular
                 side_length_a:
                     grid: [0.0, 1.0]
@@ -782,10 +780,6 @@ components:
                 side_length_b:
                     grid: [0.0, 1.0]
                     values: [7.0, 7.0]
-                #shape: polygonal
-                #side_lengths: [12.5, 7.0, 12.5, 7.0] # rectangle dimensions
-                #angles: [1.5707963267948966, 1.5707963267948966, 1.5707963267948966, 1.5707963267948966] # rectangle angles
-                #rotation: 0.0
               internal_structure: &pontlow_int
                   # Probably needs longitudinal stiffeners
                 layers:
@@ -809,15 +803,18 @@ components:
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
               Ca: [1.0, 1.0]
+              Cay: [1.0, 1.0]
               Cd: [0.8, 0.8]
-
+              Cdy: [0.8, 0.8]
             - name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
               Ca: [1.0, 1.0]
+              Cay: [1.0, 1.0]
               Cd: [0.8, 0.8]
+              Cdy: [0.8, 0.8]
     mooring:
         nodes:
             - name: line1_anchor
