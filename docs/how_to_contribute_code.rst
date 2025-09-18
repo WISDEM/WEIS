@@ -74,7 +74,7 @@ Regression tests
 
 Regression tests examine much larger portions of the code by examining top-level input and output relationships.
 Specifically, these tests check the values that the code produces against "truth" values and returns an error if they do not match.
-As an example, a low-level coding change might alter a default within a subsystem of the model being tested, which might result in a different AEP value for the wind turbine.
+As an example, a low-level coding change might alter a default within a subsystem of the model being tested, which might result in a different AEP value for the turbine.
 The regression test would report that the AEP value differs, and thus the tests fail.
 Of course, it would be challenging to completely diagnose a coding change based on only regression tests, so well-made unit tests can help narrow down a problem much more quickly.
 
