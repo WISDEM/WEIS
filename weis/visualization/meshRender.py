@@ -1,14 +1,12 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
 
 try:
-    from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
+    from vtkmodules.util.numpy_support import numpy_to_vtk
 except:
-    from vtk.util.numpy_support import numpy_to_vtk, vtk_to_numpy
-import yaml
+    from vtk.util.numpy_support import numpy_to_vtk
+import weis.inputs as sch
 
 
 def render_blade(turbineData, local=True):
@@ -300,7 +298,11 @@ def bladeMesh(bladeData, airfoils):
                       bladeData['outer_shape']['twist']['grid'],
                       bladeData['outer_shape']['twist']['values'])
     
-    pitch_axis = np.interp(s_airfoil,
+    section_offset_x = np.interp(s_airfoil,
+                           bladeData['outer_shape']['section_offset_x']['grid'],
+                           bladeData['outer_shape']['section_offset_x']['values'])
+    
+    section_offset_y = np.interp(s_airfoil,
                            bladeData['outer_shape']['section_offset_y']['grid'],
                            bladeData['outer_shape']['section_offset_y']['values'])
     
@@ -330,9 +332,11 @@ def bladeMesh(bladeData, airfoils):
         # Get the airfoil coordinates for this section
         af_coordinates = np.array([airfoils[airfoil_names[i]]['coordinates']['x'], airfoils[airfoil_names[i]]['coordinates']['y']]).T
         
-        # Scale by chord
-        af_coordinates[:, 0] = (af_coordinates[:, 0] - pitch_axis[i]) * chord[i]
-        af_coordinates[:, 1] = af_coordinates[:, 1] * chord[i]
+        # Scale by chord and adjust by section offsets x and y 
+        # Note that section_offsets are in the blade coordinate system, which is flipped compared to the local airfoil coordinate system
+        # Also, section_offset_x must be summed, whereas section_offset_y must be subtracted
+        af_coordinates[:, 0] = af_coordinates[:, 0] * chord[i] - section_offset_y[i]
+        af_coordinates[:, 1] = af_coordinates[:, 1] * chord[i] + section_offset_x[i]
         
         # Create rotation matrix for twist angle
         cos_t = np.cos(np.radians(twist[i]))
@@ -724,13 +728,13 @@ def render_our_own_delaunay(points):
 
 def main():    
     # fetch the turbine data from the yaml file
-    with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml') as file:
-    # with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml') as file:
-        turbine_data = yaml.load(file, Loader=yaml.FullLoader)
+    file_name = '../../examples/00_setup/ref_turbines/IEA-15-240-RWT_VolturnUS-S.yaml'
+    # with open('../../examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml') as file:
+    turbine_data = sch.load_geometry_yaml(file_name)
 
     # render the turbine components
-    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle', 'monopile'])
-    mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle','floating_platform'])
+    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'drivetrain', 'monopile'])
+    mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'drivetrain', 'floating_platform'])
     # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['floating_platform'])
     meshTurbine.plot(show_edges=False)
 
