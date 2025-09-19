@@ -32,6 +32,7 @@ openfast_input_map = {
     
     'rot_speed_initial': ("ElastoDyn","RotSpeed"),
     'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
+    'TTFAdisp_initial': ("ElastoDyn","TTDspFA"),
     'azimuth_init': ("ElastoDyn","Azimuth"),
     'yaw_misalign': ("ElastoDyn","NacYaw"),
 
@@ -598,7 +599,7 @@ class DLCGenerator(object):
         '''
         
         # These allowed_ics should map to input in openfast_input_map
-        allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const']
+        allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const', 'TTFAdisp_initial']
 
         
         if self.initial_condition_table and dlc_options['turbine_status'] == 'operating': # there is an IC table that's not empty
@@ -1337,6 +1338,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
 
@@ -1345,7 +1347,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+                                    'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
@@ -1379,6 +1381,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
 
@@ -1387,7 +1390,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+                                    'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
@@ -1417,6 +1420,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
 
@@ -1425,7 +1429,7 @@ class DLCGenerator(object):
         # The options in each group should have the same length
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling        
+                                    'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
@@ -1462,6 +1466,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
 
@@ -1470,7 +1475,7 @@ class DLCGenerator(object):
         # The options in each group should have the same length
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+                                    'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
@@ -1499,6 +1504,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
 
@@ -1508,7 +1514,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
 
         group0 = ['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                'rot_speed_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
+                'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
         
         if 'pitchfault_time1' in dlc_options:
             group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
@@ -1563,6 +1569,7 @@ class DLCGenerator(object):
         dlc_options['wake_mod'] = 0
         dlc_options['pitch_initial'] = 90.
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
         
@@ -1572,7 +1579,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
 
         group0 = ['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                'rot_speed_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
+                'rot_speed_initial','TTFAdisp_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
         
         if 'pitchfault_time1' in dlc_options:
             group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
@@ -1824,7 +1831,8 @@ class DLCGenerator(object):
             group0.extend(['pitch_initial'])
         if 'rot_speed_initial' in dlc_options:
             group0.extend(['rot_speed_initial'])
-        
+        if 'TTFAdisp_initial' in dlc_options:
+            group0.extend(['TTFAdisp_initial'])
         
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1900,6 +1908,7 @@ class DLCGenerator(object):
         # Disable generator, inflow, and aerodynamics by default
         dlc_options['generator_dof'] = False
         dlc_options['rot_speed_initial'] = 0.
+        dlc_options['TTFAdisp_initial'] = 0.
         dlc_options['compute_aerodynamics'] = dlc_options.get('compute_aerodynamics',0)     # Use user input, otherwise disabled
         dlc_options['compute_inflow'] = dlc_options.get('compute_inflow',0) # Use user input, otherwise disabled
         dlc_options['compute_control'] = dlc_options.get('compute_control',0) # Use user input, otherwise disabled
@@ -1929,6 +1938,7 @@ class DLCGenerator(object):
             'wave_model',
             'generator_dof',
             'rot_speed_initial',
+            'TTFAdisp_initial',
             'initial_platform_surge',
             'initial_platform_sway',
             'initial_platform_heave',
