@@ -20,7 +20,7 @@ jobs:
         python-version: ["3.11","3.12","3.13"]
         
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
     
       - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v3
