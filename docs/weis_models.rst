@@ -21,7 +21,7 @@ These are then formatted for the structural dynamic solvers BeamDyn and ElastoDy
 WISDEM computes the equivalent elastic properties of the nacelle components, of the tower, and of the offshore substructure. 
 WISDEM connects floating platform joints using members along with the parameters needed for the hydrodynamic solvers in OpenFAST and RAFT. 
 WISDEM finally computes the regulation trajectory for the turbine, which is used by ROSCO, so that WEIS can automatically create the DISCON input file.
-In simple terms, WISDEM can be seen as the first tool for the conceptual design of a wind turbine. 
+In simple terms, WISDEM can be seen as the first tool for the conceptual design of a turbine. 
 Once a first conceptual design is generated, WEIS becomes a critical tool for more sophisticated studies investigating the dynamic performance of the turbine, whether land-based or offshore.
 
 WEIS users are encouraged to familiarize themselves with WISDEM through its documentation, which is available at `https://wisdem.readthedocs.io/en/master/ <https://wisdem.readthedocs.io/en/master/>`_. 
@@ -30,7 +30,7 @@ The list of WISDEM examples is often a good starting point.
 
 RAFT 
 -------
-`RAFT <https://github.com/WISDEM/RAFT>`_ (Response Amplitudes of Floating Turbines) is an open-source Python-based software for frequency-domain analysis of floating wind turbines. The software includes quasi-static mooring reactions, strip-theory and potential-flow hydrodynamics (first and second order), blade element momentum aerodynamics, and linear turbine control in a way that avoids any time-domain preprocessing. RAFT constitutes the "Level 1" of modeling fidelity in the WEIS toolset for floating wind turbine controls co-design, providing rapid evaluation (in the order of seconds) of the coupled responses of the system.
+`RAFT <https://github.com/WISDEM/RAFT>`_ (Response Amplitudes of Floating Turbines) is an open-source Python-based software for frequency-domain analysis of floating platforms. The software includes quasi-static mooring reactions, strip-theory and potential-flow hydrodynamics (first and second order), blade element momentum aerodynamics, and linear turbine control in a way that avoids any time-domain preprocessing. RAFT constitutes the "Level 1" of modeling fidelity in the WEIS toolset for floating platform controls co-design, providing rapid evaluation (in the order of seconds) of the coupled responses of the system.
 
 As a frequency-domain code, RAFT solves for the steady state response of the system assuming linearity. In the frequency domain, time-varying quantities (such as external loads and system responses) are modeled as a linear superposition of a mean and a Fourier series of complex amplitudes. Under these assumptions, RAFT can compute:
 
@@ -86,7 +86,7 @@ pyHAMS is a python wrapper for HAMS, a boundary element method for hydrodynamic 
 OpenFAST
 -----------
 
-OpenFAST is a high-fidelity physics-based tool for wind turbine aeroelastic simulation. In WEIS, OpenFAST serves as the primary time-domain dynamic analysis engine for comprehensive turbine modeling and load calculation.
+OpenFAST is a high-fidelity physics-based tool for turbine aeroelastic simulation. In WEIS, OpenFAST serves as the primary time-domain dynamic analysis engine for comprehensive turbine modeling and load calculation.
 
 OpenFAST is integrated into WEIS through the ``FASTLoadCases`` class in ``weis/aeroelasticse/openmdao_openfast.py`` that connects the static design models from WISDEM with OpenFAST's dynamic analysis capabilities. This integration enables the inclusion of dynamic effects, controller interactions, and transient loading in the turbine design optimization process.
 
@@ -106,12 +106,12 @@ For blade modeling, WEIS configures both simple (ElastoDyn) and advanced (BeamDy
 
 WEIS uses pCrunch to post-process OpenFAST's simulation results, providing automated load analysis, extracting statistics, damage equivalent loads (DELs), and extreme values across simulations. These outputs are directly incorporated into the optimization process, enabling design constraints based on ultimate loads, operational performance, or other user defined metrics. This comprehensive analysis capability allows designers to create turbines that not only maximize energy production and minimize cost, but also maintain structural integrity.
 
-For floating offshore applications, OpenFAST's HydroDyn and MoorDyn modules simulate the complex interactions between the turbine, platform, and ocean environment. WEIS can evaluate platform motion statistics and stability metrics, enabling the design of integrated floating wind systems that balance turbine performance with platform stability.
+For floating offshore applications, OpenFAST's HydroDyn and MoorDyn modules simulate the complex interactions between the turbine, platform, and ocean environment. WEIS can evaluate platform motion statistics and stability metrics, enabling the design of integrated floating systems that balance turbine performance with platform stability.
 
 In summary, OpenFAST in WEIS provides:
 
-1. Mid-fidelity time-domain simulations capturing the full dynamic behavior of wind turbines
-2. Modeling of various wind turbine configurations
+1. Mid-fidelity time-domain simulations capturing the full dynamic behavior of turbines
+2. Modeling of various turbine configurations
 3. Load calculation for design verification and optimization
 5. Support for standard design load cases following IEC guidelines
 6. Capabilities for controller design and evaluation
@@ -124,7 +124,7 @@ Input/Output Structure
 
 The OpenFAST component in WEIS accepts a wide range of inputs including:
 
-* Environmental conditions (wind speeds, turbulence parameters, water depths)
+* Environmental conditions (inflow speeds, turbulence parameters, water depths)
 * Turbine geometric properties (blade, tower, platform definitions)
 * Operational parameters (controller settings, rotor speeds)
 * Simulation settings (time steps, analysis duration, output channels)
@@ -186,7 +186,7 @@ Further Information
 
 pCrunch
 ----------
-WEIS uses pCrunch internally to process the time series data from OpenFAST to provide merit of figures and constraints in the optimization. pCrunch can perform post-processing for any time series data from wind turbine simulations. Readers are provided for OpenFAST outputs, but the analysis tools are equally applicable to HAWC2, Bladed, QBlade, ADAMS, or other tools. pCrunch attempts to capture the primary functions of legacy tools like MCrunch, MLife, and MExtremes, while using open source utilities.  Some statistics pCrunch provides are: extreme values, fatigue calculation based on rainflow cycle counting and miner’s law, and AEP calculation. pCrunch is usually installed as part of WEIS. For separate installation guide and more details on pCrunch, check out the `pCrunch github page 
+WEIS uses pCrunch internally to process the time series data from OpenFAST to provide merit of figures and constraints in the optimization. pCrunch can perform post-processing for any time series data from turbine simulations. Readers are provided for OpenFAST outputs, but the analysis tools are equally applicable to HAWC2, Bladed, QBlade, ADAMS, or other tools. pCrunch attempts to capture the primary functions of legacy tools like MCrunch, MLife, and MExtremes, while using open source utilities.  Some statistics pCrunch provides are: extreme values, fatigue calculation based on rainflow cycle counting and miner’s law, and AEP calculation. pCrunch is usually installed as part of WEIS. For separate installation guide and more details on pCrunch, check out the `pCrunch github page 
 <https://github.com/NREL/pCrunch/tree/master>`_. pCrunch provides examples using the two primary classes AeroelasticOutputs and Crunch, see 
 `AeroelasticOutputs example <https://github.com/NREL/pCrunch/blob/master/examples/aeroelastic_output_example.ipynb>`_ and 
 `Crunch example <https://github.com/NREL/pCrunch/blob/master/examples/crunch_example.ipynb>`_.
@@ -195,7 +195,7 @@ WEIS uses pCrunch internally to process the time series data from OpenFAST to pr
 ROSCO
 ---------
 
-WEIS contains the Reference Open Source Controller for wind turbines (`link to paper <https://wes.copernicus.org/articles/7/53/2022/>`_).
+WEIS contains the Reference Open Source Controller for turbines (`link to paper <https://wes.copernicus.org/articles/7/53/2022/>`_).
 The ROSCO dynamic library links with OpenFAST, receiving sensor signals and providing control inputs to the turbine.
 The ROSCO toolbox is used to automatically tune controllers using turbine information and a few input parameters.
 Both the ROSCO dynamic library and python toolbox are installed via ``conda`` (or ``pip``) with WEIS.
@@ -212,13 +212,13 @@ The ROSCO control library uses signals like the
 - generator speed
 - nacelle tower top acceleration
 - blade root moments
-- nacelle wind vane and anemometer
+- nacelle vane and anemometer
 
 to prescribe control actions for the turbine: primarily blade pitch and generator torque.
 
 The generator torque controller is used to maintain the optimal tip speed ratio (TSR) below rated.
 The optimal TSR is determined using the Cp surface from CC-Blade in WISDEM.
-A wind speed estimate used to determine the optimal rotor speed. 
+An inflow speed estimate used to determine the optimal rotor speed. 
 It is recommended to use ``VS_ControlMode: 2`` to achieve this type of torque control.
 ROSCO can also set constant torque or constant power control above rated, using the ``VS_ConstPower`` input.
 
@@ -226,10 +226,10 @@ The pitch controller in ROSCO is a gain-schedule proportional-integral controlle
 If a WISDEM turbine is used to tune the controller, the rotor speed set point is determined by the geometry inputs ``VS_maxspd`` and ``maxTS``, whichever results in a lower rotor speed.
 The pitch control gains are automatically determined using the cc-blade-generated, Cp surfaces, and the natural frequency (``omega_pc``) and damping ratio (``zeta_pc``) of the desired closed-loop generator speed response.
 
-ROSCO implements peak shaving using a look-up table from the wind speed estimate to the minimum pitch limit, which is determined using the Ct coefficients (generated in WISDEM's cc-blade).
+ROSCO implements peak shaving using a look-up table from the inflow speed estimate to the minimum pitch limit, which is determined using the Ct coefficients (generated in WISDEM's cc-blade).
 ROSCO can also apply floating feedback control, where a nacelle acceleration signal is used to generate a pitch offset for damping platform motion.
 
 Yaw control, control of structural elements (like TMDs or external forces), and mooring cable control are available in ROSCO and OpenFAST, but are not yet supported in WEIS.  
 Soon, start-up and shutdown control will be available in both ROSCO and WEIS; they will be enabled by the DLC driver.
-Shutdown control will include safety checks for high wind speed, generator overspeed, and large yaw misalignments.
+Shutdown control will include safety checks for high inflow speed, generator overspeed, and large yaw misalignments.
 

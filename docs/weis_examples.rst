@@ -41,7 +41,7 @@ This method allows users to define and vary OpenFAST inputs systematically:
 - **Example Usage**:
   
   - The script ``run_openfast_cases.py`` simulates a set of steady-state cases.
-  - Users define the initial conditions (corresponding to each wind speed) and wind speed in the same ``group``.
+  - Users define the initial conditions (corresponding to each inflow speed) and inflow speed in the same ``group``.
 
 Running Design Load Cases (DLCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
