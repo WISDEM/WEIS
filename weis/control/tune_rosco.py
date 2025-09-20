@@ -94,13 +94,20 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
         self.add_input('generator_efficiency', val=1.0,                  desc='Generator efficiency')
         self.add_input('TowerHt',           val=1.0,        units='m',              desc='Tower height')
-        # 
-        self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
-        self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
-        self.add_input('vs_minspd',         val=0.0,        units='rad/s',          desc='') 
-        self.add_input('ss_vsgain',         val=0.0,                                desc='')
-        self.add_input('ss_pcgain',         val=0.0,                                desc='')
-        self.add_input('ps_percent',        val=0.0,                                desc='')
+        # Optional params
+        optional_params = [
+            'max_pitch',
+            'min_pitch',
+            'vs_minspd',
+            'ss_vsgain',
+            'ss_pcgain',
+            'ps_percent',
+        ]
+
+        for param in optional_params:
+            if param in rosco_init_options:
+                self.add_input(param, val=rosco_init_options[param], desc='')
+
         # Rotor Power
         if self.modeling_options['WISDEM']['RotorSE']['flag']:
             self.n_pitch    = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
@@ -207,12 +214,20 @@ class TuneROSCO(ExplicitComponent):
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
-        rosco_init_options['max_pitch']   = float(inputs['max_pitch'][0])
-        rosco_init_options['min_pitch']   = float(inputs['min_pitch'][0])
-        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'][0])
-        rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'][0])
-        rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'][0])
-        rosco_init_options['ps_percent']  = float(inputs['ps_percent'][0])
+
+        # Optional parameters
+        optional_params = [
+            'max_pitch',
+            'min_pitch',
+            'vs_minspd',
+            'ss_vsgain',
+            'ss_pcgain',
+            'ps_percent',
+        ]
+        for param in optional_params:
+            if param in rosco_init_options:
+                rosco_init_options[param] = float(inputs[param][0])
+
         rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p'][0]))
         rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p'][0]))
         rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
