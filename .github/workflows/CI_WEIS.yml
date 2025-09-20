@@ -40,10 +40,12 @@ jobs:
       #  run: |
       #    conda install -y -c intel intel-openmp mkl
       
-      - name: WISDEM for windio2
+      - name: windio2 branches of other codes
         run: |
           conda remove --force wisdem
           pip install https://github.com/WISDEM/WISDEM/archive/windIO_2p0.zip
+          conda remove --force openraft
+          pip install https://github.com/WISDEM/RAFT/archive/windio2.zip
 
       - name: Add dependencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')

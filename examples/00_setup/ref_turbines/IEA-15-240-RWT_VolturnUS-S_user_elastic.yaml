@@ -7,7 +7,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 150.0
-    rotor_diameter: 241.35064632
+    rotor_diameter: 241.94
     rated_power: 15000000.0
     lifetime: 25.0
 components:
@@ -971,7 +971,7 @@ components:
               unstretched_length: 850.0
         line_types:
            -  name: main
-              diameter: 0.185
+              diameter: 0.333
               type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
