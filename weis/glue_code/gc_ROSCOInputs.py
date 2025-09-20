@@ -43,7 +43,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     for param in optional_params:
         if param in rosco_init_options:
             wt_opt[f'tune_rosco_ivc.{param}'] = rosco_init_options[param]
-
+    
     if rosco_init_options["Fl_Mode"]:
         try:
             # wt_opt["tune_rosco_ivc.twr_freq"]      = rosco_init_options["twr_freq"]

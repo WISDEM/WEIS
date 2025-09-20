@@ -210,7 +210,7 @@ class WindPark(om.Group):
 
 
             # ROSCO Independent Vars
-
+            
             # optional parameters
             optional_inputs = [
                 'max_pitch',
