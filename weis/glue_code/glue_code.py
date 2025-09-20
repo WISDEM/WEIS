@@ -35,8 +35,9 @@ class WindPark(om.Group):
         self.options.declare("opt_options")
 
     def setup(self):
-        modeling_options = self.options["modeling_options"]
-        opt_options      = self.options["opt_options"]
+        modeling_options = self.options['modeling_options']
+        opt_options      = self.options['opt_options']
+        rosco_options    = modeling_options['ROSCO']
 
         #self.linear_solver = lbgs = om.LinearBlockGS()
         #self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
@@ -71,20 +72,26 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output("stability_margin", val=0.0,                    desc="Stability margin for robust tuning")
         tune_rosco_ivc.add_output("omega_pc_max",     val=0.0,                    desc="Maximum allowable omega for robust tuning")
         # optional inputs - not connected right now!!
-        tune_rosco_ivc.add_output("max_pitch",        val=0.0, units="rad",       desc="Maximum pitch angle , {default = 90 degrees}")
-        tune_rosco_ivc.add_output("min_pitch",        val=0.0, units="rad",       desc="Minimum pitch angle [rad], {default = 0 degrees}")
-        tune_rosco_ivc.add_output("vs_minspd",        val=0.0, units="rad/s",     desc="Minimum rotor speed [rad/s], {default = 0 rad/s}")
-        tune_rosco_ivc.add_output("ss_cornerfreq",    val=0.0, units="rad/s",     desc="First order low-pass filter cornering frequency for setpoint smoother [rad/s]")
-        tune_rosco_ivc.add_output("ss_vsgain",        val=0.0,                    desc="Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}")
-        tune_rosco_ivc.add_output("ss_pcgain",        val=0.0,                    desc="Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}")
-        tune_rosco_ivc.add_output("ps_percent",       val=0.0,                    desc="Percent peak shaving  [%, <= 1 ], {default = 80%}")
-        tune_rosco_ivc.add_output("sd_maxpit",        val=0.0, units="rad",       desc="Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}")
-        tune_rosco_ivc.add_output("sd_cornerfreq",    val=0.0, units="rad/s",     desc="Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}")
-        tune_rosco_ivc.add_output("Kp_flap",          val=0.0, units="s",         desc="Proportional term of the PI controller for the trailing-edge flaps")
-        tune_rosco_ivc.add_output("Ki_flap",          val=0.0,                    desc="Integral term of the PI controller for the trailing-edge flaps")
-        tune_rosco_ivc.add_output("twr_freq",         val=3.2, units="rps",     desc="Tower natural frequency")
-        tune_rosco_ivc.add_output("ptfm_freq",        val=0.2, units="rad/s",     desc="Platform natural frequency")
-        tune_rosco_ivc.add_output("Kp_float",         val=0.0, units="s",         desc="Floating feedback gain")
+        optional_inputs = [
+            'max_pitch',
+            'min_pitch',
+            'vs_minspd',
+            'ss_vsgain',
+            'ss_pcgain',
+            'ps_percent',
+        ]
+        for param in optional_inputs:
+            if param in rosco_options:
+                tune_rosco_ivc.add_output(param, val=0.0, desc='Optional input for ROSCO tuning')
+        
+        
+        tune_rosco_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
+        tune_rosco_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
+        tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
+        tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
+        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rps',     desc='Tower natural frequency')
+        tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
+        tune_rosco_ivc.add_output('Kp_float',         val=0.0, units='s',         desc='Floating feedback gain')
 
         self.add_subsystem("tune_rosco_ivc",tune_rosco_ivc)
 
@@ -203,20 +210,29 @@ class WindPark(om.Group):
 
 
             # ROSCO Independent Vars
-            self.connect("tune_rosco_ivc.max_pitch",        "sse_tune.tune_rosco.max_pitch") 
-            self.connect("tune_rosco_ivc.min_pitch",        "sse_tune.tune_rosco.min_pitch")
-            self.connect("tune_rosco_ivc.vs_minspd",        "sse_tune.tune_rosco.vs_minspd") 
-            self.connect("tune_rosco_ivc.ss_vsgain",        "sse_tune.tune_rosco.ss_vsgain") 
-            self.connect("tune_rosco_ivc.ss_pcgain",        "sse_tune.tune_rosco.ss_pcgain") 
-            self.connect("tune_rosco_ivc.ps_percent",       "sse_tune.tune_rosco.ps_percent") 
-            self.connect("tune_rosco_ivc.omega_pc",         "sse_tune.tune_rosco.omega_pc")
-            self.connect("tune_rosco_ivc.zeta_pc",          "sse_tune.tune_rosco.zeta_pc")
-            self.connect("tune_rosco_ivc.omega_vs",         "sse_tune.tune_rosco.omega_vs")
-            self.connect("tune_rosco_ivc.zeta_vs",          "sse_tune.tune_rosco.zeta_vs")
-            self.connect("tune_rosco_ivc.IPC_Kp1p",         "sse_tune.tune_rosco.IPC_Kp1p")
-            self.connect("tune_rosco_ivc.IPC_Ki1p",         "sse_tune.tune_rosco.IPC_Ki1p")
-            self.connect("tune_rosco_ivc.stability_margin", "sse_tune.tune_rosco.stability_margin")
-            self.connect("tune_rosco_ivc.omega_pc_max", "sse_tune.tune_rosco.omega_pc_max")
+            
+            # optional parameters
+            optional_inputs = [
+                'max_pitch',
+                'min_pitch',
+                'vs_minspd',
+                'ss_vsgain',
+                'ss_pcgain',
+                'ps_percent',
+                ]
+            for param in optional_inputs:
+                if param in rosco_options:
+                    self.connect(f'tune_rosco_ivc.{param}', f'sse_tune.tune_rosco.{param}')
+            
+            # required parameters            
+            self.connect('tune_rosco_ivc.omega_pc',         'sse_tune.tune_rosco.omega_pc')
+            self.connect('tune_rosco_ivc.zeta_pc',          'sse_tune.tune_rosco.zeta_pc')
+            self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
+            self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
+            self.connect('tune_rosco_ivc.IPC_Kp1p',         'sse_tune.tune_rosco.IPC_Kp1p')
+            self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
+            self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
+            self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
 
             # Someday, if we want to get ptfm_freq from Level 1, we"d switch that here
             self.connect("tune_rosco_ivc.ptfm_freq",        "sse_tune.tune_rosco.ptfm_freq")

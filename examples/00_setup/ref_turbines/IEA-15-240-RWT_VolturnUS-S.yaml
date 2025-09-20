@@ -730,7 +730,7 @@ components:
             u_allow_pcent: 8.5
             y_allow_pcent: 1.0
             z_allow_deg: 0.05
-            sigma: 60000.0
+            sigma: 60.e+3
             h_0: 0.05
             C_Cu: 4.786
             C_Fe: 0.556
@@ -804,7 +804,7 @@ components:
            -  name: main_column
               joint1: main_keel
               joint2: main_freeboard
-              Ca: 1.0
+              Ca: 1.0 # These coefficients can be defined as one constant scalar (here) or an array that defines different sections along the member (see column 1 below)
               Cd: 0.8
               outer_shape:
                   shape: circular

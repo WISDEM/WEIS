@@ -28,6 +28,9 @@ class RAFT_WEIS(om.Group):
         frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
         raft_opt['nfreq'] = len(frequencies)
         raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
+        raft_opt['intersection_mesh'] = 0
+        raft_opt['floating'] = weis_opt['floating']  # Give RAFT all the WEIS floating options
+
 
         turbine_opt = {}
         turbine_opt['npts'] = weis_opt['WISDEM']['TowerSE']['n_height_tower']
