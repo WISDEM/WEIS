@@ -197,9 +197,9 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
 
         table = dbc.Table(table_header + table_body, bordered=True)
     
-    elif gtype == 'nacelle':
+    elif gtype == 'drivetrain':
         multiindex_df = {}
-        for field in ['drivetrain', 'generator']:
+        for field in ['outer_shape', 'generator']:
             data = [wt_options_by_names[gname]['components'][gtype][field] if field in wt_options_by_names[gname]['components'][gtype] else {} for gname in geom_3d_names]
             columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list) and not isinstance(value, dict)).keys())
 
