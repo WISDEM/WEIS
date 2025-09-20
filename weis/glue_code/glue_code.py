@@ -210,7 +210,7 @@ class WindPark(om.Group):
 
 
             # ROSCO Independent Vars
-
+            
             # optional parameters
             optional_inputs = [
                 'max_pitch',
@@ -540,14 +540,26 @@ class WindPark(om.Group):
 
                     for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                         idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                        #self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
-                        self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}:s")
-                        self.connect(f"floatingse.member{k}.outer_diameter", f"aeroelastic.member{k}:outer_diameter")
-                        self.connect(f"floatingse.member{k}.wall_thickness", f"aeroelastic.member{k}:wall_thickness")
+                        self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}_{kname}:s")
+                        self.connect(f"floatingse.member{k}_{kname}.wall_thickness", f"aeroelastic.member{k}_{kname}:wall_thickness")
+
+                        # Member coefficients
+                        if modeling_options['floating']['members']['outer_shape'][k] == "circular":
+                            self.connect(f"floatingse.member{k}_{kname}.outer_diameter", f"aeroelastic.member{k}_{kname}:outer_diameter")
+                            self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"aeroelastic.member{k}_{kname}:Ca")
+                            self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"aeroelastic.member{k}_{kname}:Cd")
+                        elif modeling_options['floating']['members']['outer_shape'][k] == "rectangular":
+                            self.connect(f"floatingse.member{k}_{kname}.side_length_a", f"aeroelastic.member{k}_{kname}:side_length_a")
+                            self.connect(f"floatingse.member{k}_{kname}.side_length_b", f"aeroelastic.member{k}_{kname}:side_length_b")
+                            self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"aeroelastic.member{k}_{kname}:Ca")
+                            self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"aeroelastic.member{k}_{kname}:Cd")
+                            self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"aeroelastic.member{k}_{kname}:Cay")
+                            self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"aeroelastic.member{k}_{kname}:Cdy")
+
 
                         for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
-                            self.connect(f"floating.member_{kname}:{var}", f"aeroelastic.member{k}:{var}")
-
+                            self.connect(f"floating.member{k}_{kname}:{var}", f"aeroelastic.member{k}_{kname}:{var}")
+                    
                     if modeling_options["flags"]["tower"]:
                         self.connect("floating.transition_piece_mass",  "aeroelastic.transition_piece_mass")
                         self.connect("floatingse.transition_piece_I",      "aeroelastic.transition_piece_I", src_indices=[0,1,2])

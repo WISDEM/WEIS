@@ -909,8 +909,8 @@ components:
               line_type: main
               unstretched_length: 850.0
         line_types:
-           -  name: main
-              diameter: 0.185
+            - name: main
+              diameter: 0.333 # volume-equivalent
               type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
@@ -1114,9 +1114,9 @@ materials:
       G: 1323000000.0
       nu: 0.3
       alpha: 0.0
-      Xt: 74
-      Xc: 87
-      S: 21260000.0
+      Xt: 74.e+06
+      Xc: 87.e+06
+      S: 2.126E+7
       GIc: 303
       GIIc: 3446
       alp0: 53
@@ -1185,12 +1185,12 @@ materials:
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
       orth: 1
       rho: 1940.0
-      E: [44600000000.0, 17000000000.0, 16700000000.0]
-      G: [3270000000.0, 3480000000.0, 3500000000.0]
+      E: [4.46E+10, 1.7E+10, 1.67E+10]
+      G: [3.27E+9, 3.48E+9, 3.5E+9]
       nu: [0.262, 0.35, 0.264]
-      Xt: [609200000.0, 38100000.0, 15290000.0]
-      Xc: [474710000.0, 112640000.0, 113220000.0]
-      S: [18910000.0, 17240000.0, 13160000.0]
+      Xt: [6.092E+8, 3.81E+7, 1.529E+7]
+      Xc: [4.7471E+8, 1.1264E+8, 1.1322E+8]
+      S: [1.891E+7, 1.724E+7, 1.316E+7]
       m: 10
       GIc: 303
       GIIc: 3446
@@ -1209,8 +1209,8 @@ materials:
       rho: 1220.0
       orth: 1
       nu: [0.27, 0.27, 0.27]
-      Xt: [1546000000.0, 0.0, 0.0]
-      Xc: [1047000000.0, 0.0, 0.0]
+      Xt: [1546.e+6, 0.0, 0.0]
+      Xc: [1047.e+6, 0.0, 0.0]
       S: [0.0, 0.0, 0.0]
       m: 16.1
       GIc: 0.0
@@ -1229,12 +1229,12 @@ materials:
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
       orth: 1
       rho: 1940.0
-      E: [11100000000.0, 11100000000.0, 16700000000.0]
-      G: [13530000000.0, 3490000000.0, 3490000000.0]
+      E: [1.11E+10, 1.11E+10, 1.67E+10]
+      G: [1.353E+10, 3.49E+9, 3.49E+9]
       nu: [0.5, 0.0, 0.066]
-      Xt: [42900000.0, 42600000.0, 15300000.0]
-      Xc: [70700000.0, 70700000.0, 113200000.0]
-      S: [103400000.0, 17200000.0, 13200000.0]
+      Xt: [4.29E+7, 4.26E+7, 1.53E+7]
+      Xc: [7.07E+7, 7.07E+7, 1.132E+8]
+      S: [1.034E+8, 1.72E+7, 1.32E+7]
       m: 10
       GIc: 303
       GIIc: 3446
@@ -1253,12 +1253,12 @@ materials:
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
       orth: 1.0
       rho: 1940.0
-      E: [28700000000.0, 16600000000.0, 16700000000.0]
-      G: [8400000000.0, 3490000000.0, 3490000000.0]
+      E: [2.87E+10, 1.66E+10, 1.67E+10]
+      G: [8.4E+9, 3.49E+9, 3.49E+9]
       nu: [0.5, 0.0, 0.17]
-      Xt: [396000000.0, 76400000.0, 15300000.0]
-      Xc: [448900000.0, 174700000.0, 113200000.0]
-      S: [103400000.0, 17200000.0, 13200000.0]
+      Xt: [3.96E+8, 7.64E+7, 1.53E+7]
+      Xc: [4.489E+8, 1.747E+8, 1.132E+8]
+      S: [1.034E+8, 1.72E+7, 1.32E+7]
       m: 10
       GIc: 303
       GIIc: 3446
@@ -1276,8 +1276,8 @@ materials:
       description: Airex C70.130 PVC Foam, source 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'
       orth: 0.0
       rho: 130.0
-      E: 129200000.0
-      G: 48946969.696969695
+      E: 1.292E+8
+      G: 4.8946969696969695E+7
       nu: 0.32
       Xt: 2083000.0
       Xc: 1563000.0
