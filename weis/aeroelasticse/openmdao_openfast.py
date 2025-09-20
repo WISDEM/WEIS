@@ -1491,6 +1491,8 @@ class FASTLoadCases(ExplicitComponent):
             N2 = np.array([], dtype=np.int_)
             d_coarse = np.array([])
             t_coarse = np.array([])
+            Ca_coarse = np.array([])
+            Cd_coarse = np.array([])
             
             # Look over members and grab all nodes and internal connections
             n_member = modopt["floating"]["members"]["n_members"]
