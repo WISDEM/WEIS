@@ -44,7 +44,7 @@ An example (a subset of a modeling input) is shown next::
 The ``metocean_conditions`` are defined using tables of ``wind_speed``, ``wave_height``, and ``wave_period`` for normal sea states (``NSS``) and severe sea states (``SSS``), and sea states representative of 1- and 50-year return periods.
 Individual DLCs use these conditions to determine specific sea conditions for each case, but they can also be overwritten in each case.
 
-Users can specify the wind speed bin size (``ws_bin_size``) or the specific wind speeds (``wind_speed``).
+Users can specify the inflow speed bin size (``ws_bin_size``) or the specific inflow speeds (``wind_speed``).
 The number of seeds (``n_seed``) and inputs to TurbSim (``turbulent_wind``) can also be specified.
 ``transient_time`` is excluded from time series analysis; only ``analysis_time`` is used.
 A complete listing of the DLC options can be found in the `DLC options`_ below.
@@ -67,7 +67,7 @@ An example case matrix is shown next::
     2         1      9.536058651858337    9.189114   9.189114   9.189114      0       7.559987  10.0   0.0      9.7        2        13.6       15.0     1693606511 
     3         1      9.536058651858337    9.189114   9.189114   9.189114      0       7.559987  10.0   0.0      9.7        2        13.6       15.0     680233354  
 
-This case matrix is for DLC 6.1 and shows the initial conditions (BlPitch*, RotSpeed) as well as the sea state (WaveHs, WaveTp) and wind condtions (HWindSpeed, RandSeed1) for each case.
+This case matrix is for DLC 6.1 and shows the initial conditions (BlPitch*, RotSpeed) as well as the sea state (WaveHs, WaveTp) and inflow conditions (HWindSpeed, RandSeed1) for each case.
 
 Modeling Option Outputs
 -----------------------
@@ -115,7 +115,7 @@ Expected DLC Outputs in OpenFAST
 Power production (1.X)
 -----------------------
 
-In all the power producing DLCs (1.X), the wind turbine should be running and connected to an electrical load.
+In all the power producing DLCs (1.X), the turbine should be running and connected to an electrical load.
 According to the standard, deviations from theoretical operating conditions (like yaw misalignment should be considered).
 ``yaw_misalign`` is an available option for all these cases; the default is 0 deg. for all 1.X cases.
 DLC 1.X simulations all use a normal turbulence model.  The class and type is set in the ``assembly`` options in the geometry input.
@@ -126,8 +126,8 @@ There is a similar option for ``wave_period_NSS``.
 
 DLC 1.1
 -------
-Normal turbulence and sea state, specified using the options described above, with wind speeds spanning the operational wind speeds. 
-Specific wind speeds can be selected with the ``(DLC_driver,DLCs,DLC: "1.1", wind_speed)`` input.
+Normal turbulence and sea state, specified using the options described above, with inflow speeds spanning the operational inflow speeds. 
+Specific inflow speeds can be selected with the ``(DLC_driver,DLCs,DLC: "1.1", wind_speed)`` input.
 The default number of seeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
 
 .. figure:: /images/dlcs/DLC11.png
@@ -162,14 +162,14 @@ Note that the standard specifies guidance for the scaling of this turbulence bas
    :align: center
    :width: 70%
 
-Here, we compare a DLC 1.1 simulation with a DLC 1.3 simulation and note the differences in wind speed (Wind1VelX), control signals, and tower loading.
+Here, we compare a DLC 1.1 simulation with a DLC 1.3 simulation and note the differences in inflow speed (Wind1VelX), control signals, and tower loading.
 
 DLC 1.4
 -------
 
 DLC 1.4 models an extreme coherent gust with direction change (ECD) transient event that causes ultimate loading.
-The WEIS DLC driver simulates this case across wind speeds, but the standard specifies that it only needs to be simulated near rated conditions.
-At each wind speed, both a positive and negative change in direction will be simulated.
+The WEIS DLC driver simulates this case across inflow speeds, but the standard specifies that it only needs to be simulated near rated conditions.
+At each inflow speed, both a positive and negative change in direction will be simulated.
 For each of those cases, users can specify the ``n_azimuth`` input to start the simulation at evenly spaced azimuthal positions from 0 to 120 deg. to ensure a full sampling of the blade loads when the gust occurs.
 
 .. figure:: /images/dlcs/DLC14.png
@@ -363,16 +363,16 @@ For example in this DLC 1.1 example::
   # These options should be the same length and we will generate a matrix of all cases
   generic_case_inputs = []
   generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-  generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+  generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps inflow speed to ICs and add those variables to this group
   generic_case_inputs.append(['yaw_misalign']) # group 2
 
 The time and other constant options are in the first group.  This group usually has a length of one.
-Wind speed, wave height, wave period, and the seeds are varied together in the second group.  
-For example the wind speed may be 8, 10, and 12, and the corresponding wave height/period will vary with the wind speed. 
+Inflow speed, wave height, wave period, and the seeds are varied together in the second group.  
+For example the inflow speed may be 8, 10, and 12, and the corresponding wave height/period will vary with the inflow speed. 
 Initial conditions are automatically applied in this group via linear interpolation.  Search for the ``initial_condition_table`` dictionary.
-The wind speed and other metocean conditions are added to the dlc_options automatically.  
+The inflow speed and other metocean conditions are added to the dlc_options automatically.  
 The developer only needs to provide specific values in certain cases, like DLC 6.1.
-If the user also wants to vary the yaw_misalign, those offsets will be applied on each wind speed.
+If the user also wants to vary the yaw_misalign, those offsets will be applied on each inflow speed.
 
 Finally, the ``generate_cases`` method will do the rest of the work and (hopefully) check for errors along the way::
 
