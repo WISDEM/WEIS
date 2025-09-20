@@ -298,9 +298,9 @@ def bladeMesh(bladeData, airfoils):
                       bladeData['outer_shape']['twist']['grid'],
                       bladeData['outer_shape']['twist']['values'])
     
-    section_offset_x = np.interp(s_airfoil,
-                           bladeData['outer_shape']['section_offset_x']['grid'],
-                           bladeData['outer_shape']['section_offset_x']['values'])
+    section_offset_x = np.zeros(len(s_airfoil)) #np.interp(s_airfoil,
+                           #bladeData['outer_shape']['section_offset_x']['grid'],
+                           #bladeData['outer_shape']['section_offset_x']['values'])
     
     section_offset_y = np.interp(s_airfoil,
                            bladeData['outer_shape']['section_offset_y']['grid'],

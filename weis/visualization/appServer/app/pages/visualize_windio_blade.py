@@ -78,7 +78,7 @@ def draw_blade_oml(blade_names, blade_by_names):
     if blade_names is None:
         raise PreventUpdate
     
-    channels = ['chord', 'twist', 'pitch_axis']
+    channels = ['chord', 'twist', 'section_offset_y']
     cols = set_colors()            # Set color panel
     fig = make_subplots(rows=len(channels), cols=1, shared_xaxes=True)  # 3 subplots where chord, twist, LE/TE are each plotted
 
@@ -87,9 +87,9 @@ def draw_blade_oml(blade_names, blade_by_names):
         for row_idx, channel in enumerate(channels):
             trace = blade_by_names[blade_name]['outer_shape'][channel]
             # LE/TE Equation
-            if channel == 'pitch_axis':
+            if channel == 'section_offset_y':
                 chord_values = np.array(blade_by_names[blade_name]['outer_shape']['chord']['values'])
-                ref_axis_y = np.interp(blade_by_names[blade_name]['outer_shape']['chord']['grid'], blade_by_names[blade_name]['outer_shape']['reference_axis']['y']['grid'], blade_by_names[blade_name]['outer_shape']['reference_axis']['y']['values'])
+                ref_axis_y = np.interp(blade_by_names[blade_name]['outer_shape']['chord']['grid'], blade_by_names[blade_name]['reference_axis']['y']['grid'], blade_by_names[blade_name]['reference_axis']['y']['values'])
                 sec_off_y = np.interp(blade_by_names[blade_name]['outer_shape']['chord']['grid'], blade_by_names[blade_name]['outer_shape']['section_offset_y']['grid'], blade_by_names[blade_name]['outer_shape']['section_offset_y']['values'])
                 leading_edge = ref_axis_y - sec_off_y
                 tailing_edge = leading_edge - chord_values

@@ -206,7 +206,6 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
             for c in columns:
                 multiindex_df[(field, c)] = {geom_3d_names[idx] : (html.Code(dictionary[c], style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'}) if c in dictionary else html.Code("-", style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})) for idx, dictionary in enumerate(data)}
 
-        
         df = pd.DataFrame(multiindex_df)
         df.index.set_names("Label", inplace=True)
         # TODO: Freeze first column with fixed_columns={'headers': True, 'data': 1} => Doesn't work..
@@ -216,6 +215,8 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
         # TODO: How and What to visualize for substructure tables?
         table = dbc.Table(children=[])      # Return blank table for now..
 
+    else:
+        breakpoint()
     return table
 
 
