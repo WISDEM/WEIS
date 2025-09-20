@@ -13,7 +13,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # Torque control
     wt_opt["tune_rosco_ivc.omega_vs"]      = rosco_init_options["omega_vs"]
     wt_opt["tune_rosco_ivc.zeta_vs"]       = rosco_init_options["zeta_vs"]
-    
+
     # Flap control params
     if rosco_init_options["Flp_Mode"] > 0:
         try:
@@ -22,11 +22,11 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
         except:
             raise Exception("If Flp_Mode > 0, you must set flp_kp_norm, flp_tau in the modeling options")
 
-    # IPC 
+    # IPC
     if rosco_init_options["IPC_ControlMode"]:
         wt_opt["tune_rosco_ivc.IPC_Kp1p"] = rosco_init_options["IPC_Kp1p"]
         wt_opt["tune_rosco_ivc.IPC_Ki1p"] = rosco_init_options["IPC_Ki1p"]
-    
+
     # Robust controller tuning
     if opt_options["design_variables"]["control"]["servo"]["pitch_control"]["stability_margin"]["flag"]:
         wt_opt["tune_rosco_ivc.stability_margin"] = rosco_init_options["linmodel_tuning"]["stability_margin"]
@@ -52,7 +52,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
                 wt_opt["tune_rosco_ivc.Kp_float"]      = rosco_init_options["Kp_float"]
         except:
             raise Exception("If Fl_Mode > 0, you must set twr_freq and ptfm_freq in modeling options")
-        
+
     # Check for proper Flp_Mode, print warning
     #if modeling_options["WISDEM"]["RotorSE"]["n_tab"] > 1 and rosco_init_options["Flp_Mode"] == 0:
     #        raise Exception("A distributed aerodynamic control device is specified in the geometry yaml, but Flp_Mode is zero in the modeling options.")
