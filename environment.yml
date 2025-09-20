@@ -14,7 +14,7 @@ dependencies:
   - pyopenfast>=4.1.0
   - openraft>=1.4.0
   - osqp  
-  - pcrunch>=2.1.0
+  # - pcrunch>=2.1.0
   - pip
   - pyhams>=1.3
   #- pyoptsparse
@@ -28,6 +28,7 @@ dependencies:
     - pyvista
     - dearpygui
     - orbit-nrel
+    - pcrunch   # temporarily for testing use pip until 2.1.3 is also on conda-forge
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
