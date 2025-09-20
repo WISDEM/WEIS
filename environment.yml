@@ -21,6 +21,7 @@ dependencies:
   - rosco>=2.10
   - smt
   - wisdem>=3.21.0
+  - moorpy=1.1  # until WISDEM 4.0 release
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
