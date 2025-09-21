@@ -37,30 +37,30 @@ class PoseOptimizationWEIS(PoseOptimization):
         if merit_figure.lower() == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
             
-        elif merit_figure.lower() == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
+        elif merit_figure.lower() == 'del_rootmyb':   # for DAC optimization on root-flap-bending moments
             wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
             
-        elif merit_figure.lower() == 'DEL_TwrBsMyt':   # for pitch controller optimization
+        elif merit_figure.lower() == 'del_twrbsmyt':   # for pitch controller optimization
             wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             
         elif merit_figure.lower() == 'rotor_overspeed':
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
             wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
-        
-        elif merit_figure.lower() == 'Std_PtfmPitch':
+
+        elif merit_figure.lower() == 'std_ptfmpitch':
             wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
-        
-        elif merit_figure.lower() == 'Max_PtfmPitch':
+
+        elif merit_figure.lower() == 'max_ptfmpitch':
             wt_opt.model.add_objective('aeroelastic.Max_PtfmPitch')
 
-        elif merit_figure.lower() == 'Cp':
+        elif merit_figure.lower() == 'cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
-        
-        elif merit_figure.lower() == 'weis_lcoe' or merit_figure.lower().lower() == 'lcoe':
+
+        elif merit_figure.lower() == 'weis_lcoe' or merit_figure.lower() == 'lcoe':
             wt_opt.model.add_objective('financese_post.lcoe')
-        
-        elif merit_figure.lower() == 'OL2CL_pitch':
+
+        elif merit_figure.lower() == 'ol2cl_pitch':
             wt_opt.model.add_objective('aeroelastic.OL2CL_pitch')
         
         else:
