@@ -39,6 +39,17 @@ jobs:
       #  if: contains( matrix.os, 'windows')
       #  run: |
       #    conda install -y -c intel intel-openmp mkl
+
+      # Delete these next three entries once WISDEM and RAFT have releases with windio2 branches
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        run: |
+          conda install -y gfortran
+
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
       
       - name: windio2 branches of other codes
         run: |
@@ -46,7 +57,8 @@ jobs:
           pip install https://github.com/WISDEM/WISDEM/archive/windIO_2p0.zip
           conda remove --force openraft
           pip install https://github.com/WISDEM/RAFT/archive/windio2.zip
-
+      # Don't delete after this
+      
       - name: Add dependencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
