@@ -1113,10 +1113,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
         fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
         fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        for fass in ['fore_aft','side_side']:
+            for idir in [0,1]:
+                if not np.any(inputs[f'{fass}_modes'][idir,:]):
+                    print(f'WARNING: {fass} tower shape coefficients are zero which will cause errors in using ElastoDyn')
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / np.sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / np.sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / np.sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / np.sum(inputs['side_side_modes'][1, :])
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
