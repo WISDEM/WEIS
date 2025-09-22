@@ -6,19 +6,20 @@ general:
 design_variables:
   floating:
     joints:
-      flag: True
       z_coordinate:
           - names: [main_keel, col1_keel, col2_keel, col3_keel]
             lower_bound: -40.0
             upper_bound: -15.0
+            flag: True
       r_coordinate:
           - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
             lower_bound: 38.8125
             upper_bound: 64.6875
+            flag: True
     members:
-        flag: True
         groups:
           - names: [column1,column2,column3]
+            flag: True
             diameter:
                 lower_bound: 9.375
                 upper_bound: 15.625
@@ -36,9 +37,6 @@ constraints:
     Std_PtfmPitch:
       flag: False
       max: 2.
-  Max_Offset:
-    flag: True
-    max: 30.
   floating:
     stress: 
       flag: True
@@ -46,6 +44,9 @@ constraints:
       flag: True
     shell_buckling: 
       flag: True
+    Max_Offset:
+      flag: True
+      max: 30.
 
 merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 

@@ -40,10 +40,10 @@ class RAFT_WEIS(om.Group):
         turbine_opt['n_span'] = weis_opt['WISDEM']['RotorSE']['n_span']
         turbine_opt['n_aoa'] = weis_opt['WISDEM']['RotorSE']['n_aoa']
         turbine_opt['n_Re'] = weis_opt['WISDEM']['RotorSE']['n_Re']
-        turbine_opt['n_tab'] = weis_opt['WISDEM']['RotorSE']['n_tab']
+        turbine_opt['n_tab'] = 0
         turbine_opt['n_pc'] = weis_opt['WISDEM']['RotorSE']['n_pc']
-        turbine_opt['n_af'] = weis_opt['WISDEM']['RotorSE']['n_af']
-        turbine_opt['af_used_names'] = weis_opt['WISDEM']['RotorSE']['af_used']
+        turbine_opt['n_af'] = weis_opt['WISDEM']['RotorSE']['n_af_master']
+        turbine_opt['af_used_names'] = weis_opt['WISDEM']['RotorSE']['af_master']
 
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])

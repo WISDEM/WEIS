@@ -1,14 +1,12 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
 
 try:
-    from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
+    from vtkmodules.util.numpy_support import numpy_to_vtk
 except:
-    from vtk.util.numpy_support import numpy_to_vtk, vtk_to_numpy
-import yaml
+    from vtk.util.numpy_support import numpy_to_vtk
+import weis.inputs as sch
 
 
 def render_blade(turbineData, local=True):
@@ -36,7 +34,7 @@ def render_blade(turbineData, local=True):
         downwindScalar = -1 if 'downwind' in turbineData['assembly']['rotor_orientation'].lower() else 1
 
         # rotate about y-axis by the cone angle
-        coneAngle = turbineData['components']['hub']['cone_angle'] * -1 * downwindScalar # in rads is about x-axis
+        coneAngle = np.deg2rad(turbineData['components']['hub']['cone_angle']) * -1 * downwindScalar # in rads is about x-axis
         blade_1 = rotation_transformation(points, [0,           coneAngle,  0])
         # blade_2 = rotation_transformation(blade_1, [2*np.pi/3,   0,  0])
         # blade_3 = rotation_transformation(blade_1, [4*np.pi/3,   0,  0])
@@ -48,7 +46,7 @@ def render_blade(turbineData, local=True):
 
 
         # angle by the tilt of the rotor
-        tiltAngle = turbineData['components']['nacelle']['drivetrain']['uptilt'] * downwindScalar # in rads is about y-axis
+        tiltAngle = np.deg2rad(turbineData['components']['drivetrain']['outer_shape']['uptilt']) * downwindScalar # in rads is about y-axis
         # blade_1 = rotation_transformation(blade_1, [0, tiltAngle, 0])
         # blade_2 = rotation_transformation(blade_2, [0, tiltAngle, 0])
         # blade_3 = rotation_transformation(blade_3, [0, tiltAngle, 0])
@@ -60,7 +58,7 @@ def render_blade(turbineData, local=True):
         # Tanslation along the z-axis to the hub height
         zTranslation = turbineData['assembly']['hub_height']
         # Translation in the x-axis
-        xTranslation = turbineData['components']['nacelle']['drivetrain']['distance_tt_hub'] * downwindScalar * np.cos(tiltAngle) * -1
+        xTranslation = turbineData['components']['drivetrain']['outer_shape']['distance_tt_hub'] * downwindScalar * np.cos(tiltAngle) * -1
 
         # blade_1 = translation_transformation(blade_1, [xTranslation, 0, zTranslation])
         # blade_2 = translation_transformation(blade_2, [xTranslation, 0, zTranslation])
@@ -101,7 +99,7 @@ def render_hub(turbineData, local=True):
         points = rotation_transformation(points, [0, np.pi/2 + np.pi*int(downwindScalar==-1), 0])
 
         # Apply tilt angle rotation
-        tiltAngle = turbineData['components']['nacelle']['drivetrain']['uptilt'] #* downwindScalar # in rads
+        tiltAngle = np.deg2rad(turbineData['components']['drivetrain']['outer_shape']['uptilt']) # in rads is about y-axis
         points = rotation_transformation(points, [0, tiltAngle, 0])
 
         # For downwind configuration, rotate 180 degrees about z-axis
@@ -111,7 +109,7 @@ def render_hub(turbineData, local=True):
         # Tanslation along the z-axis to the hub height
         zTranslation = turbineData['assembly']['hub_height']
         # Translation in the x-axis (account for downwind configuration)
-        xTranslation = turbineData['components']['nacelle']['drivetrain']['distance_tt_hub'] * downwindScalar * np.cos(tiltAngle) * -1
+        xTranslation = turbineData['components']['drivetrain']['outer_shape']['distance_tt_hub'] * downwindScalar * np.cos(tiltAngle) * -1
 
         points = translation_transformation(points, [xTranslation, 0, zTranslation])
 
@@ -138,7 +136,7 @@ def render_Tower(turbineData, local=True):
 
 def render_nacelle(turbineData, local=True):
 
-    points = nacelleMesh(turbineData['components']['nacelle'],turbineData['components']['hub'])
+    points = nacelleMesh(turbineData['components']['drivetrain'],turbineData['components']['hub'])
 
     if local:
         mesh_state, mesh = render_our_own_delaunay(points)
@@ -151,7 +149,7 @@ def render_nacelle(turbineData, local=True):
         zTranslation = turbineData['assembly']['hub_height']
 
         # move the nacelle so that the -x face is touching the hub
-        xTranslation = turbineData['components']['nacelle']['drivetrain']['overhang']  * 0.5
+        xTranslation = turbineData['components']['drivetrain']['outer_shape']['overhang']  * 0.5
 
         # If downwind, rotate nacelle 180 degrees about z-axis
         if downwindScalar == -1:
@@ -209,7 +207,7 @@ def render_turbine(turbineData, components):
             mesh_state, mesh, extreme = render_hub(turbineData, local=False)
         elif component == 'tower':
             mesh_state, mesh, extreme = render_Tower(turbineData, local=False)
-        elif component == 'nacelle':
+        elif component == 'drivetrain':
             mesh_state, mesh, extreme = render_nacelle(turbineData, local=False)
         elif component == 'monopile':
             mesh_state, mesh, extreme = render_monopile(turbineData, local=False)
@@ -291,33 +289,38 @@ def bladeMesh(bladeData, airfoils):
     z = np.array([]) 
     
     # interpolate the chord, twist, pitch axis and reference axis to the locations of the airfoils
-    chord = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'], 
-                        bladeData['outer_shape_bem']['chord']['grid'],
-                        bladeData['outer_shape_bem']['chord']['values'])
+    s_airfoil = [bladeData['outer_shape']['airfoils'][i]['spanwise_position'] for i in range(len(bladeData['outer_shape']['airfoils']))]
+    chord = np.interp(s_airfoil,
+                      bladeData['outer_shape']['chord']['grid'],
+                      bladeData['outer_shape']['chord']['values'])
     
-    twist = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
-                        bladeData['outer_shape_bem']['twist']['grid'],
-                        bladeData['outer_shape_bem']['twist']['values'])
+    twist = np.interp(s_airfoil,
+                      bladeData['outer_shape']['twist']['grid'],
+                      bladeData['outer_shape']['twist']['values'])
     
-    pitch_axis = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
-                            bladeData['outer_shape_bem']['pitch_axis']['grid'],
-                            bladeData['outer_shape_bem']['pitch_axis']['values'])
+    section_offset_x = np.zeros(len(s_airfoil)) #np.interp(s_airfoil,
+                           #bladeData['outer_shape']['section_offset_x']['grid'],
+                           #bladeData['outer_shape']['section_offset_x']['values'])
     
-    ref_axis_x = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['x']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['x']['values'])
+    section_offset_y = np.interp(s_airfoil,
+                           bladeData['outer_shape']['section_offset_y']['grid'],
+                           bladeData['outer_shape']['section_offset_y']['values'])
     
-    ref_axis_y = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['y']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['y']['values'])
+    ref_axis_x = np.interp(s_airfoil,
+                           bladeData['reference_axis']['x']['grid'],
+                           bladeData['reference_axis']['x']['values'])
     
-    ref_axis_z = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['z']['grid'],
-                            bladeData['outer_shape_bem']['reference_axis']['z']['values'])
+    ref_axis_y = np.interp(s_airfoil,
+                           bladeData['reference_axis']['y']['grid'],
+                           bladeData['reference_axis']['y']['values'])
+    
+    ref_axis_z = np.interp(s_airfoil,
+                           bladeData['reference_axis']['z']['grid'],
+                           bladeData['reference_axis']['z']['values'])
     
 
     # extract the airfoil names at the grid locations 
-    airfoil_names = [bladeData['outer_shape_bem']['airfoil_position']['labels'][i] for i in range(len(bladeData['outer_shape_bem']['airfoil_position']['grid']))]
+    airfoil_names = [bladeData['outer_shape']['airfoils'][i]['name'] for i in range(len(bladeData['outer_shape']['airfoils']))]
 
     # Arrays to store points
     x = np.array([])
@@ -329,9 +332,11 @@ def bladeMesh(bladeData, airfoils):
         # Get the airfoil coordinates for this section
         af_coordinates = np.array([airfoils[airfoil_names[i]]['coordinates']['x'], airfoils[airfoil_names[i]]['coordinates']['y']]).T
         
-        # Scale by chord
-        af_coordinates[:, 0] = (af_coordinates[:, 0] - pitch_axis[i]) * chord[i]
-        af_coordinates[:, 1] = af_coordinates[:, 1] * chord[i]
+        # Scale by chord and adjust by section offsets x and y 
+        # Note that section_offsets are in the blade coordinate system, which is flipped compared to the local airfoil coordinate system
+        # Also, section_offset_x must be summed, whereas section_offset_y must be subtracted
+        af_coordinates[:, 0] = af_coordinates[:, 0] * chord[i] - section_offset_y[i]
+        af_coordinates[:, 1] = af_coordinates[:, 1] * chord[i] + section_offset_x[i]
         
         # Create rotation matrix for twist angle
         cos_t = np.cos(np.radians(twist[i]))
@@ -364,10 +369,10 @@ def towerMesh(towerData):
     y = np.array([])
     z = np.array([]) 
     
-    towerGrid = np.interp(towerData['outer_shape_bem']['outer_diameter']['grid'],
-                            towerData['outer_shape_bem']['reference_axis']['z']['grid'],
-                            towerData['outer_shape_bem']['reference_axis']['z']['values'])
-    TowerOD = towerData['outer_shape_bem']['outer_diameter']['values']
+    towerGrid = np.interp(towerData['outer_shape']['outer_diameter']['grid'],
+                            towerData['reference_axis']['z']['grid'],
+                            towerData['reference_axis']['z']['values'])
+    TowerOD = towerData['outer_shape']['outer_diameter']['values']
 
     # Create points for each cylinder segment
     for i in range(len(towerGrid)-1):
@@ -476,10 +481,10 @@ def nacelleMesh(nacelleData, hubData):
     xOffset = -0.2  # Shift nacelle back by to better align with hub
     
     # if the nacelle dict has length, width and height, we can create a box
-    if 'length' in nacelleData['drivetrain'].keys():
-        length = nacelleData['drivetrain']['length']
-        width = nacelleData['drivetrain']['width']
-        height = nacelleData['drivetrain']['height']
+    if 'length' in nacelleData['outer_shape'].keys():
+        length = nacelleData['outer_shape']['length']
+        width = nacelleData['outer_shape']['width']
+        height = nacelleData['outer_shape']['height']
         x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2]).T + xOffset * length
         y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2]).T
         z = np.array([-height/2, -height/2, -height/2, -height/2, height/2, height/2, height/2, height/2]).T
@@ -488,8 +493,8 @@ def nacelleMesh(nacelleData, hubData):
         # height = 1.5 * distance from tower top to hub
         # length = 1 * overhang
         # width = 1 * hub diameter
-        height = 1.5 * nacelleData['drivetrain']['distance_tt_hub']
-        length = 1 * nacelleData['drivetrain']['overhang']
+        height = 1.5 * nacelleData['outer_shape']['distance_tt_hub']
+        length = 1 * nacelleData['outer_shape']['overhang']
         width = 1 * hubData['diameter']
         x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2]).T + xOffset * length
         y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2]).T
@@ -508,8 +513,8 @@ def floatingPlatformMesh(semisubData, mooringData=None):
     def cylind2cart(p):
         # r, theta, z
         x = np.array([0, 0, 0])
-        x[0] = p[0] * np.cos(p[1])
-        x[1] = p[0] * np.sin(p[1])
+        x[0] = p[0] * np.cos(np.deg2rad(p[1]))
+        x[1] = p[0] * np.sin(np.deg2rad(p[1]))
         x[2] = p[2]
         return x
 
@@ -552,7 +557,7 @@ def floatingPlatformMesh(semisubData, mooringData=None):
             else:
                 # Create a tapered cylinder using towerMesh-like approach
                 towerData = {
-                    'outer_shape_bem': {
+                    'outer_shape': {
                         'outer_diameter': {
                             'grid': member['outer_shape']['outer_diameter']['grid'],
                             'values': member['outer_shape']['outer_diameter']['values']
@@ -723,13 +728,13 @@ def render_our_own_delaunay(points):
 
 def main():    
     # fetch the turbine data from the yaml file
-    with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml') as file:
-    # with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml') as file:
-        turbine_data = yaml.load(file, Loader=yaml.FullLoader)
+    file_name = '../../examples/00_setup/ref_turbines/IEA-15-240-RWT_VolturnUS-S.yaml'
+    # with open('../../examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml') as file:
+    turbine_data = sch.load_geometry_yaml(file_name)
 
     # render the turbine components
-    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle', 'monopile'])
-    mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle','floating_platform'])
+    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'drivetrain', 'monopile'])
+    mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'drivetrain', 'floating_platform'])
     # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['floating_platform'])
     meshTurbine.plot(show_edges=False)
 

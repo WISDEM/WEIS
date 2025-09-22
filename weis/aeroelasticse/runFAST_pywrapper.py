@@ -238,10 +238,10 @@ class runFAST_pywrapper(object):
                 for module in self.fst_vt['outlist']:
                     for channel in self.fst_vt['outlist'][module]:
                         if self.fst_vt['outlist'][module][channel]:
-                            output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value, dtype=np.uint8) 
+                            output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value, dtype=np.int_) 
 
                 # Add channel to indicate failed run
-                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
+                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.int_)
 
                 output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, name=self.FAST_InputFile,
                                            magnitude_channels=self.magnitude_channels, fatigue_channels=self.fatigue_channels)

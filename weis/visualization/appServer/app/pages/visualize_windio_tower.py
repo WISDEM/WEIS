@@ -70,10 +70,10 @@ def draw_tower(tower_names, tower_by_names):
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True, specs=[[{'rowspan': 2}, {}], [None, {}]])
     
     for idx, tower_name in enumerate(tower_names):
-        grid = tower_by_names[tower_name]['outer_shape_bem']['reference_axis']['z']['grid']
-        z = tower_by_names[tower_name]['outer_shape_bem']['reference_axis']['z']['values']
-        outer_diam = np.array(tower_by_names[tower_name]['outer_shape_bem']['outer_diameter']['values'])
-        tower_layers = tower_by_names[tower_name]['internal_structure_2d_fem']['layers']    # TODO: values are list -- need to confirm if layer is fixed with one or it could be more than one?
+        grid = tower_by_names[tower_name]['reference_axis']['z']['grid']
+        z = tower_by_names[tower_name]['reference_axis']['z']['values']
+        outer_diam = np.array(tower_by_names[tower_name]['outer_shape']['outer_diameter']['values'])
+        tower_layers = tower_by_names[tower_name]['structure']['layers']    # TODO: values are list -- need to confirm if layer is fixed with one or it could be more than one?
         thickness = np.array([l['thickness']['values'] for l in tower_layers][0])        # original thickness = [[0.8 1.0 2.0 ...]]
 
         # Realistic view combined with tower height, outer diameter and thickness

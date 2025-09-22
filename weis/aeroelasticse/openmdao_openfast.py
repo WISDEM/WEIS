@@ -91,7 +91,6 @@ class FASTLoadCases(ExplicitComponent):
             self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
             self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
             self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
-            self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
             
             self.te_ss_var       = rotorse_options['te_ss']
             self.te_ps_var       = rotorse_options['te_ps']
@@ -104,7 +103,6 @@ class FASTLoadCases(ExplicitComponent):
             self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
             self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
             self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
-            self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
 
             self.te_ss_var       = rotorse_options['te_ss']
             self.te_ps_var       = rotorse_options['te_ps']
@@ -122,7 +120,8 @@ class FASTLoadCases(ExplicitComponent):
             )
             self.add_input(
                 'le_location', 
-                val=np.zeros(n_span), 
+                val=np.zeros(n_span),
+                units='m',
                 desc='Leading-edge positions from a reference blade axis \
                 usually blade pitch axis). Locations are normalized by the \
                 local chord length. Positive in -x direction for airfoil-aligned coordinate system',
@@ -237,12 +236,12 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
             self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
             self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
-            self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
-            self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
-            self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+            self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re)), desc='lift coefficients, spanwise')
+            self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re)), desc='drag coefficients, spanwise')
+            self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re)), desc='moment coefficients, spanwise')
             self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
             self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-            self.add_input('airfoils_UserProp',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
+            self.add_input('airfoils_UserProp',     val=np.zeros((n_span, n_Re)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
 
             # Airfoil coordinates
             self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
@@ -264,14 +263,28 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['flags']["floating"]:
                 n_member = modopt["floating"]["members"]["n_members"]
                 for k in range(n_member):
+                    kname = modopt['floating']['members']['name'][k]
                     n_height_mem = modopt["floating"]["members"]["n_height"][k]
-                    self.add_input(f"member{k}:joint1", np.zeros(3), units="m")
-                    self.add_input(f"member{k}:joint2", np.zeros(3), units="m")
-                    self.add_input(f"member{k}:s", np.zeros(n_height_mem))
-                    self.add_input(f"member{k}:s_ghost1", 0.0)
-                    self.add_input(f"member{k}:s_ghost2", 0.0)
-                    self.add_input(f"member{k}:outer_diameter", np.zeros(n_height_mem), units="m")
-                    self.add_input(f"member{k}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+                    self.add_input(f"member{k}_{kname}:joint1", np.zeros(3), units="m")
+                    self.add_input(f"member{k}_{kname}:joint2", np.zeros(3), units="m")
+                    self.add_input(f"member{k}_{kname}:s", np.zeros(n_height_mem))
+                    self.add_input(f"member{k}_{kname}:s_ghost1", 0.0)
+                    self.add_input(f"member{k}_{kname}:s_ghost2", 0.0)
+                    self.add_input(f"member{k}_{kname}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+                    
+                    if modopt["floating"]["members"]["outer_shape"][k] == "circular":
+                        self.add_input(f"member{k}_{kname}:outer_diameter", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cd", val=np.zeros(n_height_mem))
+                        self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height_mem), units="m")
+                    elif modopt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                        raise Exception('Rectangular members are not yet supported in OpenFAST')
+                        self.add_input(f"member{k}_{kname}:side_length_a", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:side_length_b", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cd", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cay", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}_{kname}:Cdy", val=np.zeros(n_height_mem))
 
             # Turbine level inputs
             self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -1106,10 +1119,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
         fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
         fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        for fass in ['fore_aft','side_side']:
+            for idir in [0,1]:
+                if not np.any(inputs[f'{fass}_modes'][idir,:]):
+                    print(f'WARNING: {fass} tower shape coefficients are zero which will cause errors in using ElastoDyn')
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / np.sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / np.sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / np.sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / np.sum(inputs['side_side_modes'][1, :])
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
@@ -1131,7 +1148,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
         fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
         fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
-        fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
+        fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location'] / inputs['chord']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
         fst_vt['ElastoDynBlade']['BMassDen']   = inputs['blade:rhoA']
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['blade:EIyy']
@@ -1199,10 +1216,10 @@ class FASTLoadCases(ExplicitComponent):
         if fst_vt['AeroDyn']['AFTabMod'] == 1:
             # If AFTabMod is the default coming form the schema, check the value from WISDEM, which might be set to 2 if more Re per airfoil are defined in the geometry yaml
             fst_vt['AeroDyn']['AFTabMod'] = modopt["WISDEM"]["RotorSE"]["AFTabMod"]
-        if self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 1:
-            fst_vt['AeroDyn']['AFTabMod'] = 3
-        elif self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 2:
-            raise Exception('OpenFAST does not support both multiple Re and multiple user defined tabs. Please remove DAC devices or Re polars')
+        #if self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 1:
+        #    fst_vt['AeroDyn']['AFTabMod'] = 3
+        #elif self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 2:
+        #    raise Exception('OpenFAST does not support both multiple Re and multiple user defined tabs. Please remove DAC devices or Re polars')
 
         for i in range(self.n_span): # No of blade radial stations
 
@@ -1213,14 +1230,17 @@ class FASTLoadCases(ExplicitComponent):
             elif fst_vt['AeroDyn']['AFTabMod'] == 2:
                 loop_index = self.n_Re
             else:
-                loop_index = self.n_tab
+                #loop_index = self.n_tab
+                print("Something about n_tab and DAC.  Should not get here")
+                breakpoint()
 
             for j in range(loop_index): # Number of tabs or Re
                 if fst_vt['AeroDyn']['AFTabMod'] == 1:
-                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0], inputs['airfoils_cd'][i,:,0], inputs['airfoils_cm'][i,:,0])
                 elif fst_vt['AeroDyn']['AFTabMod'] == 2:
-                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,j,0], inputs['airfoils_cd'][i,:,j,0], inputs['airfoils_cm'][i,:,j,0])
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,j], inputs['airfoils_cd'][i,:,j], inputs['airfoils_cm'][i,:,j])
                 else:
+                    # Leftover from DAC, shouldn't get here
                     unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,j], inputs['airfoils_cd'][i,:,0,j], inputs['airfoils_cm'][i,:,0,j])
 
                 fst_vt['AeroDyn']['af_data'][i].append({})
@@ -1235,6 +1255,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn']['af_data'][i][j]['NumTabs']   = loop_index
                 if fst_vt['AeroDyn']['AFTabMod'] == 3:
+                    # Leftover from DAC, shouldn't get here
                     fst_vt['AeroDyn']['af_data'][i][j]['UserPropProp'] = inputs['airfoils_UserProp'][i,0,j]  # unsteady['UserProp'] # added to unsteady function for variable flap controls at airfoils
                     fst_vt['AeroDyn']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][0] # If AFTabMod==3 the Re is neglected, but it still must be the same across tables
                 else:
@@ -1480,18 +1501,21 @@ class FASTLoadCases(ExplicitComponent):
             N2 = np.array([], dtype=np.int_)
             d_coarse = np.array([])
             t_coarse = np.array([])
+            Ca_coarse = np.array([])
+            Cd_coarse = np.array([])
             
             # Look over members and grab all nodes and internal connections
             n_member = modopt["floating"]["members"]["n_members"]
             for k in range(n_member):
-                s_grid = inputs[f"member{k}:s"]
-                idiam = inputs[f"member{k}:outer_diameter"]
+                kname = modopt['floating']['members']['name'][k]
+                s_grid = inputs[f"member{k}_{kname}:s"]
+                idiam = inputs[f"member{k}_{kname}:outer_diameter"]
                 s_coarse = make_coarse_grid(s_grid, idiam)
-                s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}:s_ghost1"]), inputs[f"member{k}:s_ghost2"]) )
+                s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}_{kname}:s_ghost1"]), inputs[f"member{k}_{kname}:s_ghost2"]) )
                 id_coarse = np.interp(s_coarse, s_grid, idiam)
-                it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}:wall_thickness"])
-                xyz0 = inputs[f"member{k}:joint1"]
-                xyz1 = inputs[f"member{k}:joint2"]
+                it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}_{kname}:wall_thickness"])
+                xyz0 = inputs[f"member{k}_{kname}:joint1"]
+                xyz1 = inputs[f"member{k}_{kname}:joint2"]
                 dxyz = xyz1 - xyz0
                 inode_xyz = np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :]
                 inode_range = np.arange(inode_xyz.shape[0] - 1)
@@ -1502,6 +1526,25 @@ class FASTLoadCases(ExplicitComponent):
                 d_coarse = np.append(d_coarse, id_coarse)  
                 t_coarse = np.append(t_coarse, it_coarse)  
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
+
+                # Collect member coefficients
+                Ca_grid_mem = inputs[f"member{k}_{kname}:Ca"]
+                Cd_grid_mem = inputs[f"member{k}_{kname}:Cd"]
+
+                # There's some bug/feature in WISDEM that doesn't allow 0 Ca, Cd, this fixes that
+                zero_ind = Ca_grid_mem < 0
+                Ca_grid_mem[zero_ind] = 0
+
+                zero_ind = Cd_grid_mem < 0
+                Cd_grid_mem[zero_ind] = 0
+
+                # Interpolate Ca, Cd at coarse locations, add to list
+                i_Ca_coarse = np.interp(s_coarse, s_grid, Ca_grid_mem)
+                i_Cd_coarse = np.interp(s_coarse, s_grid, Cd_grid_mem)
+
+                Ca_coarse = np.append(Ca_coarse, i_Ca_coarse)  
+                Cd_coarse = np.append(Cd_coarse, i_Cd_coarse)  
+
                 
         if modopt['flags']['offshore']:
             fst_vt['SeaState']['WtrDens'] = float(inputs['rho_water'][0])
@@ -2857,7 +2900,7 @@ class FASTLoadCases(ExplicitComponent):
     def get_ac_axis(self, inputs):
         
         # Get the absolute offset between pitch axis (rotation center) and aerodynamic center
-        ch_offset = inputs['chord'] * (inputs['ac'] - inputs['le_location'])
+        ch_offset = inputs['chord']*inputs['ac'] - inputs['le_location']
         # Rotate it by the twist using the AD15 coordinate system
         x , y = util.rotate(0., 0., 0., ch_offset, -np.deg2rad(inputs['theta']))
         # Apply offset to determine the AC axis

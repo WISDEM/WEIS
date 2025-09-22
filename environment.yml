@@ -3,6 +3,7 @@ channels:
   - defaults
 
 dependencies:
+  - bs4
   - dash
   - dill
   - jsonmerge
@@ -14,14 +15,14 @@ dependencies:
   - pyopenfast>=4.1.0
   - openraft>=1.4.0
   - osqp  
-  # - pcrunch>=2.1.0
+  - pcrunch>=2.1.3
   - pip
   - pyhams>=1.3
   #- pyoptsparse
-  - rosco>=2.10
+  - rosco>=2.10.1
   - smt
   - wisdem>=3.21.0
-  - moorpy=1.1  # until WISDEM 4.0 release
+  - moorpy>=1.2
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
@@ -29,7 +30,8 @@ dependencies:
     - pyvista
     - dearpygui
     - orbit-nrel
-    - pcrunch   # temporarily for testing use pip until 2.1.3 is also on conda-forge
+    #- windIO>=2.0.0
+    - git+https://github.com/IEAWindSystems/windIO.git@floating_fixes
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

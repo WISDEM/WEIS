@@ -53,7 +53,7 @@ def test_update_local_table_content():
 
     info_tower = {'worldPosition': [165.9507745273005, -1.0578314024123374, 76.31877503078084], 'displayPosition': [815, 473, 0.9961089494163424], 'compositeID': 18, 'representationId': '1-tower-rep', 'ray': [[-717.3180998465665, 5.85103711285667, 27.765942056770616], [510.9722279695685, -4.2303597941686375, 95.28527787531458]]}
     info_hub = {'worldPosition': [-73.94327115838404, -588.2113555928286, -79.23522050445712], 'displayPosition': [407, 675, 0.9961089494163424], 'compositeID': 18, 'representationId': '1-hub-rep', 'ray': [[69.19511771010448, 705.390273059073, 424.19606797301543], [-130.5321693217238, -1093.6463635678754, -275.1499800733443]]}
-    info_nacelle = {'worldPosition': [408.14524393293925, 86.63564418893745, 365.7396308885164], 'displayPosition': [1243, 634, 0.9961089494163424], 'compositeID': 18, 'representationId': '2-nacelle-rep', 'ray': [[-379.2887699625321, -96.11346614345888, -26.92764160309813], [715.9761467503329, 157.62497130727294, 519.0779537902234]]}
+    info_nacelle = {'worldPosition': [408.14524393293925, 86.63564418893745, 365.7396308885164], 'displayPosition': [1243, 634, 0.9961089494163424], 'compositeID': 18, 'representationId': '2-drivetrain-rep', 'ray': [[-379.2887699625321, -96.11346614345888, -26.92764160309813], [715.9761467503329, 157.62497130727294, 519.0779537902234]]}
     
     output_tower = update_local_table_content(info_tower, geom_3d_names, wt_options_by_names)
     output_hub = update_local_table_content(info_hub, geom_3d_names, wt_options_by_names)
@@ -82,8 +82,8 @@ def test_update_local_table_content():
     nacelle_data = [[td.children if isinstance(td.children, str) else td.children.children for td in tr.children] for tr in output_nacelle.children[1].children]
     nacelle_df = pd.DataFrame(nacelle_data, columns=index)
     assert set(nacelle_df.loc[:, 'Label']) == set(geom_3d_names)
-    assert nacelle_df.loc[geom_3d_names.index('15MW'), ('drivetrain', 'uptilt')] == wt_options_by_names['15MW']['components']['nacelle']['drivetrain']['uptilt']
-    assert nacelle_df.loc[geom_3d_names.index('3.4MW'), ('generator', 'rated_rpm')] == wt_options_by_names['3.4MW']['components']['nacelle']['generator']['rated_rpm']
+    assert nacelle_df.loc[geom_3d_names.index('15MW'), ('outer_shape', 'uptilt')] == wt_options_by_names['15MW']['components']['drivetrain']['outer_shape']['uptilt']
+    assert nacelle_df.loc[geom_3d_names.index('3.4MW'), ('generator', 'rated_rpm')] == wt_options_by_names['3.4MW']['components']['drivetrain']['generator']['rated_rpm']
 
 
 def test_update_local_scene_content():
