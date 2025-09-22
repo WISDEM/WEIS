@@ -3,6 +3,7 @@ channels:
   - defaults
 
 dependencies:
+  - bs4
   - dash
   - dill
   - jsonmerge
