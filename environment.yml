@@ -30,7 +30,7 @@ dependencies:
     - dearpygui
     - orbit-nrel
     #- windIO>=2.0.0
-    - git+https://github.com/IEAWindSystems/windIO.git@@floating_fixes
+    - git+https://github.com/IEAWindSystems/windIO.git@floating_fixes
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
