@@ -65,6 +65,8 @@ class FASTLoadCases(ExplicitComponent):
         self.n_blades      = modopt['assembly']['number_of_blades']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
+        # Number of wind speeds for AEP calculation
+        self.n_ws_aep = n_ws_aep = modopt['DLC_driver']['n_ws_aep']
 
         # Environmental Conditions needed regardless of where model comes from
         self.add_input('V_cutin', val=0.0, units='m/s', desc='Minimum wind speed where turbine operates (cut-in)')
@@ -392,9 +394,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_stiffness',    val=np.zeros(n_TMDs), units='N/m',        desc='TMD Stiffnes')
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
-        # DLC options
-        n_ws_aep = np.max([1,modopt['DLC_driver']['n_ws_aep']])
-
         # OpenFAST options
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
@@ -458,18 +457,19 @@ class FASTLoadCases(ExplicitComponent):
         
 
         # Rotor power outputs
-        self.add_output('V', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
-        self.add_output('P', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
-        self.add_output('P_std', val=np.zeros(n_ws_aep), units='W', desc='standard deviation of rotor electrical power')
-        self.add_output('Cp', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
-        self.add_output('Ct', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
-        self.add_output('Omega', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds')
-        self.add_output('Omega_std', val=np.zeros(n_ws_aep), units='rpm', desc='standard deviation of rotation speeds')
-        self.add_output('pitch', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles')
-        self.add_output('pitch_std', val=np.zeros(n_ws_aep), units='deg', desc='standard deviation of pitch angles')
-        self.add_output('Thrust', val=np.zeros(n_ws_aep), units='N', desc='rotor thrust')
-        self.add_output('Thrust_std', val=np.zeros(n_ws_aep), units='N', desc='standard deviation of rotor thrust')
-        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+        if n_ws_aep > 0:
+            self.add_output('V', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
+            self.add_output('P', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
+            self.add_output('P_std', val=np.zeros(n_ws_aep), units='W', desc='standard deviation of rotor electrical power')
+            self.add_output('Cp', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
+            self.add_output('Ct', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
+            self.add_output('Omega', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds')
+            self.add_output('Omega_std', val=np.zeros(n_ws_aep), units='rpm', desc='standard deviation of rotation speeds')
+            self.add_output('pitch', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles')
+            self.add_output('pitch_std', val=np.zeros(n_ws_aep), units='deg', desc='standard deviation of pitch angles')
+            self.add_output('Thrust', val=np.zeros(n_ws_aep), units='N', desc='rotor thrust')
+            self.add_output('Thrust_std', val=np.zeros(n_ws_aep), units='N', desc='standard deviation of rotor thrust')
+            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -2623,41 +2623,42 @@ class FASTLoadCases(ExplicitComponent):
         # Skip if we're not running with aerodynamics or controls/generator
         if not self.fst_vt['Fst']['CompAero'] or not self.fst_vt['Fst']['CompServo']:
             return outputs
-            
-        AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
-        outputs['AEP'] = AEP
 
-        n_seeds_AEP = 1
-        if len(idx_pwrcrv) > 0:
-            sum_stats = sum_stats.iloc[idx_pwrcrv]
-            outputs['V'] = np.unique(U)
-            n_seeds_AEP = int(len(U) / len(np.unique(U)))
-        else:
-            outputs['V'] = dlc_generator.cases[0].URef
-            logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
+        if self.n_ws_aep > 0:
+            AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
+            outputs['AEP'] = AEP
 
-        if len(U) == 1:
-            logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
-            
-        # Calculate AEP and Performance Data
-        # Average across turbulent seeds for each wind speed
-        def avg_seeds(vec):
-            vec = np.asarray(vec)
-            if n_seeds_AEP > 1:
-                return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
+            n_seeds_AEP = 0
+            if len(idx_pwrcrv) > 0:
+                sum_stats = sum_stats.iloc[idx_pwrcrv]
+                outputs['V'] = np.unique(U)
+                n_seeds_AEP = int(len(U) / len(np.unique(U)))
             else:
-                return vec
-        outputs['Cp'] = avg_seeds(sum_stats['RtFldCp']['mean'])
-        outputs['Ct'] = avg_seeds(sum_stats['RtFldCt']['mean'])
-        outputs['Omega'] = avg_seeds(sum_stats['RotSpeed']['mean'])
-        outputs['Omega_std'] = avg_seeds(sum_stats['RotSpeed']['std'])
-        outputs['pitch'] = avg_seeds(sum_stats['BldPitch1']['mean'])
-        outputs['pitch_std'] = avg_seeds(sum_stats['BldPitch1']['std'])
-        outputs['Thrust'] = avg_seeds(sum_stats['RotThrust']['mean'])
-        outputs['Thrust_std'] = avg_seeds(sum_stats['RotThrust']['std'])
-        if self.fst_vt['Fst']['CompServo'] == 1:
-            outputs['P'] = avg_seeds(sum_stats['GenPwr']['mean'])
-            outputs['P_std'] = avg_seeds(sum_stats['GenPwr']['std'])
+                outputs['V'] = dlc_generator.cases[0].URef
+                logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
+
+            if len(U) == 1:
+                logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+                
+            # Calculate AEP and Performance Data
+            # Average across turbulent seeds for each wind speed
+            def avg_seeds(vec):
+                vec = np.asarray(vec)
+                if n_seeds_AEP > 1:
+                    return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
+                else:
+                    return vec
+            outputs['Cp'] = avg_seeds(sum_stats['RtFldCp']['mean'])
+            outputs['Ct'] = avg_seeds(sum_stats['RtFldCt']['mean'])
+            outputs['Omega'] = avg_seeds(sum_stats['RotSpeed']['mean'])
+            outputs['Omega_std'] = avg_seeds(sum_stats['RotSpeed']['std'])
+            outputs['pitch'] = avg_seeds(sum_stats['BldPitch1']['mean'])
+            outputs['pitch_std'] = avg_seeds(sum_stats['BldPitch1']['std'])
+            outputs['Thrust'] = avg_seeds(sum_stats['RotThrust']['mean'])
+            outputs['Thrust_std'] = avg_seeds(sum_stats['RotThrust']['std'])
+            if self.fst_vt['Fst']['CompServo'] == 1:
+                outputs['P'] = avg_seeds(sum_stats['GenPwr']['mean'])
+                outputs['P_std'] = avg_seeds(sum_stats['GenPwr']['std'])
 
         return outputs
 
