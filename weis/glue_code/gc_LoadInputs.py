@@ -299,8 +299,12 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 
                 self.modeling_options['TMDs']['group_mapping'] = tmd_group_map
 
-    def update_ontology_control(self, wt_opt):
-        # Update controller
+    def update_ontology(self, wt_opt):
+        # Call the WISDEM version first
+        super(WindTurbineOntologyPythonWEIS, self).update_ontology(wt_opt)
+
+        '''
+        # Likely outdated
         if self.modeling_options['flags']['control']:
             self.wt_init['control']['pitch']['omega_pc'] = wt_opt['tune_rosco_ivc.omega_pc']
             self.wt_init['control']['pitch']['zeta_pc']  = wt_opt['tune_rosco_ivc.zeta_pc']
@@ -313,10 +317,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.wt_init['control']['dac']['flp_kp_norm']= float(wt_opt['tune_rosco_ivc.flp_kp_norm'])
                 self.wt_init['control']['dac']['flp_tau'] = float(wt_opt['tune_rosco_ivc.flp_tau'])
+        '''
+
+        if self.modeling_options['flags']['TMDs']:
+            for k in range( self.modeling_options['TMDs']['n_TMDs'] ):
+                for m in ['mass', 'stiffness', 'damping']: #, 'natural_frequency', 'damping_ratio']:
+                    self.wt_init['TMDs'][k][m] = float(wt_opt[f'TMDs.{m}'][k])
 
 
-    def write_options(self, fname_output):
+    def write_outputs(self, fname_output):
         # Override the WISDEM version to ensure that the WEIS options files are written instead
+        sch.write_geometry_yaml(self.wt_init, fname_output)
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)
 
