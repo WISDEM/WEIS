@@ -6,7 +6,7 @@ import shutil
 
 class TestFrequency(unittest.TestCase):
 
-    @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
+    #@unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
     def test_BEM(self):
         ## File management
         run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -48,11 +48,4 @@ class TestFrequency(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFrequency)
-    result = unittest.TextTestRunner().run(suite)
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
-
+    unittest.main()
