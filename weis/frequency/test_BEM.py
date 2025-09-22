@@ -6,7 +6,7 @@ import shutil
 
 class TestFrequency(unittest.TestCase):
 
-    #@unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
+    @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
     def test_BEM(self):
         ## File management
         run_dir = os.path.dirname( os.path.realpath(__file__) )
