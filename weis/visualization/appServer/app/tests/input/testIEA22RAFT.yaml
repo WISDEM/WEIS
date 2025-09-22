@@ -5,74 +5,10 @@ outputDirStructure:
         raft_designs:
           dirs: {}
           files:
-          - raft_design_4.yaml
-          - raft_design_11.yaml
-          - raft_design_8.yaml
-          - raft_design_27.yaml
-          - raft_design_31.yaml
-          - raft_design_30.yaml
-          - raft_design_26.yaml
-          - raft_design_9.yaml
-          - raft_design_10.yaml
-          - raft_design_5.yaml
-          - raft_design_21.yaml
-          - raft_design_27.pkl
-          - raft_design_33.pkl
-          - raft_design_32.pkl
-          - raft_design_26.pkl
-          - raft_design_2.yaml
-          - raft_design_18.pkl
-          - raft_design_30.pkl
-          - raft_design_24.pkl
-          - raft_design_17.yaml
-          - raft_design_25.pkl
-          - raft_design_31.pkl
-          - raft_design_19.pkl
-          - raft_design_21.pkl
-          - raft_design_16.yaml
-          - raft_design_20.pkl
-          - raft_design_3.yaml
-          - raft_design_22.pkl
-          - raft_design_9.pkl
-          - raft_design_8.pkl
-          - raft_design_20.yaml
-          - raft_design_23.pkl
-          - raft_design_12.pkl
-          - raft_design_5.pkl
-          - raft_design_19.yaml
-          - raft_design_4.pkl
-          - raft_design_13.pkl
-          - raft_design_23.yaml
-          - raft_design_11.pkl
-          - raft_design_6.pkl
-          - raft_design_15.yaml
-          - raft_design_7.pkl
-          - raft_design_10.pkl
           - raft_design_0.yaml
           - raft_design_1.yaml
-          - raft_design_14.pkl
-          - raft_design_28.pkl
-          - raft_design_3.pkl
-          - raft_design_2.pkl
-          - raft_design_14.yaml
-          - raft_design_29.pkl
-          - raft_design_15.pkl
-          - raft_design_17.pkl
-          - raft_design_22.yaml
           - raft_design_0.pkl
-          - raft_design_18.yaml
           - raft_design_1.pkl
-          - raft_design_16.pkl
-          - raft_design_13.yaml
-          - raft_design_29.yaml
-          - raft_design_6.yaml
-          - raft_design_33.yaml
-          - raft_design_25.yaml
-          - raft_design_24.yaml
-          - raft_design_32.yaml
-          - raft_design_7.yaml
-          - raft_design_28.yaml
-          - raft_design_12.yaml
         raft_plots:
           dirs: {}
           files: []
@@ -94,7 +30,7 @@ userOptions:
     status: true
     type: 1
   output_fileName: IEA-22-280-RWT
-  output_folder: /Users/gbarter/devel/WEIS/examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
+  output_folder: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
   sql_recorder: true
   sql_recorder_file: log_opt.sql
 userPreferences:
@@ -131,4 +67,4 @@ userPreferences:
       - rotorse.EIyy_N*m**2
       - rotorse.GJ_N*m**2
       xaxis: rotorse.rc.s
-    output_path: /Users/gbarter/devel/WEIS/examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
+    output_path: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
