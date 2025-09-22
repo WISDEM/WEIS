@@ -49,7 +49,7 @@ jobs:
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y m2w64-toolchain libpython
+          conda install -y m2-pkg-config libpython
       
       - name: windio2 branches of other codes
         run: |
