@@ -32,12 +32,17 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
         wt_opt['tune_rosco_ivc.stability_margin'] = rosco_init_options['linmodel_tuning']['stability_margin']
         wt_opt['tune_rosco_ivc.omega_pc_max'] = rosco_init_options['linmodel_tuning']['omega_pc']['max']
     # other optional parameters
-    wt_opt['tune_rosco_ivc.max_pitch']     = rosco_init_options['max_pitch']
-    wt_opt['tune_rosco_ivc.min_pitch']     = rosco_init_options['min_pitch']
-    wt_opt['tune_rosco_ivc.vs_minspd']     = rosco_init_options['vs_minspd']
-    wt_opt['tune_rosco_ivc.ss_vsgain']     = rosco_init_options['ss_vsgain']
-    wt_opt['tune_rosco_ivc.ss_pcgain']     = rosco_init_options['ss_pcgain']
-    wt_opt['tune_rosco_ivc.ps_percent']    = rosco_init_options['ps_percent']
+    optional_params = [
+         'max_pitch',
+         'min_pitch',
+         'vs_minspd',
+         'ss_vsgain',
+         'ss_pcgain',
+         'ps_percent',
+    ]
+    for param in optional_params:
+        if param in rosco_init_options:
+            wt_opt[f'tune_rosco_ivc.{param}'] = rosco_init_options[param]
     
     if rosco_init_options['Fl_Mode']:
         try:

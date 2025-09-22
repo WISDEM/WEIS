@@ -37,6 +37,7 @@ class WindPark(om.Group):
     def setup(self):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
+        rosco_options    = modeling_options['ROSCO']
 
         #self.linear_solver = lbgs = om.LinearBlockGS()
         #self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
@@ -69,13 +70,19 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('stability_margin', val=0.0,                    desc='Stability margin for robust tuning')
         tune_rosco_ivc.add_output('omega_pc_max',     val=0.0,                    desc='Maximum allowable omega for robust tuning')
         # optional inputs - not connected right now!!
-        tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
-        tune_rosco_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
-        tune_rosco_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
-        tune_rosco_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
-        tune_rosco_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
-        tune_rosco_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
-        tune_rosco_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
+        optional_inputs = [
+            'max_pitch',
+            'min_pitch',
+            'vs_minspd',
+            'ss_vsgain',
+            'ss_pcgain',
+            'ps_percent',
+        ]
+        for param in optional_inputs:
+            if param in rosco_options:
+                tune_rosco_ivc.add_output(param, val=0.0, desc='Optional input for ROSCO tuning')
+        
+        
         tune_rosco_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
         tune_rosco_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
@@ -199,12 +206,21 @@ class WindPark(om.Group):
 
 
             # ROSCO Independent Vars
-            self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
-            self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
-            self.connect('tune_rosco_ivc.vs_minspd',        'sse_tune.tune_rosco.vs_minspd') 
-            self.connect('tune_rosco_ivc.ss_vsgain',        'sse_tune.tune_rosco.ss_vsgain') 
-            self.connect('tune_rosco_ivc.ss_pcgain',        'sse_tune.tune_rosco.ss_pcgain') 
-            self.connect('tune_rosco_ivc.ps_percent',       'sse_tune.tune_rosco.ps_percent') 
+            
+            # optional parameters
+            optional_inputs = [
+                'max_pitch',
+                'min_pitch',
+                'vs_minspd',
+                'ss_vsgain',
+                'ss_pcgain',
+                'ps_percent',
+                ]
+            for param in optional_inputs:
+                if param in rosco_options:
+                    self.connect(f'tune_rosco_ivc.{param}', f'sse_tune.tune_rosco.{param}')
+            
+            # required parameters            
             self.connect('tune_rosco_ivc.omega_pc',         'sse_tune.tune_rosco.omega_pc')
             self.connect('tune_rosco_ivc.zeta_pc',          'sse_tune.tune_rosco.zeta_pc')
             self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
@@ -548,12 +564,12 @@ class WindPark(om.Group):
                 self.connect('rotorse.re.I', 'aeroelastic.blade:I')
                 self.connect('rotorse.rs.frame.flap_mode_shapes', 'aeroelastic.blade:flap_mode_shapes')
                 self.connect('rotorse.rs.frame.edge_mode_shapes', 'aeroelastic.blade:edge_mode_shapes')
-                self.connect('rotorse.rp.powercurve.V', 'aeroelastic.U')
-                self.connect('rotorse.rp.powercurve.Omega', 'aeroelastic.Omega')
-                self.connect('rotorse.rp.powercurve.pitch', 'aeroelastic.pitch')
+                self.connect('rotorse.rp.powercurve.V', 'aeroelastic.U_init')
+                self.connect('rotorse.rp.powercurve.Omega', 'aeroelastic.Omega_init')
+                self.connect('rotorse.rp.powercurve.pitch', 'aeroelastic.pitch_init')
                 self.connect('rotorse.rp.powercurve.V_R25', 'aeroelastic.V_R25')
                 self.connect('rotorse.rp.powercurve.rated_V', 'aeroelastic.Vrated')
-                self.connect('rotorse.rp.powercurve.Ct_aero', 'aeroelastic.Ct_aero')
+                self.connect('rotorse.rp.powercurve.Ct_aero', 'aeroelastic.Ct_aero_init')
                 self.connect('rotorse.rp.gust.V_gust', 'aeroelastic.Vgust')
                 self.connect('rotorse.wt_class.V_extreme1', 'aeroelastic.V_extreme1')
                 self.connect('rotorse.wt_class.V_extreme50', 'aeroelastic.V_extreme50')
