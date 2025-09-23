@@ -346,7 +346,7 @@ def toggle_conv_layout(prep_data, opt_options, df_dict):
     
     print('toggle conv layout with', opt_options['conv_y'])
     df = pd.DataFrame.from_records(df_dict)
-    df = df.applymap(lambda x: np.array(x))
+    df = df.map(lambda x: np.array(x))
     
     return True, sorted(df.keys()), opt_options['conv_y']
 
@@ -398,7 +398,7 @@ def update_graphs(signaly, df_dict):
         raise PreventUpdate
     
     df = pd.DataFrame.from_records(df_dict)
-    df = df.applymap(lambda x: np.array(x))
+    df = df.map(lambda x: np.array(x))
 
     # Add subplots for multiple y-channels vertically
     fig = make_subplots(

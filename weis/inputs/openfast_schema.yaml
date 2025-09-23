@@ -3090,39 +3090,48 @@ properties:
                 type: object
                 default: {}
                 description: Add additional OpenFAST channels to the output files
+                additionalProperties: True
                 properties:
                     InflowWind:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     AeroDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     ElastoDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     BeamDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     HydroDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     SubDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     MoorDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
                     ServoDyn:
                         type: object
                         default: {}
                         description: "Add items here with the format of 'VariableName: True'"
+                        additionalProperties: True
             from_openfast:
                 type: boolean
                 default: False

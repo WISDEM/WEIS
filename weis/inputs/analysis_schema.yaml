@@ -498,10 +498,3 @@ properties:
                         type: boolean
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
-
-    
-
-    merit_figure:
-        type: string
-        description: Objective function / merit figure for optimization
-        default: LCOE

@@ -192,8 +192,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 # Remove the fst_vt key from the dictionary and write out the modeling options
                 modeling_options['General']['openfast_configuration']['fst_vt'] = {}
                 if not modeling_options['OpenFAST']['from_openfast']:
-                    wt_initial.write_ontology(wt_opt, froot_out)
-                wt_initial.write_options(froot_out)
+                    wt_initial.update_ontology(wt_opt)
+                wt_initial.write_outputs(froot_out)
 
                 # openMDAO doesn't save constraint values, so we get them from this construction
                 problem_var_dict = wt_opt.list_driver_vars(

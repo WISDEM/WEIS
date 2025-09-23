@@ -117,17 +117,21 @@ class FASTLoadCases(ExplicitComponent):
         self.n_blades      = modopt['assembly']['number_of_blades']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
+        # Number of wind speeds for AEP calculation
+        self.n_ws_aep = n_ws_aep = modopt['DLC_driver']['n_ws_aep']
 
         # Environmental Conditions needed regardless of where model comes from
-        self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
-        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
-        self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
-        self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
+        self.add_input('V_cutin', val=0.0, units='m/s', desc='Minimum wind speed where turbine operates (cut-in)')
+        self.add_input('V_cutout', val=0.0, units='m/s', desc='Maximum wind speed where turbine operates (cut-out)')
+        self.add_input('Vrated', val=0.0, units='m/s', desc='rated wind speed')
+        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
-        self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        self.add_discrete_input('turbine_class', val='I', desc='IEC turbine class')
+        self.add_input('Rtip', val=0.0, units='m', desc='dimensional radius of tip')
+        self.add_input('shearExp', val=0.0, desc='shear exponent')
         self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
+        self.add_input('rho', val=1.225, units='kg/m**3', desc='density of air')
+
 
         if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
@@ -139,7 +143,6 @@ class FASTLoadCases(ExplicitComponent):
             self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
             self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
             self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
-            self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
             
             self.te_ss_var       = rotorse_options['te_ss']
             self.te_ps_var       = rotorse_options['te_ps']
@@ -152,7 +155,6 @@ class FASTLoadCases(ExplicitComponent):
             self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
             self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
             self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
-            self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
 
             self.te_ss_var       = rotorse_options['te_ss']
             self.te_ps_var       = rotorse_options['te_ps']
@@ -170,7 +172,8 @@ class FASTLoadCases(ExplicitComponent):
             )
             self.add_input(
                 'le_location', 
-                val=np.zeros(n_span), 
+                val=np.zeros(n_span),
+                units='m',
                 desc='Leading-edge positions from a reference blade axis \
                 usually blade pitch axis). Locations are normalized by the \
                 local chord length. Positive in -x direction for airfoil-aligned coordinate system',
@@ -285,12 +288,12 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
             self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
             self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
-            self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
-            self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
-            self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+            self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re)), desc='lift coefficients, spanwise')
+            self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re)), desc='drag coefficients, spanwise')
+            self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re)), desc='moment coefficients, spanwise')
             self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
             self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-            self.add_input('airfoils_UserProp',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
+            self.add_input('airfoils_UserProp',     val=np.zeros((n_span, n_Re)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
 
             # Airfoil coordinates
             self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
@@ -348,10 +351,10 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
             # Initial conditions
-            self.add_input('U', val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-            self.add_input('Omega', val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-            self.add_input('pitch', val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
-            self.add_input("Ct_aero", val=np.zeros(n_pc), desc="rotor aerodynamic thrust coefficient")
+            self.add_input('U_init', val=np.zeros(n_pc), units='m/s', desc='Initial wind speeds')
+            self.add_input('Omega_init', val=np.zeros(n_pc), units='rpm', desc='Initial rotation speeds')
+            self.add_input('pitch_init', val=np.zeros(n_pc), units='deg', desc='Initial pitch angles')
+            self.add_input("Ct_aero_init", val=np.zeros(n_pc), desc="Initial rotor aerodynamic thrust coefficient")
 
             # Cp-Ct-Cq surfaces
             self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
@@ -368,7 +371,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
             self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
             
-            self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
             self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
             self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
             self.add_input(
@@ -460,9 +462,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_stiffness',    val=np.zeros(n_TMDs), units='N/m',        desc='TMD Stiffnes')
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
-        # DLC options
-        n_ws_aep = np.max([1,modopt['DLC_driver']['n_ws_aep']])
-
         # OpenFAST options
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
@@ -526,13 +525,19 @@ class FASTLoadCases(ExplicitComponent):
         
 
         # Rotor power outputs
-        self.add_output('V_out', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
-        self.add_output('P_out', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
-        self.add_output('Cp_out', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
-        self.add_output('Ct_out', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
-        self.add_output('Omega_out', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds to run')
-        self.add_output('pitch_out', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles to run')
-        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+        if n_ws_aep > 0:
+            self.add_output('V', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
+            self.add_output('P', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
+            self.add_output('P_std', val=np.zeros(n_ws_aep), units='W', desc='standard deviation of rotor electrical power')
+            self.add_output('Cp', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
+            self.add_output('Ct', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
+            self.add_output('Omega', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds')
+            self.add_output('Omega_std', val=np.zeros(n_ws_aep), units='rpm', desc='standard deviation of rotation speeds')
+            self.add_output('pitch', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles')
+            self.add_output('pitch_std', val=np.zeros(n_ws_aep), units='deg', desc='standard deviation of pitch angles')
+            self.add_output('Thrust', val=np.zeros(n_ws_aep), units='N', desc='rotor thrust')
+            self.add_output('Thrust_std', val=np.zeros(n_ws_aep), units='N', desc='standard deviation of rotor thrust')
+            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -1171,10 +1176,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
         fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
         fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['fore_aft_modes'][1, :] / sum(inputs['fore_aft_modes'][1, :])     # HACK, don't commit
+        for fass in ['fore_aft','side_side']:
+            for idir in [0,1]:
+                if not np.any(inputs[f'{fass}_modes'][idir,:]):
+                    logger.warning(f'WARNING: {fass} tower shape coefficients are zero which will cause errors in using ElastoDyn')
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / np.sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / np.sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / np.sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / np.sum(inputs['side_side_modes'][1, :])
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
@@ -1196,7 +1205,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
         fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
         fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
-        fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
+        fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location'] / inputs['chord']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
         fst_vt['ElastoDynBlade']['BMassDen']   = inputs['blade:rhoA']
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['blade:EIyy']
@@ -1264,10 +1273,10 @@ class FASTLoadCases(ExplicitComponent):
         if fst_vt['AeroDyn']['AFTabMod'] == 1:
             # If AFTabMod is the default coming form the schema, check the value from WISDEM, which might be set to 2 if more Re per airfoil are defined in the geometry yaml
             fst_vt['AeroDyn']['AFTabMod'] = modopt["WISDEM"]["RotorSE"]["AFTabMod"]
-        if self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 1:
-            fst_vt['AeroDyn']['AFTabMod'] = 3
-        elif self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 2:
-            raise Exception('OpenFAST does not support both multiple Re and multiple user defined tabs. Please remove DAC devices or Re polars')
+        #if self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 1:
+        #    fst_vt['AeroDyn']['AFTabMod'] = 3
+        #elif self.n_tab > 1 and fst_vt['AeroDyn']['AFTabMod'] == 2:
+        #    raise Exception('OpenFAST does not support both multiple Re and multiple user defined tabs. Please remove DAC devices or Re polars')
 
         for i in range(self.n_span): # No of blade radial stations
 
@@ -1278,14 +1287,17 @@ class FASTLoadCases(ExplicitComponent):
             elif fst_vt['AeroDyn']['AFTabMod'] == 2:
                 loop_index = self.n_Re
             else:
-                loop_index = self.n_tab
+                #loop_index = self.n_tab
+                print("Something about n_tab and DAC.  Should not get here")
+                breakpoint()
 
             for j in range(loop_index): # Number of tabs or Re
                 if fst_vt['AeroDyn']['AFTabMod'] == 1:
-                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0], inputs['airfoils_cd'][i,:,0], inputs['airfoils_cm'][i,:,0])
                 elif fst_vt['AeroDyn']['AFTabMod'] == 2:
-                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,j,0], inputs['airfoils_cd'][i,:,j,0], inputs['airfoils_cm'][i,:,j,0])
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,j], inputs['airfoils_cd'][i,:,j], inputs['airfoils_cm'][i,:,j])
                 else:
+                    # Leftover from DAC, shouldn't get here
                     unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,j], inputs['airfoils_cd'][i,:,0,j], inputs['airfoils_cm'][i,:,0,j])
 
                 fst_vt['AeroDyn']['af_data'][i].append({})
@@ -1300,6 +1312,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn']['af_data'][i][j]['NumTabs']   = loop_index
                 if fst_vt['AeroDyn']['AFTabMod'] == 3:
+                    # Leftover from DAC, shouldn't get here
                     fst_vt['AeroDyn']['af_data'][i][j]['UserPropProp'] = inputs['airfoils_UserProp'][i,0,j]  # unsteady['UserProp'] # added to unsteady function for variable flap controls at airfoils
                     fst_vt['AeroDyn']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][0] # If AFTabMod==3 the Re is neglected, but it still must be the same across tables
                 else:
@@ -1499,15 +1512,13 @@ class FASTLoadCases(ExplicitComponent):
                 i_Ca_coarse = np.interp(s_coarse, s_grid, Ca_grid_mem)
                 i_Cd_coarse = np.interp(s_coarse, s_grid, Cd_grid_mem)
 
-
                 Ca_coarse = np.append(Ca_coarse, i_Ca_coarse)  
                 Cd_coarse = np.append(Cd_coarse, i_Cd_coarse)  
+                
                 # Structural properties
                 E_coarse = np.append(E_coarse, i_E_coarse)
                 G_coarse = np.append(G_coarse, i_G_coarse)
                 rho_coarse = np.append(rho_coarse, i_rho_coarse)
-
-
 
                 # Start assigning member-shape dependent properties
                 if member_shape == 'circular':
@@ -2326,11 +2337,11 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
                 Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
         else:
-            U_interp = inputs['U']
-            pitch_interp = inputs['pitch']
-            rot_speed_interp = inputs['Omega']
-            Ct_aero_interp = inputs['Ct_aero']
-        
+            U_interp = inputs['U_init']
+            pitch_interp = inputs['pitch_init']
+            rot_speed_interp = inputs['Omega_init']
+            Ct_aero_interp = inputs['Ct_aero_init']
+
         tau1_const_interp = np.zeros_like(Ct_aero_interp)
         for i in range(len(Ct_aero_interp)):
             a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
@@ -2342,8 +2353,11 @@ class FASTLoadCases(ExplicitComponent):
         initial_condition_table['rot_speed_initial'] = rot_speed_interp
         initial_condition_table['Ct_aero'] = Ct_aero_interp
         initial_condition_table['tau1_const'] = tau1_const_interp
-        
-        
+        # Estimate initial tower top displacement from rotor thrust. 
+        # Assume that at rated thrust tower top deflection is 4% of hub height
+        thrust = 0.5 * np.array(Ct_aero_interp) * inputs['Rtip'][0]**2 * np.pi * inputs['rho'][0] * np.array(U_interp)**2
+        initial_condition_table['TTFAdisp_initial'] = thrust / np.max(thrust) * hub_height * 0.03
+
         dlc_generator = DLCGenerator(
             cut_in, 
             cut_out, 
@@ -3035,29 +3049,42 @@ class FASTLoadCases(ExplicitComponent):
         # Skip if we're not running with aerodynamics or controls/generator
         if not self.fst_vt['Fst']['CompAero'] or not self.fst_vt['Fst']['CompServo']:
             return outputs
-            
-        AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
-        outputs['AEP'] = AEP
 
-        if len(idx_pwrcrv) > 0:
-            sum_stats = sum_stats.iloc[idx_pwrcrv]
-            outputs['V_out'] = np.unique(U)
-            prob = self.cruncher.prob[idx_pwrcrv]
-        else:
-            outputs['V_out'] = dlc_generator.cases[0].URef
-            prob = self.cruncher.prob
-            logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
+        if self.n_ws_aep > 0:
+            AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
+            outputs['AEP'] = AEP
 
-        if len(U) == 1:
-            logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
-            
-        # Calculate AEP and Performance Data
-        outputs['Cp_out'] = np.sum(prob * sum_stats['RtFldCp']['mean'])
-        outputs['Ct_out'] = np.sum(prob * sum_stats['RtFldCt']['mean'])
-        outputs['Omega_out'] = np.sum(prob * sum_stats['RotSpeed']['mean'])
-        outputs['pitch_out'] = np.sum(prob * sum_stats['BldPitch1']['mean'])
-        if self.fst_vt['Fst']['CompServo'] == 1:
-            outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
+            n_seeds_AEP = 0
+            if len(idx_pwrcrv) > 0:
+                sum_stats = sum_stats.iloc[idx_pwrcrv]
+                outputs['V'] = np.unique(U)
+                n_seeds_AEP = int(len(U) / len(np.unique(U)))
+            else:
+                outputs['V'] = dlc_generator.cases[0].URef
+                logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
+
+            if len(U) == 1:
+                logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+                
+            # Calculate AEP and Performance Data
+            # Average across turbulent seeds for each wind speed
+            def avg_seeds(vec):
+                vec = np.asarray(vec)
+                if n_seeds_AEP > 1:
+                    return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
+                else:
+                    return vec
+            outputs['Cp'] = avg_seeds(sum_stats['RtFldCp']['mean'])
+            outputs['Ct'] = avg_seeds(sum_stats['RtFldCt']['mean'])
+            outputs['Omega'] = avg_seeds(sum_stats['RotSpeed']['mean'])
+            outputs['Omega_std'] = avg_seeds(sum_stats['RotSpeed']['std'])
+            outputs['pitch'] = avg_seeds(sum_stats['BldPitch1']['mean'])
+            outputs['pitch_std'] = avg_seeds(sum_stats['BldPitch1']['std'])
+            outputs['Thrust'] = avg_seeds(sum_stats['RotThrust']['mean'])
+            outputs['Thrust_std'] = avg_seeds(sum_stats['RotThrust']['std'])
+            if self.fst_vt['Fst']['CompServo'] == 1:
+                outputs['P'] = avg_seeds(sum_stats['GenPwr']['mean'])
+                outputs['P_std'] = avg_seeds(sum_stats['GenPwr']['std'])
 
 
     def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
@@ -3314,7 +3341,7 @@ class FASTLoadCases(ExplicitComponent):
     def get_ac_axis(self, inputs):
         
         # Get the absolute offset between pitch axis (rotation center) and aerodynamic center
-        ch_offset = inputs['chord'] * (inputs['ac'] - inputs['le_location'])
+        ch_offset = inputs['chord']*inputs['ac'] - inputs['le_location']
         # Rotate it by the twist using the AD15 coordinate system
         x , y = util.rotate(0., 0., 0., ch_offset, -np.deg2rad(inputs['theta']))
         # Apply offset to determine the AC axis

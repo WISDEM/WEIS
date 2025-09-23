@@ -1,8 +1,8 @@
 WEIS Documentation
 ==================
 
-WEIS, Wind Energy with Integrated Servo-control, performs multi-fidelity co-design of wind turbines.
-WEIS is a framework that combines multiple NREL-developed tools to enable design optimization of floating offshore wind turbines.
+WEIS, Workflow for Energy with Integrated Servo-control, performs multi-fidelity co-design of floating platforms and energy systems.
+WEIS is a framework that combines multiple NREL-developed tools to enable design optimization of energy systems.
 
 Important Links:
 
