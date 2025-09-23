@@ -93,7 +93,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
 
         # Openfast
-        if self.modeling_options['OpenFAST_Linear']['flag'] or self.modeling_options['OpenFAST']['flag']:
+        if self.modeling_options['OpenFAST_Linear']['flag'] or self.modeling_options['DFSM']['flag'] or self.modeling_options['OpenFAST']['flag']:
             fast = InputReader_OpenFAST()
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
@@ -170,10 +170,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         else:
             bemDir = osp.join(base_run_dir,'BEM')
 
-        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        self.modeling_options["RAFT"]['BEM_dir'] = bemDir
         if MPI:
             # If running MPI, RAFT won't be able to save designs in parallel
-            self.modeling_options["Level1"]['save_designs'] = False
+            self.modeling_options["RAFT"]['save_designs'] = False
         
         # RAFT
         if self.modeling_options["flags"]["floating"]:
@@ -190,6 +190,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # ROSCO
         self.modeling_options['ROSCO']['flag'] = (self.modeling_options['RAFT']['flag'] or
                                                   self.modeling_options['OpenFAST_Linear']['flag'] or
+                                                  self.modeling_options['DFSM']['flag'] or
                                                   self.modeling_options['OpenFAST']['flag'])
         
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty

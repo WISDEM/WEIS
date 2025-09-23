@@ -377,10 +377,302 @@ properties:
             #MoorDyn: *ofmoordyn
             #ServoDyn: *ofservodyn
             #outlist: *ofoutlist
-    # Add pointers to new Level 1,2,3 for backwards compatibility
-    Level1: *raft_modopt
-    Level2: *of_linear_modopt
-    Level3: *of_modopt
+    DFSM:
+        type: object
+        default: {}
+        description: Scehma that describes the modeling options used for the DFSM model
+        properties:
+            flag:
+                type: boolean
+                default: False 
+                description: Flag to enable DFSM model for simulation/optimal control
+            general_options:
+                type: object
+                default: {}
+                description: general options needed for DFSM
+                properties:
+                    dfsm_file:
+                        type: string
+                        description: Name of the pickle file that contains the DFSM
+                    save_results:
+                        type: boolean
+                        default: False
+                        description: Flag to save the results from DFSM
+                    modeling_data_path:
+                        type: string
+                        description: Name of the folder that contains the .outb/pickle files used to construct the DFSM model.
+                    usecase:
+                        type: string
+                        default: closed-loop-simulation
+                        enum: ['closed-loop-simulation','open-loop-optimal-control']
+                        description: Use case for the DFSM model. Options are closed-loop simulation, where the DFSM is linked to the ROSCO controller to run simulation, and open-loop-optimal-control, where an optimal-control problem is formulated and solved.
+                    run_dir:
+                        type: string
+                        default: none
+                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
+            # usecase_options:
+            #     type: object
+            #     default: {}
+            #     description: Use case options for the DFSM model
+            #     properties:
+                    # usecase:
+                    #     type: string
+                    #     default: test
+                    #     enum: ['closed-loop-simulation','open-loop-optimal-control']
+                    #     description: Use case for the DFSM model. Options are closed-loop simulation, where the DFSM is linked to the ROSCO controller to run simulation, and open-loop-optimal-control, where an optimal-control problem is formulated and solved.
+                    # test_options:
+                    #     type: object
+                    #     default: {}
+                    #     description: List of options for testing DFSM model
+                    #     properties:
+                    #         test_ind: 
+                    #             type: array
+                    #             default: [0]
+                    #             description: The index of the test simulation
+                    #         simulation_flag:
+                    #             type: boolean
+                    #             default: True 
+                    #             description: Flag to enable simulation
+                    #         plot_flag:
+                    #             type: boolean
+                    #             default: False 
+                    #             description: Flag to plot DFSM simulation against OpenFAST
+                    # param:
+                    #     type: object
+                    #     default: {}
+                    #     description: Parameters to be provided to the controller interface
+                    #     properties:
+                    #         VS_GenEff:
+                    #             type: number 
+                    #             description: generator efficiency
+                    #         WE_GearboxRatio:
+                    #             type: number 
+                    #             description: gearbox ratio
+                    #         VS_RtPwr:
+                    #             type: number
+                    #             description: rated power
+                    #         DT:
+                    #             type: number 
+                    #             description: step size used in simulations
+                    #         num_blade:
+                    #             type: number
+                    #             description: number of blades in the turbine
+                    #         DLL_FileName:
+                    #             type: string
+                    #             description: name of the dynamic library
+                    # solver_options:
+                    #     url: https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+                    #     type: object
+                    #     default: {}
+                    #     description: Options used for the ode solver used to simulate the DFSM
+                    #     properties:
+                    #         method:
+                    #             type: string
+                    #             description: The algorithm used in the ode solver
+                    #             default: RK45
+                    #             enum: [RK45,RK23,DOP853,Radau,BDF,LSODA] 
+                    #         rtol:
+                    #             type: number 
+                    #             description: The relative tolerence used for the solver
+                    #             default: 1e-6
+                    #         atol:
+                    #             type: number
+                    #             description: The absolute tolerence used for the solver
+                    #             default: 1e-6   
+            model_options:
+                type: object
+                default: {}
+                properties:
+                    ode_method:
+                        type: string
+                        default: RK4
+                        description: ode method used to solve the closed-loop simulation
+                    interp_type:
+                        type: string
+                        default: linear
+                        description: interpolation method used to setup the LPV problem
+                    reqd_states:
+                        type: array
+                        description: List of the states to be used in the DFSM model. The names of the quantities must be the same as OpenFAST names 
+                        default: ['GenSpeed']
+                        items:
+                            type: string
+                            uniqueItems: True 
+                    reqd_controls:
+                        type: array
+                        description: List of the controls to be used in the DFSM model. The names of the quantities must be the same as OpenFAST names 
+                        default: ['RtVAvgxh']
+                        items:
+                            type: string
+                            uniqueItems: True
+                    reqd_outputs:
+                        type: array
+                        description: List of the controls to be used in the DFSM model. The names of the quantities must be the same as OpenFAST names 
+                        default: ['GenPwr']
+                        items:
+                            type: string
+                            uniqueItems: True  
+                    state_props: &sigprops
+                        type: object
+                        default: {}
+                        properties: 
+                            units: 
+                                type: array
+                                description: units for the state quantities (will be automated in the future)
+                                default: ['rpm']
+                                items: 
+                                    type: string
+                            key_freq_name:
+                                type: array
+                                description: name of the key frequencies to be plotted in PSD
+                                default: [['2P']]
+                                items: 
+                                    type: array
+                            key_freq_val:
+                                type: array
+                                description: name of the key frequencies to be plotted in PSD
+                                default: [[0.39]]
+                                items: 
+                                    type: array
+                    output_props: *sigprops
+                    tmin:
+                        type: number 
+                        description: minimum time
+                        default: 0
+                    tmax:
+                        type: number 
+                        description: maximum time
+                        default: 10000
+                    add_dx2:
+                        type: boolean 
+                        default: True 
+                        description: Flag to include the second derivatives of the states
+                    linear_model_file:
+                        type: string
+                        default: none
+                        description: Name of the matfile that has the linear model
+                    region:
+                        type: string
+                        default: none
+                    scale_args:
+                        type: object 
+                        default: {}
+                        description: Arguments to scale the state, control and output quantities
+                        properties:
+                            state_scaling_factor:
+                                type: array
+                                default: [1]
+                            # control_scaling_factor:
+                            #     type: array
+                            #     default: [1]
+                            # output_scaling_factor:
+                            #     type: array
+                            #     default: [1]
+                    filter_args:
+                        type: object
+                        default: {}
+                        description: Arguments to filter the state, control and output quantities
+                        properties:
+                            state_filter_flag:
+                                type: array
+                                default: [False]
+                            state_filter_type:
+                                type: array 
+                                default: [filtfilt]
+                            state_filter_tf:
+                                type: array
+                                default: [0.1]
+            construction_options:
+                type: object
+                default: {}
+                properties:
+                    L_type:
+                        type: string
+                        description: Type of the linear model to be used in the multifidelity DFSM model
+                        default: LTI
+                        enum: [None,LTI,LPV]
+                    n_samples:
+                        type: number 
+                        default: 50
+                        description: number of samples used to construct the corrective function
+                    sampling_method:
+                        type: string 
+                        default: KM
+                        description: sampling method used to extract samples
+                    train_split:
+                        type: number 
+                        default: 0.8
+                        description: fraction of the samples used for constructing surrogate models
+                    N_type:
+                        type: string
+                        description: Type of nonlinear model to be used in the multifidelity DFSM model
+                        default: GPR
+                        enum: [None,GPR,NN]
+                    GPR_options:
+                        url: https://scikit-learn.org/stable/auto_examples/gaussian_process/plot_gpr_noisy_targets.html
+                        type: object
+                        default: {}
+                        description: Options used to construct the GPR based nonlinear function
+                        properties:
+                            kernel:
+                                type: string
+                                description: The kernel used for the GPR model
+                                default: RBF   
+                                enum: [RBF,matern,quad,exp-sine,dot]                
+                            length_scale: 
+                                type: number
+                                default: 1
+                                description: Length scale for the kernel
+                            lscale_bounds:
+                                type: array
+                                default: [1e-5,1e5]
+                                description: bounds on the length scale
+                                items: 
+                                    type: number
+                            n_restarts_optimizer:
+                                type: integer
+                                description: Number of times the hyperparameter-optimizer is started for GPR
+                                default: 5
+                                maximum: 100
+                                minimum: 1
+                            random_state:
+                                type: integer
+                                description: Random state to be set for constructing the GPR model
+                                default: 34534
+                                maximum: 1000000
+                                minimum: 0
+                    NN_options:
+                        url: https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html
+                        type: object 
+                        default: {}
+                        description: Options used to construct the NN based nonlinear function
+                        properties:
+                            hidden_layer_size:
+                                type: array
+                                description: size/shape of the hidden layer used in the NN network
+                                default: [50,10]     
+                                items:
+                                    type: integer
+                            max_iter:
+                                type: integer
+                                description: maximum iterations of the solver used to fit the NN
+                                default: 300
+                            activation:
+                                type: string
+                                description: The type of activation function used in the NN model
+                                default: tanh
+                                enum: [identity, logistic, tanh, relu]
+                            solver:
+                                type: string
+                                description: The type of solver used in the finding th hyper parameters for the NN model
+                                default: adam
+                                enum: [lbfgs, sgd, adam]
+                            tol:
+                                type: number 
+                                description: Tolerence for the solver
+                                default: 1e-5
+
+
     DLC_driver:
         type: object
         default: {}
