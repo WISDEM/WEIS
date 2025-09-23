@@ -24,8 +24,8 @@ extra_scripts = [
     "04_frequency_domain_analysis_design/oc3_raft_driver",
     "04_frequency_domain_analysis_design/umaine_semi_raft_opt_driver",
     "05_control_optimization/tmd_opt_driver",
-    "18_user_custom_setup/weis_driver_umaine_semi",
-    "18_user_custom_setup/variable_overrides_driver",
+    "10_user_custom_setup/user_elastic_driver",
+    "10_user_custom_setup/variable_overrides_driver",
     # "08_potential_flow_modeling/openfast_potmod_driver",   #skip this one for now
 ]
 
