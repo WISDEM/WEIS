@@ -78,19 +78,20 @@ def draw_blade_oml(blade_names, blade_by_names):
     if blade_names is None:
         raise PreventUpdate
     
-    channels = ['chord', 'twist', 'pitch_axis']
+    channels = ['chord', 'twist', 'section_offset_y']
     cols = set_colors()            # Set color panel
     fig = make_subplots(rows=len(channels), cols=1, shared_xaxes=True)  # 3 subplots where chord, twist, LE/TE are each plotted
 
     for idx, blade_name in enumerate(blade_names):
         # Add a trace per blade over subplots
         for row_idx, channel in enumerate(channels):
-            trace = blade_by_names[blade_name]['outer_shape_bem'][channel]
+            trace = blade_by_names[blade_name]['outer_shape'][channel]
             # LE/TE Equation
-            if channel == 'pitch_axis':
-                chord_values = np.array(blade_by_names[blade_name]['outer_shape_bem']['chord']['values'])
-                pitchAxis = np.interp(blade_by_names[blade_name]['outer_shape_bem']['chord']['grid'], blade_by_names[blade_name]['outer_shape_bem']['pitch_axis']['grid'], blade_by_names[blade_name]['outer_shape_bem']['pitch_axis']['values'])
-                leading_edge = pitchAxis * chord_values
+            if channel == 'section_offset_y':
+                chord_values = np.array(blade_by_names[blade_name]['outer_shape']['chord']['values'])
+                ref_axis_y = np.interp(blade_by_names[blade_name]['outer_shape']['chord']['grid'], blade_by_names[blade_name]['reference_axis']['y']['grid'], blade_by_names[blade_name]['reference_axis']['y']['values'])
+                sec_off_y = np.interp(blade_by_names[blade_name]['outer_shape']['chord']['grid'], blade_by_names[blade_name]['outer_shape']['section_offset_y']['grid'], blade_by_names[blade_name]['outer_shape']['section_offset_y']['values'])
+                leading_edge = ref_axis_y - sec_off_y
                 tailing_edge = leading_edge - chord_values
 
                 fig.append_trace(go.Scatter(
@@ -152,9 +153,9 @@ def draw_blade_matrix(blade_names, blade_by_names):
 
     for idx, blade_name in enumerate(blade_names):
         # There are some files which doesn't contain elastic properties..
-        if 'elastic_properties_mb' in blade_by_names[blade_name].keys():
-            stiff_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['stiff_matrix']
-            inertia_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['inertia_matrix']
+        if 'elastic_properties' in blade_by_names[blade_name].keys():
+            stiff_matrix = blade_by_names[blade_name]['elastic_properties']['stiffness_matrix']
+            inertia_matrix = blade_by_names[blade_name]['elastic_properties']['inertia_matrix']
 
             stiff_grid = stiff_matrix['grid']
             stiff_values = np.array(stiff_matrix['values'])         # n rows x 21 cols (where 21 = 6+5+4+3+2+1)

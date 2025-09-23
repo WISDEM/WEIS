@@ -8,6 +8,19 @@ General:
         use_exe: True
         allow_fails: True
         fail_value: 9999
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.12
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+    water_depth: 200.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45
 
 WISDEM:
     RotorSE:
@@ -45,6 +58,15 @@ WISDEM:
         rank_and_file: True
     BOS:
         flag: True
+    LCOE:
+        flag: True
+        wake_loss_factor: 0.15
+        fixed_charge_rate: 0.056
+        bos_per_kW: 4053.
+        opex_per_kW: 137.
+        turbine_number: 40.
+        labor_rate: 58.8
+        painting_rate: 30.0
 
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
@@ -82,7 +104,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
 RAFT:
     flag: True
     potential_model_override: 0
-    trim_ballast: 2
+    trim_ballast: 1
     heave_tol: 1
     save_designs: True
 

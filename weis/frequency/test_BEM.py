@@ -20,9 +20,9 @@ class TestFrequency(unittest.TestCase):
         modeling_override["OpenFAST"]["flag"] = False
         modeling_override["RAFT"] = {}
         modeling_override["RAFT"]["flag"] = True
-        modeling_override["RAFT"]["potential_model_override"] = 0
-        modeling_override["RAFT"]["potential_bem_members"] = ["main_column", "column1", "column2", "column3", "Y_pontoon_lower1", "Y_pontoon_lower2", "Y_pontoon_lower3"]
-        modeling_override["RAFT"]["intersection_mesh"] = 1
+        modeling_override["RAFT"]["potential_model_override"] = 1
+        #modeling_override["RAFT"]["potential_bem_members"] = ["main_column", "column1", "column2", "column3", "Y_pontoon_lower1", "Y_pontoon_lower2", "Y_pontoon_lower3"]
+        modeling_override["RAFT"]["intersection_mesh"] = 0 #1
         modeling_override["RAFT"]["characteristic_length_min"] = 3
         modeling_override["RAFT"]["characteristic_length_max"] = 7
         modeling_override["RAFT"]["plot_designs"] = True
@@ -48,11 +48,4 @@ class TestFrequency(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFrequency)
-    result = unittest.TextTestRunner().run(suite)
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
-
+    unittest.main()

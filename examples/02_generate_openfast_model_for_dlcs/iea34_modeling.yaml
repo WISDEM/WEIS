@@ -16,10 +16,56 @@ WISDEM:
         flag: True
     BOS:
         flag: True
+        plant_row_spacing: 7
+        commissioning_cost_kW: 44.0
+        decommissioning_cost_kW: 58.0
+        distance_to_substation: 50.0
+        distance_to_interconnection: 8.
+        interconnect_voltage: 130
+    LCOE:
+        flag: True
+        wake_loss_factor: 0.15
+        fixed_charge_rate: 0.075
+        bos_per_kW: 459.
+        opex_per_kW: 44.
+        turbine_number: 178.
+        labor_rate: 58.8
+        painting_rate: 30.0
+        blade_mass_cost_coeff: 14.6
+        hub_mass_cost_coeff: 3.9
+        pitch_system_mass_cost_coeff: 22.1
+        spinner_mass_cost_coeff: 11.1
+        lss_mass_cost_coeff: 11.9
+        bearing_mass_cost_coeff: 4.5
+        gearbox_torque_cost: 50.
+        hss_mass_cost_coeff: 6.8
+        generator_mass_cost_coeff: 12.4
+        bedplate_mass_cost_coeff: 2.9
+        yaw_mass_cost_coeff: 8.3
+        converter_mass_cost_coeff: 18.8
+        transformer_mass_cost_coeff: 18.8
+        hvac_mass_cost_coeff: 124.0
+        cover_mass_cost_coeff: 5.7
+        elec_connec_machine_rating_cost_coeff: 41.85
+        platforms_mass_cost_coeff: 17.1
+        tower_mass_cost_coeff: 2.9
+        controls_machine_rating_cost_coeff: 21.15
+        crane_cost: 12.e+3
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
 
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
+        TMax: 60.0
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -31,6 +77,11 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompIce: 0
     linearization:
         Linearize: False
+    InflowWind:
+        WindType: 1
+        #HWindSpeed: 10.0
+        PLexp: 0.0
+        ScaleMethod: 0
     ElastoDyn:
         flag: True
         FlapDOF1: True
@@ -60,87 +111,14 @@ ROSCO:
 
     
 DLC_driver:
-    DLCs: # Currently supported IEC 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3, or define a Custom one
-        - DLC: "1.1"
-          ws_bin_size: 5
-          n_seeds: 2
-          analysis_time: 1.
-          transient_time: 0.
-          #wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-          #Seeds: [568, 728]
-          # turbulent_wind:
-          #     HubHt: 110
-          #     GridHeight: 160
-          #     GridWidth: 160
-        - DLC: "1.2"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        #   Seeds: [568, 728]
-        - DLC: "1.3"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        #   Seeds: [1]
-        - DLC: "1.4"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-          n_azimuth: 3
-          wind_speed: [9., 11.]
-        - DLC: "1.5"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        # - DLC: "1.6" #severe sea state
-        # - DLC: "5.1"
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        #   Seeds: [2821, 2993939]
-        # - DLC: "1.5"
-        # - DLC: "1.6"
-        #   n_seeds: 6
-        # - DLC: "6.3"
-        #   n_seeds: 6
-        - DLC: "5.1"
-          wind_speed: [12]
-          n_seeds: 1
-          n_azimuth: 3
-          analysis_time: 1.
-          shutdown_time: 0.
-          transient_time: 0.0
-        - DLC: "6.1"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        #   Seeds: [12, 4312]
-        # - DLC: "6.2"
-        - DLC: "6.3"
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
-        #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-        #   Seeds: [22, 87, 65]
-        - DLC: "6.4" #idling 
-          ws_bin_size: 10
-          analysis_time: 1.
-          transient_time: 0.
+    DLCs:
+         - DLC: steady
+           wind_speed: [10.]
+           wind_heading: [0.]
+           yaw_misalign: [0.]
+           turbulent_wind:
+               flag: False
 
-        # - DLC: Custom
-        #   wind_speed: [10., 12, 14]
-        #   wind_heading: [0., 0., 0.]
-        #   yaw_misalign: [0., 0., 0.]
-        #   turbulent_wind:
-        #       flag: True
-        #   #    IECturbc: [0.1, 0.1, 0.1]
-        #   #turbine_status: ["operating", "idling", "parked"]
-        #   #wave_spectrum: ["JONSWAP", "unit", "JONSWAP"]
-        #   wave_period: [8., 9., 10.]
-        #   wave_height: [2., 4., 6.]
-        #   wave_heading: [0., 0., 0.]
 
               
               
