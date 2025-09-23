@@ -11,7 +11,7 @@ especially those that OpenFAST uses.
 import os
 from weis import weis_main
 
-TEST_RUN = True
+TEST_RUN = False
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -22,7 +22,10 @@ fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
 
 # Run the base simulation with no changes to the inputs
 wt_opt, modeling_options, opt_options = weis_main(
-    fname_wt_input, fname_modeling_options, fname_analysis_options
+    fname_wt_input, 
+    fname_modeling_options, 
+    fname_analysis_options,
+    test_run=TEST_RUN
 )
 print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")
 
