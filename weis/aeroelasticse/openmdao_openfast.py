@@ -1890,8 +1890,8 @@ class FASTLoadCases(ExplicitComponent):
                 if len(j2) == 0:
 
                     rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member = split_members(rigid_links_xyz[i_rigid+1,:], rigid_link_N2, member_end_A, member_vec, rho_coarse, E_coarse, G_coarse, d_coarse, t_coarse, a_coarse, b_coarse, propID1, propID2, sub_N1, sub_N2, idx_circular_member, idx_rectangular_member)
-                                
 
+            idx_rigid_member = np.arange( len(rigid_link_N1), dtype=np.int_ ) + len(idx_rectangular_member) + len(idx_circular_member)
             fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
             fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
             fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
@@ -1951,6 +1951,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID2'] = propID2
             mtype = np.ones( n_members, dtype=np.int_ )
             mtype[idx_rectangular_member] = -1
+            mtype[idx_rigid_member] = 3
             fst_vt['SubDyn']['MType'] = mtype
             fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
             fst_vt['SubDyn']['M_Spin'] = np.zeros( n_members, dtype=np.int_ ) #  TODO: no rotation or rectangular members supported yet, see https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
@@ -1979,8 +1980,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
 
             if len(rigid_links_xyz) > 0:
-                fst_vt['SubDyn']['MPropSetID1'] = np.append(fst_vt['SubDyn']['MPropSetID1'], (sub_N2[-1]+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_)) # New property set for rigid links
-                fst_vt['SubDyn']['MPropSetID2'] = np.append(fst_vt['SubDyn']['MPropSetID2'], (sub_N2[-1]+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_))
+                fst_vt['SubDyn']['MPropSetID1'] = np.append(fst_vt['SubDyn']['MPropSetID1'], (n_properties+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_)) # New property set for rigid links
+                fst_vt['SubDyn']['MPropSetID2'] = np.append(fst_vt['SubDyn']['MPropSetID2'], (n_properties+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_))
                 fst_vt['SubDyn']['MType'] = np.append(fst_vt['SubDyn']['MType'], 3*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) # Rigid link type
                 fst_vt['SubDyn']['M_Spin'] = np.append(fst_vt['SubDyn']['M_Spin'], -1*np.ones(len(rigid_links_xyz)//2))
                 fst_vt['SubDyn']['M_COSMID'] = np.append(fst_vt['SubDyn']['M_COSMID'], -1*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) 
