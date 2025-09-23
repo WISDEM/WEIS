@@ -1411,17 +1411,22 @@ class FASTLoadCases(ExplicitComponent):
             mono_d = inputs['monopile_outer_diameter']
             mono_t = inputs['monopile_wall_thickness']
             mono_elev = inputs['monopile_z']
-            z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
+            z_coarse = make_coarse_grid(mono_elev[:], mono_d[:])
             # Don't want any nodes near zero for annoying hydrodyn errors
             idx0 = np.intersect1d(np.where(z_coarse>-0.5), np.where(z_coarse<0.5))
             z_coarse = np.delete(z_coarse, idx0) 
             n_joints = len(z_coarse)
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
-            d_coarse = np.interp(z_coarse, mono_elev[1:], mono_d[1:])
+            d_coarse = np.interp(z_coarse, mono_elev[:], mono_d[:])
             t_coarse = util.sectional_interp(z_coarse, mono_elev[1:], mono_t[1:])
+            a_coarse = np.zeros_like(d_coarse) # dummy a and b
+            b_coarse = np.zeros_like(d_coarse)
+            MSecGeom = np.ones(n_members, dtype=np.int_)  # 1 for circular
             N1 = np.arange( n_members, dtype=np.int_ ) + 1
             N2 = np.arange( n_members, dtype=np.int_ ) + 2
+            rigid_links_xyz = np.empty((0, 3)) # No rigid links for monopile, dummy
+            
             
         elif modopt['flags']['floating']:
             joints_xyz = np.empty((0, 3))
@@ -1792,7 +1797,7 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn inputs- monopile and floating YL: move it down so can reuse the coarsened discretization from hydrodyn 08-27-2025
         if modopt['flags']['monopile']:
 
-            n_joints = len(mono_d[1:]) # Omit submerged pile
+            n_joints = len(d_coarse) # Omit submerged pile
             itrans = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
@@ -1805,13 +1810,23 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = N1
             fst_vt['SubDyn']['MJointID2'] = N2
+            propID1 = copy.deepcopy(N1) 
+            propID2 = copy.deepcopy(N2)
+            idx_rectangular_member = []
+            idx_rigid_member = []
+            n_properties = len(d_coarse)
+            i_properties = np.arange( n_properties, dtype=np.int_ ) + 1
+            n_circular = n_properties
+            n_rectangular = 0
+            iprop_circular = i_properties
+            iprop_rectangular = np.array([], dtype=np.int_)
             
             # Circular cross-section properties
-            E_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_E'][1:])
+            E_coarse = util.sectional_interp(z_coarse, mono_elev[1:], inputs['monopile_E'][1:])
             fst_vt['SubDyn']['YoungE1'] = E_coarse
-            G_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_G'][1:])
+            G_coarse = util.sectional_interp(z_coarse, mono_elev[1:], inputs['monopile_G'][1:])
             fst_vt['SubDyn']['ShearG1'] = G_coarse
-            rho_coarse = np.interp(z_coarse, mono_elev[1:], inputs['monopile_rho'][1:])
+            rho_coarse = util.sectional_interp(z_coarse, mono_elev[1:], inputs['monopile_rho'][1:])
             fst_vt['SubDyn']['MatDens1'] = rho_coarse
             fst_vt['SubDyn']['XsecD'] = d_coarse
             fst_vt['SubDyn']['XsecT'] = t_coarse
@@ -1909,7 +1924,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
             fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
             fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
-            n_joints = len(fst_vt['SubDyn']['JointXss'])
+
             # Append rigid link members at the end
             sub_N1 = np.append(sub_N1, rigid_link_N1)
             sub_N2 = np.append(sub_N2, rigid_link_N2)
@@ -1949,6 +1964,7 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn inputs- offshore generic
         if modopt['flags']['offshore']:
             mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
+            n_joints = len(fst_vt['SubDyn']['JointXss'])
             if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
             fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
             fst_vt['SubDyn']['Rct_SoilFile'] = [""]*fst_vt['SubDyn']['NReact']
