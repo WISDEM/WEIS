@@ -827,9 +827,10 @@ components:
            -  name: Y_pontoon_lower1
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
-              Ca: [1.0, 1.0]
-              Cay: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               outer_shape: &id007
                   shape: rectangular
                   side_length_a:
@@ -857,17 +858,19 @@ components:
               joint1: main_lower_pontoon
               joint2: col2_lower_pontoon
               outer_shape: *id007
-              Ca: [1.0, 1.0]
-              Cay: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               structure: *id008
            -  name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
               outer_shape: *id007
-              Ca: [1.0, 1.0]
-              Cay: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               structure: *id008
     mooring:
         nodes:
