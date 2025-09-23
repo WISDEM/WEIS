@@ -687,6 +687,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
+            fst_vt['SeaState']['NX'] = 2
+            fst_vt['SeaState']['NY'] = 2
+            fst_vt['SeaState']['NZ'] = 2
                 
                 
         if self.model_only == True:
