@@ -478,7 +478,7 @@ class WindPark(om.Group):
 
                 self.connect("high_level_tower_props.hub_height", "aeroelastic.hub_height")
                 if modeling_options["flags"]["tower"]:
-                    self.connect("towerse.member.mass_den",                "aeroelastic.mass_den")
+                    self.connect('towerse.total_mass_den',                'aeroelastic.mass_den')
                     self.connect("towerse.member.foreaft_stff",            "aeroelastic.foreaft_stff")
                     self.connect("towerse.member.sideside_stff",           "aeroelastic.sideside_stff")
                     self.connect("towerse.member.tor_stff",                "aeroelastic.tor_stff")
