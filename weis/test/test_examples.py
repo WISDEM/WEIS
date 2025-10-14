@@ -16,6 +16,7 @@ skinny_scripts = [
 # Only run on PR on Ubuntu
 extra_scripts = [
     "01_simulate_own_openfast_model/run_openfast_cases",
+    "01_simulate_own_openfast_model/fatigue_driver",
     "02_generate_openfast_model_for_dlcs/iea15_monopile_driver",
     "02_generate_openfast_model_for_dlcs/iea34_driver",
     "02_generate_openfast_model_for_dlcs/oc3_driver",

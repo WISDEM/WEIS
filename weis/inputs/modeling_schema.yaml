@@ -545,15 +545,15 @@ properties:
                                 enum: [JONSWAP,unit]
                                 minItems: 1
                                 uniqueItems: false
-                        probability:
-                            type: array
-                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed_fatigue.
-                            default: [1.]
-                            items:
-                                type: number
-                                minItems: 1
-                                minimum: 0.
-                                maximum: 1.
+                        # probability:
+                        #     type: array
+                        #     description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed_fatigue.
+                        #     default: [1.]
+                        #     items:
+                        #         type: number
+                        #         minItems: 1
+                        #         minimum: 0.
+                        #         maximum: 1.
                         IEC_WindType:
                             type: string
                             default: NTM
@@ -983,7 +983,7 @@ properties:
                             uniqueItems: false
                     wave_height_fatigue:
                         type: array
-                        description: Array of Hs for fatigue computations conditional to wind speed
+                        description: Array of Hs for each fatigue bin
                         default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
                         items:
                             type: number
@@ -994,7 +994,7 @@ properties:
                             uniqueItems: false
                     wave_period_fatigue:
                         type: array
-                        description: Array of Tp for fatigue computations
+                        description: Array of Tp for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1005,7 +1005,7 @@ properties:
                             uniqueItems: false
                     wave_direction_fatigue:
                         type: array
-                        description: Array of wave direction for fatigue computations
+                        description: Array of wave direction for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1016,7 +1016,7 @@ properties:
                             uniqueItems: false
                     wind_direction_fatigue:
                         type: array
-                        description: Array of wind direction for fatigue computations
+                        description: Array of wind direction for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1025,6 +1025,15 @@ properties:
                             minimum: 0.0
                             maximum: 1000.0
                             uniqueItems: false
+                    probability:
+                        type: array
+                        description: Probability of occurrance for each fatigue bin in DLC 1.2
+                        default: [1.]
+                        items:
+                            type: number
+                            minItems: 1
+                            minimum: 0.
+                            maximum: 1.
                     wave_height_SSS:
                         type: array
                         description: Array of Hs for SSS conditional to wind speed
