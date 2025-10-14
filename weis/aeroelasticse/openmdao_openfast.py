@@ -2139,11 +2139,12 @@ class FASTLoadCases(ExplicitComponent):
             case_name.extend(case_name_i)
 
         # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
-        for case_i, wt, wa, wf in zip(case_list,WindFile_type,WindFile_plexp,WindFile_name):
-            case_i[('InflowWind','WindType')] = wt
-            case_i[('InflowWind','PLExp')] = wa
-            case_i[('InflowWind','FileName_Uni')] = wf
-            case_i[('InflowWind','FileName_BTS')] = wf
+        for i_case, case_i in enumerate(case_list):  # i_case is index, case_i is case dictionary
+            case_i[('InflowWind','WindType')] = WindFile_type[i_case]
+            case_i[('InflowWind','PLExp')] = WindFile_plexp[i_case]
+            case_i[('InflowWind','FileName_Uni')] = WindFile_name[i_case]
+            case_i[('InflowWind','FileName_BTS')] = WindFile_name[i_case]
+            case_i[('TurbSim', 'IECTurbc')] = dlc_generator.cases[i_case].IECturbc
 
         # Save some case info
         self.TMax = [c.total_time for c in dlc_generator.cases]
