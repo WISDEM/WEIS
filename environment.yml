@@ -21,7 +21,6 @@ dependencies:
   - pyhams>=1.3
   #- pyoptsparse
   - rosco>=2.10.1
-  - smt
   - wisdem>=3.21.0
   - moorpy>=1.2
   - pip:
@@ -31,6 +30,7 @@ dependencies:
     - pyvista
     - dearpygui
     - orbit-nrel
+    - smt
     - windIO>=2.0.1
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
