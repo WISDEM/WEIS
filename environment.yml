@@ -10,6 +10,7 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
+  - numpy>=2
   - openfast>=4.1.0
   - openfast-io>=4.1.0
   - pyopenfast>=4.1.0
