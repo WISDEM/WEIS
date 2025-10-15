@@ -10,6 +10,7 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
+  - numpy>=2
   - openfast>=4.1.0
   - openfast-io>=4.1.0
   - pyopenfast>=4.1.0
@@ -20,7 +21,6 @@ dependencies:
   - pyhams>=1.3
   #- pyoptsparse
   - rosco>=2.10.1
-  - smt
   - wisdem>=3.21.0
   - moorpy>=1.2
   - pip:
@@ -30,8 +30,8 @@ dependencies:
     - pyvista
     - dearpygui
     - orbit-nrel
-    #- windIO>=2.0.0
-    - git+https://github.com/IEAWindSystems/windIO.git@floating_fixes
+    - smt
+    - windIO>=2.0.1
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
