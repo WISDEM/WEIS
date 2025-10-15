@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_22_Semi
-        # OF_run_dir: outputs/IEA_w_TMD_33
         save_iterations: True
         save_timeseries: True
         use_exe: True
@@ -103,7 +102,6 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
 
 RAFT:
     flag: True
-    potential_model_override: 0
     trim_ballast: 1
     heave_tol: 1
     save_designs: True

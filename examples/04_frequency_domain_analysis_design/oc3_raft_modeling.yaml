@@ -1,5 +1,8 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    potential_flow_modeling:
+        bem_method: 0   # Use BEM for selected members
+        bem_members: [spar]
 
 Environment:
     air_density: 1.225
@@ -75,8 +78,6 @@ WISDEM:
 
 RAFT:
     flag: True
-    potential_model_override: 0
-    potential_bem_members: [spar]
     min_freq_BEM: 0.1
     min_freq: 0.1
     max_freq: 1.0
