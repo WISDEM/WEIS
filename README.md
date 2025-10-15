@@ -61,7 +61,7 @@ The installation instructions below use the environment name, "weis-env," but an
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
         conda env create --name weis-env -f environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-        conda install -y petsc4py=3.22.2 mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
+        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
 
 2. If you are NOT on Kestrel, install the software
         
