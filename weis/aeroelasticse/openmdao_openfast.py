@@ -744,6 +744,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
+            fst_vt['SeaState']['NX'] = 2
+            fst_vt['SeaState']['NY'] = 2
+            fst_vt['SeaState']['NZ'] = 2
                 
                 
         if self.model_only == True:
@@ -1586,12 +1589,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AxVnCOff'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxFDLoFSc'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
             # Use coarse member nodes for HydroDyn
-
-            # Simplify members if using potential model only
-            if modopt["RAFT"]["potential_model_override"] == 2:
-                joints_xyz = np.array([[0,0,0],[0,0,-1]])
-                N1 = np.array([N1[0]])
-                N2 = np.array([N2[0]])
                 
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['SeaState']['WtrDpth'])[0]
@@ -1709,21 +1706,22 @@ class FASTLoadCases(ExplicitComponent):
                 for m in ['AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG']:
                     fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
 
-            if modopt["RAFT"]["potential_model_override"] == 1:
+            if modopt["General"]["potential_flow_modeling"]["bem_method"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
                 
-            elif modopt["RAFT"]["potential_model_override"] == 2:
+            elif modopt["General"]["potential_flow_modeling"]["bem_method"] == 2:
                 # BEM only, no strip theory
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
 
-                for m in ['Cd', 'CdMG', 'Ca', 'CaMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                # Zero all coefficients except drag, which cannot come from BEM
+                for m in ['Ca', 'CaMG', 'Cp', 'CpMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
                     fst_vt['HydroDyn'][f'CylSimpl{m}'] = 0.0
                 
-                for m in ['CdA', 'CdB', 'CdAMG', 'CdBMG', 'CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCd', 'AxCdMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
+                for m in ['CaA', 'CaB', 'CaAMG', 'CaBMG', 'Cp', 'CpMG', 'AxCa', 'AxCaMG', 'AxCp', 'AxCpMG', 'Cb', 'CbMG']:
                     fst_vt['HydroDyn'][f'RecSimpl{m}'] = 0.0
 
-            elif modopt["RAFT"]["potential_model_override"] == 3:
+            elif modopt["General"]["potential_flow_modeling"]["bem_method"] == 3:
                 # Potential model for inviscid forces (radiation, excitation) only
                 
                 # Avoid double counting of buoyancy force in WAMIT, using OpenFAST nonlinear buoyancy, hydrostatics.  .hst file should be zeros
@@ -2527,11 +2525,12 @@ class FASTLoadCases(ExplicitComponent):
             case_name.extend(case_name_i)
 
         # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
-        for case_i, wt, wa, wf in zip(case_list,WindFile_type,WindFile_plexp,WindFile_name):
-            case_i[('InflowWind','WindType')] = wt
-            case_i[('InflowWind','PLExp')] = wa
-            case_i[('InflowWind','FileName_Uni')] = wf
-            case_i[('InflowWind','FileName_BTS')] = wf
+        for i_case, case_i in enumerate(case_list):  # i_case is index, case_i is case dictionary
+            case_i[('InflowWind','WindType')] = WindFile_type[i_case]
+            case_i[('InflowWind','PLExp')] = WindFile_plexp[i_case]
+            case_i[('InflowWind','FileName_Uni')] = WindFile_name[i_case]
+            case_i[('InflowWind','FileName_BTS')] = WindFile_name[i_case]
+            case_i[('TurbSim', 'IECTurbc')] = dlc_generator.cases[i_case].IECturbc
 
         # Save some case info
         self.TMax = [c.total_time for c in dlc_generator.cases]

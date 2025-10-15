@@ -11,18 +11,21 @@ especially those that OpenFAST uses.
 import os
 from weis import weis_main
 
-TEST_RUN = True
+TEST_RUN = False
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
 examples_dir = os.path.join(run_dir, "..")
 fname_wt_input = os.path.join(examples_dir, "00_setup", "ref_turbines", "IEA-3p4-130-RWT.yaml")
 fname_modeling_options = os.path.join(examples_dir, "02_generate_openfast_model_for_dlcs", "iea34_modeling.yaml")
-fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
+fname_analysis_options = os.path.join(run_dir, "noopt_analysis.yaml")
 
 # Run the base simulation with no changes to the inputs
 wt_opt, modeling_options, opt_options = weis_main(
-    fname_wt_input, fname_modeling_options, fname_analysis_options
+    fname_wt_input, 
+    fname_modeling_options, 
+    fname_analysis_options,
+    test_run=TEST_RUN
 )
 print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")
 

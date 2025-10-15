@@ -79,7 +79,6 @@ Environment:
 RAFT:
     # Using strip theory only
     flag: False
-    potential_model_override: 1
     
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True

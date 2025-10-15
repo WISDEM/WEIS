@@ -83,7 +83,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompAero: 2
         CompServo: 1
         CompHydro: 1
-        CompSub: 1 # to use subdyn
+        CompSub: 0 # to use subdyn
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
@@ -112,19 +112,10 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
-    HydroDyn:
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
-        PotMod: 0
-        # PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 RAFT:
     flag: False
-    potential_model_override: 1
+    
 
 ROSCO:
     flag: True
@@ -157,9 +148,9 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
-        - DLC: "1.6"
+        - DLC: "steady"
           wind_speed: [12]
-          analysis_time: 1.
+          analysis_time: 200.
           transient_time: 0.
         # - DLC: "6.1"
         #   n_seeds: 6

@@ -96,6 +96,27 @@ properties:
                 type: boolean
                 default: False
                 description: Flag for using streamlined models in the WEIS simulation.
+            potential_flow_modeling:
+                type: object
+                default: {}
+                description: Options for potential flow modeling of submerged members
+                properties:
+                    bem_method: 
+                        type: integer
+                        default: 0
+                        enum: [0, 1, 2, 3]
+                        description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = use potential BEM modeling only for inviscid forces
+                    bem_members:
+                        type: array
+                        description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
+                        default: []
+                        items:
+                            type: string
+                            uniqueItems: True
+                    bem_file_base:
+                        type: string
+                        default: none
+                        description: Base filename (no extension) for potential BEM mesh files.  WEIS will look for <bem_file_base>.* files.  If not present, they will be generated using pyHAMS.
     WISDEM:
         type: object
         default: {}
@@ -123,18 +144,6 @@ properties:
                 minimum: 0.0
                 maximum: 1e3
                 units: Hz
-            potential_bem_members:
-                type: array
-                description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
-                default: []
-                items:
-                    type: string
-                    uniqueItems: True
-            potential_model_override:
-                type: integer
-                default: 0
-                enum: [0, 1, 2, 3]
-                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = use potential BEM modeling only for inviscid forces
             intersection_mesh:
                 type: integer
                 default: 0
@@ -983,7 +992,7 @@ properties:
                             uniqueItems: false
                     wave_height_fatigue:
                         type: array
-                        description: Array of Hs for fatigue computations conditional to wind speed
+                        description: Array of Hs for each fatigue bin
                         default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
                         items:
                             type: number
@@ -994,7 +1003,7 @@ properties:
                             uniqueItems: false
                     wave_period_fatigue:
                         type: array
-                        description: Array of Tp for fatigue computations
+                        description: Array of Tp for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1005,7 +1014,7 @@ properties:
                             uniqueItems: false
                     wave_direction_fatigue:
                         type: array
-                        description: Array of wave direction for fatigue computations
+                        description: Array of wave direction for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1016,7 +1025,7 @@ properties:
                             uniqueItems: false
                     wind_direction_fatigue:
                         type: array
-                        description: Array of wind direction for fatigue computations
+                        description: Array of wind direction for each fatigue bin
                         default: []
                         items:
                             type: number
@@ -1025,6 +1034,15 @@ properties:
                             minimum: 0.0
                             maximum: 1000.0
                             uniqueItems: false
+                    probability:
+                        type: array
+                        description: Probability of occurrance for each fatigue bin in DLC 1.2
+                        default: [1.]
+                        items:
+                            type: number
+                            minItems: 1
+                            minimum: 0.
+                            maximum: 1.
                     wave_height_SSS:
                         type: array
                         description: Array of Hs for SSS conditional to wind speed

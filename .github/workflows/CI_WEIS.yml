@@ -54,17 +54,17 @@ jobs:
       - name: windio2 branches of other codes
         run: |
           conda remove --force wisdem
-          pip install https://github.com/WISDEM/WISDEM/archive/windIO_2p0.zip
+          pip install https://github.com/WISDEM/WISDEM/archive/develop.zip
           conda remove --force openraft
-          pip install https://github.com/WISDEM/RAFT/archive/windio2.zip
+          pip install https://github.com/WISDEM/RAFT/archive/dev.zip
       # Don't delete after this
       
       - name: Add dependencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
-          conda install -y petsc4py=3.22.2 mpi4py pyoptsparse
+          conda install -y petsc4py mpi4py pyoptsparse
           sudo apt install -y libglu1-mesa
-          pip install pygmsh==7.1.17
+          pip install pygmsh>=7.1.17
           pip install https://github.com/LHEEA/meshmagick/archive/master.zip
           pip install trimesh        
       
@@ -141,6 +141,12 @@ jobs:
           treon rev_DLCs_WEIS.ipynb
           treon rev_Opt.ipynb
           treon rev_WEIS_CSV.ipynb
+
+      - name: Test preprocessing notebooks
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        run: |
+          cd examples/09_preprocessing/fatigue
+          treon Fatigue_Setup.ipynb
 
       # Run parallel script calling OpenFAST
       - name: Run parallel cases

@@ -1,9 +1,12 @@
+# Generic modeling options file to run standard WISDEM case
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
         allow_fails: True
         fail_value: 9999
+    potential_flow_modeling:
+        bem_method: 1   # Use strip theory for all members
 
 WISDEM:
     RotorSE:
@@ -14,31 +17,60 @@ WISDEM:
         te_ps: TE_reinforcement_PS
         n_span: 60
     DriveSE:
-        flag: False
+        flag: user_elastic
     TowerSE:
         flag: True
-        wind: PowerWind  # Wind used
+    FloatingSE:
+        flag: True
+        symmetric_moorings: True
         gamma_f: 1.35    # Safety factor for fatigue loads
         gamma_m: 1.3     # Safety factor for material properties
         gamma_n: 1.0     # Safety factor for ...
         gamma_b: 1.1     # Safety factor for ...
         gamma_fatigue: 1.755  # Safety factor for fatigue loads
-        buckling_length: 30    # Buckling parameter
-        soil_springs: True
-        gravity_foundation: False
-        frame3dd:
-            shear: True
-            geom: True
-            tol: 1e-9
-    FixedBottomSE:
-        flag: False
-    FloatingSE:
-        flag: False
-        rank_and_file: True
-    # BOS:
-    #     flag: True
+    BOS:
+        flag: True
+        plant_turbine_spacing: 7
+        plant_row_spacing: 7
+        commissioning_cost_kW: 44.0
+        decommissioning_cost_kW: 58.0
+        distance_to_substation: 1.0
+        distance_to_interconnection: 8.5
+        interconnect_voltage: 130.
+        distance_to_site: 115.
+        distance_to_landfall: 50.
+        port_cost_per_month: 2e6
+        construction_insurance: 44.0
+        construction_financing: 183.0
+        contingency: 316.0
+        site_auction_price: 100e6
+        site_assessment_cost: 50e6
+        construction_plan_cost: 2.5e5
+        installation_plan_cost: 1e6
+    LCOE:
+        flag: True
+        wake_loss_factor: 0.15
+        fixed_charge_rate: 0.056
+        bos_per_kW: 4053.
+        opex_per_kW: 137.
+        turbine_number: 40.
+        labor_rate: 58.8
+        painting_rate: 30.0
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.12
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+    water_depth: 200.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
@@ -72,28 +104,17 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
-    HydroDyn:
+    SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
-        PotMod: 1
-        # WaveMod: 0
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
-Level1:
+RAFT:
     flag: False
-    potential_model_override: 2
 
 ROSCO:
     flag: True
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
-    
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
 DLC_driver:
     metocean_conditions:
         wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
@@ -123,10 +144,9 @@ DLC_driver:
         # - DLC: "1.5"
         - DLC: "1.6"
           wind_speed: [12]
+          analysis_time: 1.
           transient_time: 0.
-          analysis_time: 10.
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"
         #   n_seeds: 6
-
