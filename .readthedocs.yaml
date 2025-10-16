@@ -21,11 +21,15 @@ build:
       #- pip install --upgrade pip pytest numpy numpydoc windIO
       - conda install -y compilers sphinx sphinxcontrib-bibtex sphinx-jsonschema sphinxcontrib-video
       - conda install sphinx_rtd_theme>=1.3
-      - pip install sphinx sphinxcontrib-bibtex sphinx-rtd-theme
+      #- pip install sphinx sphinxcontrib-bibtex sphinx-rtd-theme
       - pip install json-schema-for-humans 
     pre_build:
       - pwd
       - ls
+      - conda remove --force wisdem
+      - pip install https://github.com/WISDEM/WISDEM/archive/develop.zip
+      - conda remove --force openraft
+      - pip install https://github.com/WISDEM/RAFT/archive/dev.zip
       - pip install -e .
       - python -c "import weis.inputs.validation as vd; vd.wisval.write_yaml(vd.get_geometry_schema(), vd.fschema_geom)"
       - python -c "import weis.inputs.validation as vd; vd.wisval.write_yaml(vd.get_modeling_schema(), vd.fschema_model)"
