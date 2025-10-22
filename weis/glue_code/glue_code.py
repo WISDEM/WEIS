@@ -355,6 +355,12 @@ class WindPark(om.Group):
                         self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"raft.member{k}:Cay")
                         self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"raft.member{k}:Cdy")
 
+                # Rigid bodies
+                for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
+                    self.connect(f"floating.rigid_body_{k}_node",f"raft.rigid_body_{k}_node")
+                    self.connect(f"floating.rigid_body_{k}_mass",f"raft.rigid_body_{k}_mass")
+                    self.connect(f"floating.rigid_body_{k}_inertia",f"raft.rigid_body_{k}_inertia")
+
                 self.connect("mooring.mooring_nodes", "raft.mooring_nodes")
                 self.connect("mooring.unstretched_length", "raft.unstretched_length")
                 for var in ["diameter","mass_density","stiffness","breaking_load","cost_rate",
@@ -542,6 +548,12 @@ class WindPark(om.Group):
                         idx = modeling_options["floating"]["members"]["name2idx"][kname]
                         self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}_{kname}:s")
                         self.connect(f"floatingse.member{k}_{kname}.wall_thickness", f"aeroelastic.member{k}_{kname}:wall_thickness")
+                        self.connect(f"floatingse.member{k}_{kname}.rho", f"aeroelastic.member{k}_{kname}:rho")
+                        self.connect(f"floatingse.member{k}_{kname}.E", f"aeroelastic.member{k}_{kname}:E")
+                        self.connect(f"floatingse.member{k}_{kname}.G", f"aeroelastic.member{k}_{kname}:G")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_z_cg", f"aeroelastic.member{k}_{kname}:ballast_z_cg")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_mass", f"aeroelastic.member{k}_{kname}:ballast_mass")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_I_base", f"aeroelastic.member{k}_{kname}:ballast_I_base")
 
                         # Member coefficients
                         if modeling_options['floating']['members']['outer_shape'][k] == "circular":

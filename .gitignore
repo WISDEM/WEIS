@@ -124,3 +124,6 @@ wind/
 BEM/
 none/
 steady_state/
+
+# OpenMDAO
+reports/

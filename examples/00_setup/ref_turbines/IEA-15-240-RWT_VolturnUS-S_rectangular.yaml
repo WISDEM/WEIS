@@ -705,7 +705,7 @@ components:
            -  name: main_column
               joint1: main_keel
               joint2: main_freeboard
-              Ca: [1.0, 1.0]
+              Ca: [0.9, 0.9] # Will be used for strip-theory only model
               Cd: [0.8, 0.8]
               outer_shape:
                   shape: circular
@@ -732,7 +732,7 @@ components:
            -  name: column1
               joint1: col1_keel
               joint2: col1_freeboard
-              Ca: [1.0, 1.0]
+              Ca: [0.9, 0.9]
               Cd: [0.8, 0.8]
               outer_shape: &id003
                   shape: circular
@@ -768,7 +768,7 @@ components:
            -  name: column2
               joint1: col2_keel
               joint2: col2_freeboard
-              Ca: [1.0, 1.0]
+              Ca: [0.9, 0.9]
               Cd: [0.8, 0.8]
               outer_shape: *id003
               axial_joints:
@@ -782,7 +782,7 @@ components:
            -  name: column3
               joint1: col3_keel
               joint2: col3_freeboard
-              Ca: [1.0, 1.0]
+              Ca: [0.9, 0.9]
               Cd: [0.8, 0.8]
               outer_shape: *id003
               axial_joints:
@@ -827,8 +827,10 @@ components:
            -  name: Y_pontoon_lower1
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
-              Ca: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               outer_shape: &id007
                   shape: rectangular
                   side_length_a:
@@ -856,15 +858,19 @@ components:
               joint1: main_lower_pontoon
               joint2: col2_lower_pontoon
               outer_shape: *id007
-              Ca: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               structure: *id008
            -  name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
               outer_shape: *id007
-              Ca: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: [1.4175, 1.1921]
+              Cay: [1.0856, 1.0856]
+              Cd: [7.66, 5.06]
+              Cdy: [4.6, 4.6]
               structure: *id008
     mooring:
         nodes:

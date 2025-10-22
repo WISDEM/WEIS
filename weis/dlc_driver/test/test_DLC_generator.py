@@ -46,7 +46,7 @@ class TestIECWind(unittest.TestCase):
             
 
         np.testing.assert_equal(dlc_generator.cases[11].URef, ws_cut_out)
-        np.testing.assert_equal(dlc_generator.n_cases, 487)
+        np.testing.assert_equal(dlc_generator.n_cases, 479)
 
         # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
         DLCs = [i_dlc['DLC'] for i_dlc in modeling_options['DLC_driver']['DLCs']]

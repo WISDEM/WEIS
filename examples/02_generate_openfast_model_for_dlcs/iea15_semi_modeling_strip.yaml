@@ -1,10 +1,12 @@
-# Generic modeling options file to run standard WISDEM case
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        allow_fails: True
+        # allow_fails: True
         fail_value: 9999
+    potential_flow_modeling:
+        bem_method: 1 # strip theory only
+
 WISDEM:
     RotorSE:
         flag: True
@@ -14,17 +16,23 @@ WISDEM:
         te_ps: TE_reinforcement_PS
         n_span: 60
     DriveSE:
-        flag: user_elastic
+        flag: True
     TowerSE:
         flag: True
-    FloatingSE:
-        flag: True
-        symmetric_moorings: True
+        wind: PowerWind  # Wind used
         gamma_f: 1.35    # Safety factor for fatigue loads
         gamma_m: 1.3     # Safety factor for material properties
         gamma_n: 1.0     # Safety factor for ...
         gamma_b: 1.1     # Safety factor for ...
         gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    FloatingSE:
+        flag: True
+        rank_and_file: True
     BOS:
         flag: True
         plant_turbine_spacing: 7
@@ -53,6 +61,7 @@ WISDEM:
         turbine_number: 40.
         labor_rate: 58.8
         painting_rate: 30.0
+        
 Environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
@@ -76,7 +85,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompAero: 2
         CompServo: 1
         CompHydro: 1
-        CompSub: 0
+        CompSub: 1 # to use subdyn
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
@@ -101,27 +110,30 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+        SumPrint: True
+    SubDyn:
+        SumPrint: True
     SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
     HydroDyn:
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
-        PotMod: 1
-        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        AddBLin1: [5.51e4, 0.0, 0.0, 0.0, 0, 0.0]
+        AddBLin2: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin3: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin4: [0.0, 0.0, 0.0, 0.0, 4.34e8, 0.0]
+        AddBLin5: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        PotMod: 0
 
 RAFT:
     flag: False
-    potential_model_override: 2
+    potential_model_override: 1
 
 ROSCO:
     flag: True
     tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+
 DLC_driver:
     metocean_conditions:
         wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
@@ -149,11 +161,12 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
-        - DLC: "1.6"
+        - DLC: "steady"
           wind_speed: [12]
-          analysis_time: 1.
+          analysis_time: 200.
           transient_time: 0.
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"
         #   n_seeds: 6
+

@@ -143,6 +143,12 @@ jobs:
           treon rev_Opt.ipynb
           treon rev_WEIS_CSV.ipynb
 
+      - name: Test preprocessing notebooks
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        run: |
+          cd examples/09_preprocessing/fatigue
+          treon Fatigue_Setup.ipynb
+
       # Run parallel script calling OpenFAST
       - name: Run parallel cases
         if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')

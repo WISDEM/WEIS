@@ -113,9 +113,8 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         # WaveMod: 0
 
-RAFT: # -> RAFT, but testing backwards compatibility
+RAFT: 
     flag: True
-    potential_model_override: 0
     trim_ballast: 2
     heave_tol: 1
     save_designs: True

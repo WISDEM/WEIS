@@ -1,0 +1,64 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: False
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+OpenFAST: 
+    flag: True
+    from_openfast: True
+    regulation_trajectory: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    HydroDyn:
+        DiffQTF: 0
+
+
+ROSCO:
+    flag: True
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+    zeta_pc: 1.23
+    omega_pc: 0.198
+    U_pc: [12]
+
+
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+        # fatigue bins
+        probability: [0.0721575, 0.0662317, 0.0586440, 0.0367738, 0.0367117, 0.0360826, 0.0348322, 0.0305607, 0.0288366, 0.0261494]
+        wave_height_fatigue: [1.93014, 2.86339, 1.48861, 2.44239, 2.00784, 2.46889, 1.44362, 1.72633, 1.28708, 3.52561]
+        wave_period_fatigue: [7.44086, 8.92557, 7.81407, 11.2402, 13.0567, 11.5244, 8.43307, 11.2183, 9.40580, 8.93552]
+        wind_direction_fatigue: [354.390, 355.816, 354.287, 352.366, 1.13005, 356.901, 351.408, 340.028, 356.371, 351.312]
+        wave_direction_fatigue: [334.359, 333.178, 312.166, 295.182, 287.033, 319.190, 324.634, 291.644, 284.024, 331.980]
+        wind_speed_fatigue: [11.1524, 13.4155, 9.81267, 12.5141, 7.14479, 8.37364, 4.87918, 4.74585, 7.99299, 19.4352]
+    DLCs:
+        - DLC: "1.2"
+          analysis_time: 1.
+          transient_time: 0.0
+          n_cases: 2    # run top n_cases from *_fatigue lists above, with associated probabilities
+          n_seeds: 2    # number of seeds per case
+
