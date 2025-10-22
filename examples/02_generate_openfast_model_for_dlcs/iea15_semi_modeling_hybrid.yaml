@@ -86,7 +86,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompAero: 2
         CompServo: 1
         CompHydro: 1
-        CompSub: 0 # to use subdyn
+        CompSub: 1 # to use subdyn
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
@@ -111,23 +111,26 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+        SumPrint: True
+    SubDyn:
+        SumPrint: True
     SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
     HydroDyn:
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
-        PotMod: 1
-        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        AddBLin1: [5.51e4, 0.0, 0.0, 0.0, 0, 0.0]
+        AddBLin2: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin3: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin4: [0.0, 0.0, 0.0, 0.0, 4.34e8, 0.0]
+        AddBLin5: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 RAFT:
-    flag: False
-    
+    flag: True
+    characteristic_length_min: 1
+    characteristic_length_max: 5
+    intersection_mesh: 1
 
 ROSCO:
     flag: True
@@ -160,9 +163,9 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
-        - DLC: "steady"
+        - DLC: "1.6"
           wind_speed: [12]
-          analysis_time: 200.
+          analysis_time: 300
           transient_time: 0.
         # - DLC: "6.1"
         #   n_seeds: 6

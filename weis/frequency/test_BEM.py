@@ -6,7 +6,7 @@ import shutil
 
 class TestFrequency(unittest.TestCase):
 
-    @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
+    # @unittest.skipUnless("RUN_EXHAUSTIVE" in os.environ, "exhaustive on pull request only")
     def test_BEM(self):
         ## File management
         run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -22,10 +22,11 @@ class TestFrequency(unittest.TestCase):
         modeling_override["RAFT"]["flag"] = True
         modeling_override["General"] = {}
         modeling_override["General"]["potential_flow_modeling"] = {}
-        modeling_override["General"]["potential_flow_modeling"]["bem_method"] = 1 #This needs to be 2 to actually test BEM, but it's too slow for CI as is
-        modeling_override["RAFT"]["intersection_mesh"] = 0
-        modeling_override["RAFT"]["characteristic_length_min"] = 7
-        modeling_override["RAFT"]["characteristic_length_max"] = 12
+        modeling_override["General"]["potential_flow_modeling"]["bem_method"] = 0 #This needs to be 0 (or 2) to actually test BEM, use 0 because we don't want to mesh the upper pontoon
+        modeling_override["General"]["potential_flow_modeling"]["bem_members"] = ["main_column", "column1", "column2", "column3", "Y_pontoon_lower1", "Y_pontoon_lower2", "Y_pontoon_lower3"]
+        modeling_override["RAFT"]["intersection_mesh"] = 1
+        modeling_override["RAFT"]["characteristic_length_min"] = 1
+        modeling_override["RAFT"]["characteristic_length_max"] = 5
         modeling_override["RAFT"]["plot_designs"] = True
         modeling_override["RAFT"]["save_designs"] = True
 
