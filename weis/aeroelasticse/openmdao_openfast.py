@@ -327,6 +327,10 @@ class FASTLoadCases(ExplicitComponent):
                     self.add_input(f"member{k}_{kname}:G", np.zeros(n_height_mem-1), units="Pa")
                     self.add_input(f"member{k}_{kname}:rho", np.zeros(n_height_mem-1), units="kg/m**3")
 
+                    self.add_input(f"member{k}_{kname}:ballast_z_cg", units="m")
+                    self.add_input(f"member{k}_{kname}:ballast_mass", units="kg")
+                    self.add_input(f"member{k}_{kname}:ballast_I_base", np.zeros(6), units="kg*m**2")
+
                     if modopt["floating"]["members"]["outer_shape"][k] == "circular":
                         self.add_input(f"member{k}_{kname}:outer_diameter", val=np.zeros(n_height_mem), units="m")
                         self.add_input(f"member{k}_{kname}:Ca", val=np.zeros(n_height_mem))
@@ -1448,8 +1452,6 @@ class FASTLoadCases(ExplicitComponent):
             G_coarse = np.array([])
             rho_coarse = np.array([])
             rigid_links_xyz = np.empty((0, 3))
-            rigid_links_N1 = np.array([], dtype=np.int_)
-            rigid_links_N2 = np.array([], dtype=np.int_)
 
 
             idx_circular_member = [i for i, shape in enumerate(modopt['floating']['members']['outer_shape']) if shape == 'circular']
@@ -1853,6 +1855,22 @@ class FASTLoadCases(ExplicitComponent):
 
         elif modopt['flags']['floating']:
 
+            # If SubDyn is used in OpenFAST, ElastoDyn masses and inertias are set to zero
+            if fst_vt['Fst']['CompSub']:
+                fst_vt['ElastoDyn']['PtfmMass'] = 0 
+                fst_vt['ElastoDyn']['PtfmRIner'] = 0 
+                fst_vt['ElastoDyn']['PtfmPIner'] = 0 
+
+                # If the YawDOF is enabled, set the yaw inertia to a small value to avoid numerical issues
+                if fst_vt['ElastoDyn']['YawDOF']:
+                    fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2]) * 1e-5
+                else:
+                    fst_vt['ElastoDyn']['PtfmYIner'] = 0
+
+                fst_vt['ElastoDyn']['PtfmXYIner'] = 0
+                fst_vt['ElastoDyn']['PtfmYZIner'] = 0
+                fst_vt['ElastoDyn']['PtfmXZIner'] = 0
+
             itrans = util.closest_node(joints_xyz, inputs["transition_node"])
 
 
@@ -1923,8 +1941,8 @@ class FASTLoadCases(ExplicitComponent):
             # Append rigid link members at the end
             sub_N1 = np.append(sub_N1, rigid_link_N1)
             sub_N2 = np.append(sub_N2, rigid_link_N2)
-            fst_vt['SubDyn']['MJointID1'] = sub_N1
-            fst_vt['SubDyn']['MJointID2'] = sub_N2
+            fst_vt['SubDyn']['MJointID1'] = sub_N1.tolist()
+            fst_vt['SubDyn']['MJointID2'] = sub_N2.tolist()
             n_members = len(sub_N1)
             imembers = np.arange( n_members, dtype=np.int_ ) + 1
 
@@ -1955,6 +1973,7 @@ class FASTLoadCases(ExplicitComponent):
             i_properties = np.arange( n_properties, dtype=np.int_ ) + 1
             iprop_circular = i_properties[idx_circular]
             iprop_rectangular = i_properties[idx_rectangular]
+            iprop_rigid_link = n_properties + 1
 
         # SubDyn inputs- offshore generic
         if modopt['flags']['offshore']:
@@ -1964,16 +1983,16 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
             fst_vt['SubDyn']['Rct_SoilFile'] = [""]*fst_vt['SubDyn']['NReact']
             fst_vt['SubDyn']['NJoints'] = n_joints
-            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
-            fst_vt['SubDyn']['JointType'] = np.ones( n_joints, dtype=np.int_)
+            fst_vt['SubDyn']['JointID'] = (np.arange( n_joints, dtype=np.int_) + 1).tolist()
+            fst_vt['SubDyn']['JointType'] = np.ones( n_joints, dtype=np.int_).tolist()
             fst_vt['SubDyn']['JointDirX'] = fst_vt['SubDyn']['JointDirY'] = fst_vt['SubDyn']['JointDirZ'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointStiff'] = np.zeros( n_joints )
             fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
             fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
             fst_vt['SubDyn']['NMembers'] = n_members 
-            fst_vt['SubDyn']['MemberID'] = imembers 
-            fst_vt['SubDyn']['MPropSetID1'] = propID1
-            fst_vt['SubDyn']['MPropSetID2'] = propID2
+            fst_vt['SubDyn']['MemberID'] = imembers.tolist()
+            fst_vt['SubDyn']['MPropSetID1'] = propID1.tolist() + (n_members - len(propID1)) * [iprop_rigid_link]    # Add rigid link property id
+            fst_vt['SubDyn']['MPropSetID2'] = propID2.tolist() + (n_members - len(propID2)) * [iprop_rigid_link]
             mtype = np.ones( n_members, dtype=np.int_ )
             mtype[idx_rectangular_member] = -1
             mtype[idx_rigid_member] = 3
@@ -2004,12 +2023,69 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['JMXY'] = fst_vt['SubDyn']['JMXZ'] = fst_vt['SubDyn']['JMYZ'] = [0.0]
             fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
 
+            # Ballast Mass as lumped mass
+            for k in range(n_member):
+                kname = modopt['floating']['members']['name'][k]
+                z_pos = inputs[f"member{k}_{kname}:ballast_z_cg"]
+                m_ballast = inputs[f"member{k}_{kname}:ballast_mass"]
+                if m_ballast > 0.0:
+
+                    self.add_concentrated_mass(fst_vt, m_ballast[0], z_pos, n_members, n_joints, joints_xyz, inputs, k, kname, iprop_rigid_link)
+
+                    # Place the ballast joint z_pos along the member centerline
+                    xyz0 = inputs[f"member{k}_{kname}:joint1"]
+                    xyz1 = inputs[f"member{k}_{kname}:joint2"]
+                    dxyz = xyz1 - xyz0
+                    vector_length = np.linalg.norm(dxyz)
+                    unit_vector = dxyz / vector_length
+                    ballast_position = xyz0 + unit_vector * z_pos
+
+                    # Make a new member from xyz0 to ballast_position
+                    n_joints += 1
+                    fst_vt['SubDyn']['NJoints'] = n_joints
+                    fst_vt['SubDyn']['JointID'] += [n_joints]
+                    fst_vt['SubDyn']['JointXss'] = np.append(fst_vt['SubDyn']['JointXss'], [ballast_position[0]])
+                    fst_vt['SubDyn']['JointYss'] = np.append(fst_vt['SubDyn']['JointYss'], [ballast_position[1]])
+                    fst_vt['SubDyn']['JointZss'] = np.append(fst_vt['SubDyn']['JointZss'], [ballast_position[2]])
+                    fst_vt['SubDyn']['JointType'] += [1]
+
+                    fst_vt['SubDyn']['JointDirX'] = np.append(fst_vt['SubDyn']['JointDirX'], [0])
+                    fst_vt['SubDyn']['JointDirY'] = np.append(fst_vt['SubDyn']['JointDirY'], [0])
+                    fst_vt['SubDyn']['JointDirZ'] = np.append(fst_vt['SubDyn']['JointDirZ'], [0])
+                    fst_vt['SubDyn']['JointStiff'] = np.append(fst_vt['SubDyn']['JointStiff'], [0])
+
+                    n_members += 1  # in case this is used after here
+                    fst_vt['SubDyn']['NMembers'] = n_members
+                    fst_vt['SubDyn']['MemberID'] += [n_members]
+
+                    ibase = util.closest_node(joints_xyz, xyz0)
+                    fst_vt['SubDyn']['MJointID1'] += [ibase]
+                    fst_vt['SubDyn']['MJointID2'] += [n_joints]  # New joint at ballast position
+                    fst_vt['SubDyn']['MPropSetID1'] += [iprop_rigid_link]    # ID of rigid link property set
+                    fst_vt['SubDyn']['MPropSetID2'] += [iprop_rigid_link]    # ID of rigid link property set
+                    fst_vt['SubDyn']['MType'] = np.append(fst_vt['SubDyn']['MType'], [3])  # Rigid link type
+                    fst_vt['SubDyn']['M_Spin'] = np.append(fst_vt['SubDyn']['M_Spin'], [0])
+                    fst_vt['SubDyn']['M_COSMID'] = np.append(fst_vt['SubDyn']['M_COSMID'], [-1])
+
+                    # Finally add the concentrated mass at the ballast joint
+                    fst_vt['SubDyn']['NCmass'] += 1
+                    fst_vt['SubDyn']['JMass'] += [m_ballast[0]]
+                    fst_vt['SubDyn']['CMJointID'] += [n_joints]
+
+                    # TODO translate intertia from base axis to cg
+                    fst_vt['SubDyn']['JMXX'] += [inputs[f"member{k}_{kname}:ballast_I_base"][0]]
+                    fst_vt['SubDyn']['JMYY'] += [inputs[f"member{k}_{kname}:ballast_I_base"][1]]
+                    fst_vt['SubDyn']['JMZZ'] += [inputs[f"member{k}_{kname}:ballast_I_base"][2]]
+                    fst_vt['SubDyn']['JMXY'] += [0.0]
+                    fst_vt['SubDyn']['JMXZ'] += [0.0]
+                    fst_vt['SubDyn']['JMYZ'] += [0.0]
+                    fst_vt['SubDyn']['MCGX'] += [0.0]
+                    fst_vt['SubDyn']['MCGY'] += [0.0]
+                    fst_vt['SubDyn']['MCGZ'] += [0.0]
+
+
+            # Make a weightless rigid link type for all the rigid links
             if len(rigid_links_xyz) > 0:
-                fst_vt['SubDyn']['MPropSetID1'] = np.append(fst_vt['SubDyn']['MPropSetID1'], (n_properties+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_)) # New property set for rigid links
-                fst_vt['SubDyn']['MPropSetID2'] = np.append(fst_vt['SubDyn']['MPropSetID2'], (n_properties+1)*np.ones(len(rigid_links_xyz)//2).astype(np.int_))
-                fst_vt['SubDyn']['MType'] = np.append(fst_vt['SubDyn']['MType'], 3*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) # Rigid link type
-                fst_vt['SubDyn']['M_Spin'] = np.append(fst_vt['SubDyn']['M_Spin'], -1*np.ones(len(rigid_links_xyz)//2))
-                fst_vt['SubDyn']['M_COSMID'] = np.append(fst_vt['SubDyn']['M_COSMID'], -1*np.ones(len(rigid_links_xyz)//2, dtype=np.int_)) 
                 fst_vt['SubDyn']['RigidPropSetID'] = np.array([n_rectangular + n_circular + 1])
                 fst_vt['SubDyn']['NRigidPropSets'] = 1
                 fst_vt['SubDyn']['RigidMatDens'] = np.zeros(1)

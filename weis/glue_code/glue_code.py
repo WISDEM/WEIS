@@ -551,6 +551,9 @@ class WindPark(om.Group):
                         self.connect(f"floatingse.member{k}_{kname}.rho", f"aeroelastic.member{k}_{kname}:rho")
                         self.connect(f"floatingse.member{k}_{kname}.E", f"aeroelastic.member{k}_{kname}:E")
                         self.connect(f"floatingse.member{k}_{kname}.G", f"aeroelastic.member{k}_{kname}:G")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_z_cg", f"aeroelastic.member{k}_{kname}:ballast_z_cg")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_mass", f"aeroelastic.member{k}_{kname}:ballast_mass")
+                        self.connect(f"floatingse.member{k}_{kname}.ballast_I_base", f"aeroelastic.member{k}_{kname}:ballast_I_base")
 
                         # Member coefficients
                         if modeling_options['floating']['members']['outer_shape'][k] == "circular":
