@@ -165,7 +165,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
                     
                 # Update RAFT BEM dir
-                self.modeling_options["RAFT"]['BEM_dir'] = self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"]
+                self.modeling_options["RAFT"]['BEM_dir'] = bemDir
     
 
         # OpenFAST dir
