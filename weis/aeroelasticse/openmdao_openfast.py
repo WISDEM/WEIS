@@ -645,12 +645,6 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
 
-            # Fix TwrTI: WEIS modeling options have it as a single value...
-            if not isinstance(fst_vt['AeroDyn']['TwrTI'],list):
-                fst_vt['AeroDyn']['TwrTI'] = [fst_vt['AeroDyn']['TwrTI']] * len(fst_vt['AeroDyn']['TwrElev'])
-            if not isinstance(fst_vt['AeroDyn']['TwrCb'],list):
-                fst_vt['AeroDyn']['TwrCb'] = [fst_vt['AeroDyn']['TwrCb']] * len(fst_vt['AeroDyn']['TwrElev'])
-
             # Fix AddF0: Should be a n x 1 array (list of lists):
             if fst_vt['HydroDyn']:
                 fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
@@ -662,14 +656,22 @@ class FASTLoadCases(ExplicitComponent):
         #  Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
         modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
 
+        
         # Backwards compatibility with Level3
         if 'Level3' in modopts_no_defaults:
             if 'OpenFAST' not in modopts_no_defaults:
                 modopts_no_defaults['OpenFAST'] = {}
             modopts_no_defaults['OpenFAST'].update(modopts_no_defaults['Level3'])
 
+        # Takes modeling options and applies them to fst_vt
         fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
 
+        # Fix TwrTI, Cb: WEIS modeling options have it as a single value...
+        if not hasattr(fst_vt['AeroDyn']['TwrTI'],'__len__'):
+            fst_vt['AeroDyn']['TwrTI'] = [fst_vt['AeroDyn']['TwrTI']] * len(fst_vt['AeroDyn']['TwrElev'])
+        if not hasattr(fst_vt['AeroDyn']['TwrCb'],'__len__'):
+            fst_vt['AeroDyn']['TwrCb'] = [fst_vt['AeroDyn']['TwrCb']] * len(fst_vt['AeroDyn']['TwrElev'])
+        
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
             if 'option_names' in fst_vt['MoorDyn']:  # MoorDyn is special, and option_names is only present if 
