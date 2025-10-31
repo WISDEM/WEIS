@@ -285,9 +285,6 @@ class NSGA2:
                 flush=True,
             )
 
-        print(f"DEBUG!!!!! UPDATE_DATA_EXTERNAL ON RANK {self.comm_mpi.Get_rank() if self.comm_mpi else 0}")
-        print(f"DEBUG!!!!! DV POPULATION ON RANK {self.comm_mpi.Get_rank() if self.comm_mpi else 0}: {self.design_vars_population}")
-
         # put together the return values
         rv = [objs_p]
         if self.N_constr:

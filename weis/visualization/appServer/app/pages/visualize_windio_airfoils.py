@@ -139,12 +139,12 @@ def draw_airfoil_polar(airfoil_names, airfoil_by_names, switches_value):
     fig = make_subplots(rows = len(switches_value), cols = 1, shared_xaxes=True)
     for row_idx, value in enumerate(switches_value):
         for idx, airfoil_name in enumerate(airfoil_names):
-            polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
+            polars_dict = airfoil_by_names[airfoil_name]['polars'][0]['re_sets'][0]
 
             if value == 1:
                 fig.append_trace(go.Scatter(
-                            x = np.rad2deg(polars_dict['c_l']['grid']),
-                            y = polars_dict['c_l']['values'],
+                            x = polars_dict['cl']['grid'],
+                            y = polars_dict['cl']['values'],
                             mode = 'lines+markers',
                             marker=dict(symbol='diamond', color=cols[idx]),
                             line=dict(color=cols[idx]),
@@ -155,8 +155,8 @@ def draw_airfoil_polar(airfoil_names, airfoil_by_names, switches_value):
 
             elif value == 2:
                 fig.append_trace(go.Scatter(
-                            x = np.rad2deg(polars_dict['c_d']['grid']),
-                            y = polars_dict['c_d']['values'],
+                            x = polars_dict['cd']['grid'],
+                            y = polars_dict['cd']['values'],
                             mode = 'lines+markers',
                             marker=dict(symbol='arrow', angleref='previous', size=10, color=cols[idx]),
                             line=dict(color=cols[idx]),
@@ -167,8 +167,8 @@ def draw_airfoil_polar(airfoil_names, airfoil_by_names, switches_value):
             
             elif value == 3:
                 fig.append_trace(go.Scatter(
-                            x = np.rad2deg(polars_dict['c_m']['grid']),
-                            y = polars_dict['c_m']['values'],
+                            x = polars_dict['cm']['grid'],
+                            y = polars_dict['cm']['values'],
                             mode = 'lines+markers',
                             marker=dict(symbol='cross', color=cols[idx]),
                             line=dict(color=cols[idx]),

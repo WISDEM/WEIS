@@ -33,64 +33,45 @@ class PoseOptimizationWEIS(PoseOptimization):
             self.n_OF_runs = modeling_options['OpenFAST_Linear']['linearization']['NLinTimes']
         else:
             self.n_OF_runs = 0
+    
+    def set_merit_figure(self, wt_opt, merit_figure):
+            
+        if merit_figure.lower() == 'blade_tip_deflection':
+            wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
+            
+        elif merit_figure.lower() == 'del_rootmyb':   # for DAC optimization on root-flap-bending moments
+            wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
+            
+        elif merit_figure.lower() == 'del_twrbsmyt':   # for pitch controller optimization
+            wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
+            
+        elif merit_figure.lower() == 'rotor_overspeed':
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
 
-    def set_objective(self, wt_opt):
-        # Set merit figure. Each objective has its own scaling.  Check first for user override
+        elif merit_figure.lower() == 'std_ptfmpitch':
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.Std_PtfmPitch')
 
-        # make merit_figure and merit_figure_user a list if it is not already
-        if isinstance(self.opt['merit_figure'], str):
-            self.opt['merit_figure'] = [self.opt['merit_figure']]
+        elif merit_figure.lower() == 'max_ptfmpitch':
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.Max_PtfmPitch')
 
-        if isinstance(self.opt['merit_figure_user'], dict):
-            self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]
+        elif merit_figure.lower() == 'cp':
+            wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
 
-        for merit_figure_user in self.opt['merit_figure_user']:
-            if merit_figure_user["name"] != "":
-                coeff = -1.0 if merit_figure_user["max_flag"] else 1.0
-                wt_opt.model.add_objective(merit_figure_user["name"],
-                                        ref=coeff*np.abs(merit_figure_user["ref"]))
+        elif merit_figure.lower() == 'weis_lcoe' or merit_figure.lower() == 'lcoe':
+            wt_opt.model.add_objective('financese_post.lcoe')
 
-
-        for merit_figure in self.opt['merit_figure']:
-            if merit_figure == 'none':  # default
-                break
-
-            if merit_figure == 'blade_tip_deflection':
-                wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
-
-            elif merit_figure == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
-                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
-
-            elif merit_figure == 'DEL_TwrBsMyt':   # for pitch controller optimization
-                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
-
-            elif merit_figure == 'rotor_overspeed':
-                if not any(self.level_flags):
-                    raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
-                wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
-
-            elif merit_figure == 'Std_PtfmPitch':
-                if not any(self.level_flags):
-                    raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
-                wt_opt.model.add_objective(f'{self.floating_solve_component}.Std_PtfmPitch')
-
-            elif merit_figure == 'Max_PtfmPitch':
-                if not any(self.level_flags):
-                    raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
-                wt_opt.model.add_objective(f'{self.floating_solve_component}.Max_PtfmPitch')
-
-            elif merit_figure == 'Cp':
-                wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
-
-            elif merit_figure == 'weis_lcoe' or merit_figure.lower() == 'lcoe':
-                wt_opt.model.add_objective('financese_post.lcoe')
-
-            elif merit_figure == 'OL2CL_pitch':
-                wt_opt.model.add_objective('aeroelastic.OL2CL_pitch')
-
-            else:
-                super(PoseOptimizationWEIS, self).set_merit_figure(wt_opt, merit_figure)
-
+        elif merit_figure.lower() == 'ol2cl_pitch':
+            wt_opt.model.add_objective('aeroelastic.OL2CL_pitch')
+        
+        else:
+            super(PoseOptimizationWEIS, self).set_merit_figure(wt_opt, merit_figure)
+                
         return wt_opt
 
 
@@ -329,8 +310,8 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = control_constraints['rotor_overspeed']['max'])
 
         # Add PI gains if overspeed is merit_figure or constraint
-        if (control_constraints['rotor_overspeed']['flag'] or self.opt['merit_figure'] == 'rotor_overspeed') and \
-            self.modeling['ROSCO']['flag']:
+        if (control_constraints['rotor_overspeed']['flag'] or 'rotor_overspeed' in self.opt['merit_figure']) \
+            and self.modeling['ROSCO']['flag']:
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
                 upper = 0.0)
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki',

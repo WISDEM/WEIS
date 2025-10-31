@@ -11,6 +11,7 @@ from weis.dlc_driver.dlc_generator    import DLCGenerator
 from openmdao.utils.mpi import MPI
 from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
+from weis.control.tune_rosco import update_rosco_options
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -48,12 +49,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         if modeling_override:
             update_options(self.modeling_options, modeling_override)
-            sch.re_validate_modeling(self.modeling_options)
-                
+            sch.load_modeling_yaml(self.modeling_options)
         
         if analysis_override:
             update_options(self.analysis_options, analysis_override)
-            sch.re_validate_analysis(self.analysis_options)
+            sch.load_analysis_yaml(self.analysis_options)
 
         self.set_run_flags()
         self.set_openmdao_vectors()
@@ -210,20 +210,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
                 
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1].lower() != 'none':  # default is none
-            inps = load_rosco_yaml(self.modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
-            self.modeling_options['ROSCO'].update(inps['controller_params'])
-
-            # Apply changes in modeling options, should have already been validated
-            modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])  
-            skip_options = ['tuning_yaml','DISCON']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
-            for option, value in modopts_no_defaults['ROSCO'].items():
-                if option not in skip_options:
-                    self.modeling_options['ROSCO'][option] = value
-            # Handle DISCON inputs separately
-            if 'DISCON' in modopts_no_defaults['ROSCO']:
-                for option, value in modopts_no_defaults['ROSCO']['DISCON'].items():
-                    self.modeling_options['ROSCO']['DISCON'][option] = value
+        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+            update_rosco_options(self.modeling_options)
         
         # XFoil
         if not osp.isfile(self.modeling_options['OpenFAST']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
@@ -315,16 +303,27 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 
                 self.modeling_options['TMDs']['group_mapping'] = tmd_group_map
 
-    def update_ontology_control(self, wt_opt):
-        # Update controller
+    def update_ontology(self, wt_opt):
+        # Call the WISDEM version first
+        super(WindTurbineOntologyPythonWEIS, self).update_ontology(wt_opt)
+
+        '''
+        # Likely outdated
         if self.modeling_options['flags']['control']:
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.wt_init['control']['dac']['flp_kp_norm']= float(wt_opt['tune_rosco_ivc.flp_kp_norm'])
                 self.wt_init['control']['dac']['flp_tau'] = float(wt_opt['tune_rosco_ivc.flp_tau'])
+        '''
+
+        if self.modeling_options['flags']['TMDs']:
+            for k in range( self.modeling_options['TMDs']['n_TMDs'] ):
+                for m in ['mass', 'stiffness', 'damping']: #, 'natural_frequency', 'damping_ratio']:
+                    self.wt_init['TMDs'][k][m] = float(wt_opt[f'TMDs.{m}'][k])
 
 
-    def write_options(self, fname_output):
+    def write_outputs(self, fname_output):
         # Override the WISDEM version to ensure that the WEIS options files are written instead
+        sch.write_geometry_yaml(self.wt_init, fname_output)
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)
 

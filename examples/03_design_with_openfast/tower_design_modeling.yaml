@@ -1,6 +1,5 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    solver_maxiter: 2
     openfast_configuration:
         use_exe: True
 
@@ -30,8 +29,48 @@ WISDEM:
     FloatingSE:
         flag: True
         rank_and_file: True
-    # BOS:
-    #     flag: True
+    BOS:
+        flag: True
+        plant_turbine_spacing: 7
+        plant_row_spacing: 7
+        commissioning_cost_kW: 44.0
+        decommissioning_cost_kW: 58.0
+        distance_to_substation: 1.0
+        distance_to_interconnection: 8.5
+        interconnect_voltage: 130.
+        distance_to_site: 115.
+        distance_to_landfall: 50.
+        port_cost_per_month: 2e6
+        construction_insurance: 44.0
+        construction_financing: 183.0
+        contingency: 316.0
+        site_auction_price: 100e6
+        site_assessment_cost: 50e6
+        construction_plan_cost: 2.5e5
+        installation_plan_cost: 1e6
+    LCOE:
+        flag: True
+        wake_loss_factor: 0.15
+        fixed_charge_rate: 0.056
+        bos_per_kW: 4053.
+        opex_per_kW: 137.
+        turbine_number: 40.
+        labor_rate: 58.8
+        painting_rate: 30.0
+        
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.12
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+    water_depth: 200.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45
 
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
@@ -46,6 +85,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
+        NumCrctn: 1
     linearization:
         Linearize: False
     ElastoDyn:
@@ -87,23 +127,19 @@ RAFT:
 
 ROSCO:
     flag: True
-    SD_Mode: 0
-    PS_Mode: 1
-    ps_percent: 0.85
-    F_LPFType: 2
-    F_NotchType: 2
-    Fl_Mode: 2 
-    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile/IEA-15-240-RWT-Monopile_ROSCO.yaml
-    zeta_pc: [1,1]
-    omega_pc: [0.2,0.2]
-    U_pc: [12,18]
-    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    omega_vs: 0.12  
-    twr_freq: 3.2
-    ptfm_freq: 0.2
-    Kp_float: -10
-    
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+
 DLC_driver:
+    metocean_conditions:
+        wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
+        wave_height_NSS: [0.83, 0.88, 0.94, 1.03, 1.16, 1.34, 1.57, 1.86, 2.22, 2.62, 3.07]
+        wave_period_NSS: [6.9, 6.96, 7.02, 7.12, 7.25, 7.43, 7.66, 7.94, 8.27, 8.63, 9.01]
+        wave_height_SSS: [6.3, 8, 8, 8.1, 8.5, 8.5, 9.8, 9.8, 9.8, 9.8, 9.9]
+        wave_period_SSS: [11.5, 12.7, 12.7, 12.8, 13.1, 13.1, 14.1, 14.1, 14.1, 14.1, 14.1]
+        wave_height1: 6.98
+        wave_period1: 11.7
+        wave_height50: 10.68
+        wave_period50: 14.2
     DLCs:
         - DLC: "1.1"
           wind_speed: [12] #,16,20,24]
