@@ -98,7 +98,7 @@ class WindPark(om.Group):
                 else:
                     raise Exception(f"The DISCON design variable {dv['name']} does not have a defined start, nor is it defined in the modeling options.")
 
-            tune_rosco_ivc.add_output(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+            tune_rosco_ivc.add_output(f"discon:{dv['name']}", val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         # These are always added
         tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
@@ -108,8 +108,8 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('stability_margin', val=0.0,                    desc='Stability margin for robust tuning')
         
         # Skip if already added, could apply same treatment to The Ones Above
-        if 'ps_percent' not in rosco_tuning_dv_names:
-            tune_rosco_ivc.add_output('ps_percent', val=modeling_options['ROSCO']['ps_percent'],  desc='Peak shaving fraction [0-1], {default = 1.0}')     desc='Floating feedback gain')
+        if "ps_percent" not in rosco_tuning_dv_names:
+            tune_rosco_ivc.add_output("ps_percent", val=modeling_options["ROSCO"]["ps_percent"],  desc="Peak shaving fraction [0-1], {default = 1.0}")
 
         self.add_subsystem("tune_rosco_ivc",tune_rosco_ivc)
 
@@ -229,37 +229,37 @@ class WindPark(om.Group):
 
             # ROSCO Independent Vars
             
-            # optional parameters
-            optional_inputs = [
-                'max_pitch',
-                'min_pitch',
-                'vs_minspd',
-                'ss_vsgain',
-                'ss_pcgain',
-                'ps_percent',
-                ]
-            for param in optional_inputs:
-                if param in rosco_options:
-                    self.connect(f'tune_rosco_ivc.{param}', f'sse_tune.tune_rosco.{param}')
+            # # optional parameters
+            # optional_inputs = [
+            #     'max_pitch',
+            #     'min_pitch',
+            #     'vs_minspd',
+            #     'ss_vsgain',
+            #     'ss_pcgain',
+            #     'ps_percent',
+            #     ]
+            # for param in optional_inputs:
+            #     if param in rosco_options:
+            #         self.connect(f'tune_rosco_ivc.{param}', f'sse_tune.tune_rosco.{param}')
 
-            # required parameters
-            self.connect('tune_rosco_ivc.omega_pc',         'sse_tune.tune_rosco.omega_pc')
-            self.connect('tune_rosco_ivc.zeta_pc',          'sse_tune.tune_rosco.zeta_pc')
-            self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
-            self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
-            self.connect('tune_rosco_ivc.IPC_Kp1p',         'sse_tune.tune_rosco.IPC_Kp1p')
-            self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
-            self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
+            # # required parameters
+            # self.connect('tune_rosco_ivc.omega_pc',         'sse_tune.tune_rosco.omega_pc')
+            # self.connect('tune_rosco_ivc.zeta_pc',          'sse_tune.tune_rosco.zeta_pc')
+            # self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
+            # self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
+            # self.connect('tune_rosco_ivc.IPC_Kp1p',         'sse_tune.tune_rosco.IPC_Kp1p')
+            # self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
+            # self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
+            # self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
+            # self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
+            # if modeling_options['ROSCO']['Flp_Mode'] > 0:
+            #     self.connect('tune_rosco_ivc.flp_kp_norm',    'sse_tune.tune_rosco.flp_kp_norm')
+            #     self.connect('tune_rosco_ivc.flp_tau',     'sse_tune.tune_rosco.flp_tau')
             
             # Peak shaving DV should also influence rotor power in WISDEM
             if not modeling_options['OpenFAST']['from_openfast']:
                 self.connect(f'tune_rosco_ivc.ps_percent', "rotorse.rp.powercurve.ps_percent")
 
-            self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
-            if modeling_options['ROSCO']['Flp_Mode'] > 0:
-                self.connect('tune_rosco_ivc.flp_kp_norm',    'sse_tune.tune_rosco.flp_kp_norm')
-                self.connect('tune_rosco_ivc.flp_tau',     'sse_tune.tune_rosco.flp_tau')
 
             # Connect generic ivc/dvs
             for dv in rosco_tuning_dvs:
@@ -1010,17 +1010,3 @@ class WindPark(om.Group):
                 self.connect("aeroelastic.rotor_overspeed",    "outputs_2_screen_weis.rotor_overspeed")
                 self.connect("aeroelastic.Std_PtfmPitch",      "outputs_2_screen_weis.Std_PtfmPitch")
                 self.connect("aeroelastic.Max_PtfmPitch",      "outputs_2_screen_weis.Max_PtfmPitch")
-                self.connect("tune_rosco_ivc.omega_pc",        "outputs_2_screen_weis.omega_pc")
-                self.connect("tune_rosco_ivc.zeta_pc",         "outputs_2_screen_weis.zeta_pc")
-                self.connect("tune_rosco_ivc.omega_vs",        "outputs_2_screen_weis.omega_vs")
-                self.connect("tune_rosco_ivc.zeta_vs",         "outputs_2_screen_weis.zeta_vs")
-                self.connect("tune_rosco_ivc.Kp_float",        "outputs_2_screen_weis.Kp_float")
-                self.connect("tune_rosco_ivc.ptfm_freq",       "outputs_2_screen_weis.ptfm_freq")
-                self.connect("tune_rosco_ivc.flp_kp_norm",       "outputs_2_screen_weis.flp_kp_norm")
-                self.connect("tune_rosco_ivc.flp_tau",        "outputs_2_screen_weis.flp_tau")
-                self.connect("tune_rosco_ivc.IPC_Kp1p",        "outputs_2_screen_weis.IPC_Kp1p")
-                self.connect("tune_rosco_ivc.IPC_Ki1p",        "outputs_2_screen_weis.IPC_Ki1p")
-                #if modeling_options["ROSCO"]["Flp_Mode"]:
-                #    self.connect("dac_ivc.te_flap_end",            "outputs_2_screen_weis.te_flap_end")
-                if modeling_options["OL2CL"]["flag"]:
-                    self.connect("aeroelastic.OL2CL_pitch",      "outputs_2_screen_weis.OL2CL_pitch")

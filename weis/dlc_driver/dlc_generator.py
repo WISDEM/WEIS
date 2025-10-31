@@ -314,8 +314,8 @@ class DLCGenerator(object):
         return wave_heading
 
     def get_probability(self, options):
-        if len(options['probability']) > 0:
-            probability = np.array( [float(m) for m in options['probability']] )
+        if len(options['probabilities']) > 0:
+            probability = np.array( [float(m) for m in options['probabilities']] )
         else:
             probability = np.array([])
         return probability

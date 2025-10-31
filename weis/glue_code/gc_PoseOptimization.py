@@ -1,6 +1,8 @@
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 import numpy as np
-from weis.inputs.validation import get_modeling_schema, re_validate_modeling
+from weis.inputs.validation import get_modeling_schema
+import weis.inputs as sch
+
 from copy import deepcopy
 
 class PoseOptimizationWEIS(PoseOptimization):
@@ -104,7 +106,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 min_modopts = deepcopy(self.modeling)
                 min_modopts['ROSCO'][dv['name']] = dv['min']  # apply to modopts
                 try:
-                    re_validate_modeling(min_modopts)
+                    sch.load_modeling_yaml(min_modopts)
                 except:
                     raise Exception(f'Error validating the design variable {dv["name"]} (min) against the ROSCO schema.')
 
@@ -112,7 +114,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 max_modopts = deepcopy(self.modeling)
                 max_modopts['ROSCO'][dv['name']] = dv['max']  # apply to modopts
                 try:
-                    re_validate_modeling(max_modopts)
+                    sch.load_modeling_yaml(max_modopts)
                 except:
                     raise Exception(f'Error validating the design variable {dv["name"]} (max) against the ROSCO schema.')
 
@@ -148,7 +150,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 min_modopts = deepcopy(self.modeling)
                 min_modopts['ROSCO'][dv['name']] = dv['min']  # apply to modopts
                 try:
-                    re_validate_modeling(min_modopts)
+                    sch.load_modeling_yaml(min_modopts)
                 except:
                     raise Exception(f'Error validating the design variable {dv["name"]} (min) against the ROSCO schema.')
 
@@ -156,7 +158,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 max_modopts = deepcopy(self.modeling)
                 max_modopts['ROSCO'][dv['name']] = dv['max']  # apply to modopts
                 try:
-                    re_validate_modeling(max_modopts)
+                    sch.load_modeling_yaml(max_modopts)
                 except:
                     raise Exception(f'Error validating the design variable {dv["name"]} (max) against the ROSCO schema.')
 

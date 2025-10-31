@@ -251,10 +251,10 @@ class TuneROSCO(ExplicitComponent):
             if param in rosco_init_options:
                 rosco_init_options[param] = float(inputs[param][0])
 
-        rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p'][0]))
-        rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p'][0]))
-        rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
-        rosco_init_options['IPC_Kp2p']    = 0.0
+        # rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p'][0]))
+        # rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p'][0]))
+        # rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
+        # rosco_init_options['IPC_Kp2p']    = 0.0
 
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'][0])
@@ -267,8 +267,7 @@ class TuneROSCO(ExplicitComponent):
         # Generic inputs
         rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
         for dv in rosco_tuning_dvs:
-            # TODO: support arrays, figure out casting
-            rosco_init_options[dv['name']] = inputs[dv['name']][0]
+            rosco_init_options[dv['name']] = inputs[dv['name']]
 
         # Generic DISCON Inputs
         discon_dvs = self.opt_options['design_variables']['control']['discon']
