@@ -1,0 +1,146 @@
+general:
+    folder_output: outputs/umaine_semi_raft_dc
+    fname_output: refturb_output
+
+
+design_variables:
+  control:
+    ps_percent: #Peak shaving #defalt: 0.85
+      flag: True
+      lower_bound: 0.75
+      upper_bound: 1.0
+    servo:
+      pitch_control:
+        omega: #rad/s  #default: 0.2 
+          flag: True
+          min: 0.1
+          max: 0.7
+        zeta: #rad/s  #default:  1.0
+          flag: True
+          min: 0.7
+          max: 1.5
+        Kp_float: #s  #default:  -10.0
+          flag: True
+          min: -20.0 #-100.0
+          max: 0.0
+        ptfm_freq:  #rad/s default: 0.2
+          flag: True
+          min: 0.1 #0.00001
+          max: 1.5
+      torque_control:
+        omega: #rad/s  #default: 0.12 
+          flag: True
+          min: 0.1
+          max: 0.7
+        zeta: #rad/s  #default: 0.85
+          flag: True
+          min: 0.7
+          max: 1.5
+  floating:
+    joints:
+      flag: True
+      z_coordinate:
+        - names: [main_keel, col1_keel, col2_keel, col3_keel]
+          lower_bound: -40.0
+          upper_bound: -15.0
+        - names: [main_freeboard, col1_freeboard, col2_freeboard, col3_freeboard] #Platform sizing: form -20 (keel) to 15 (freeboard)
+          lower_bound: 7.0 #default 15
+          upper_bound: 21.0
+      r_coordinate:
+          - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
+            lower_bound: 38.8125
+            upper_bound: 64.6875
+    members:
+      flag: True
+      groups:
+        - names: [main_column] # Platform sizing: diameter (Center Column)
+          diameter:
+            lower_bound: 6.0 #default: 10
+            upper_bound: 14.0
+            constant: True
+        - names: [column1, column2, column3] # Platform sizing: diameter (Side Columns)
+          diameter:
+            lower_bound: 10.5 #11.0 #10.7 #8.5 # default: 12.5
+            upper_bound: 14.5 #14.5 #16.5
+            constant: True
+        - names: [Y_pontoon_upper1, Y_pontoon_upper2, Y_pontoon_upper3] # Platform sizing: Pantoon upper diameter
+          diameter:
+            lower_bound: 0.71 # default: 0.91
+            upper_bound: 1.11
+            constant: True
+        - names: [Y_pontoon_lower1, Y_pontoon_lower2, Y_pontoon_lower3] # Platform sizing: Pantoon lower diameter
+          side_length_a:
+            lower_bound: 6.25 # default 12.5
+            upper_bound: 18.75
+            constant: True
+          side_length_b:
+            lower_bound: 3.5 # default 7.0
+            upper_bound: 10.5
+            constant: True
+  rotor_diameter:
+    flag: True
+    minimum: 235.0 #242.23775645
+    maximum: 250.0
+
+constraints:
+  control:
+    Max_PtfmPitch:
+      flag: True
+      max: 5.5
+    Std_PtfmPitch:
+      flag: True
+      max: 2.0
+    nacelle_acceleration:
+      flag: True
+      max: 0.5
+  floating:
+    metacentric_height:
+      flag: True
+      lower_bound: 5.0
+    Max_Offset:
+      flag: True
+      max: 25.0
+    stress: 
+      flag: True
+    global_buckling:
+      flag: True
+    mooring_tension:
+      flag: True
+
+merit_figure: structural_mass
+
+driver:
+  optimization:
+    flag: False             # Flag to enable optimization
+    solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    tol: 1.e-2              # Optimality tolerance
+    max_iter: 50            # Maximum number of iterations (SLSQP)
+  design_of_experiments:
+    flag: False             # Flag to enable design of experiments
+    run_parallel: True      # Flag to run using parallel processing
+    generator: LatinHypercube    # Type of input generator. (Uniform)
+    num_samples: 200        # number of samples for (Uniform only)
+    skip_doe_if_doedata_exist: True
+    skip_training_if_sm_exist: True
+
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder
+    includes: ['*raft*','*floating*','*platform*','*financese*']
+    surrogate_model_outputs:
+      - 'raft.surge_period'   # Surge natural period
+      - 'raft.sway_period'    # Sway natural period
+      - 'raft.heave_period'   # Heave natural period
+      - 'raft.roll_period'    # Roll natural period
+      - 'raft.pitch_period'   # Pitch natural period
+      - 'raft.yaw_period'     # Yaw natural period
+      - 'raft.Max_Offset'     # Maximum distance in surge/sway direction
+      - 'raft.Max_PtfmPitch'  # Maximum platform pitch over all cases
+      - 'raft.max_nac_accel'  # Maximum nacelle accelleration over all cases
+      - 'raft.max_tower_base' # Maximum tower base moment over all cases
+      - 'floatingse.system_structural_mass'
+      - 'floatingse.platform_cost'
+      - 'floatingse.platform_base_F'
+      - 'floatingse.platform_base_M'
+      - 'financese.plant_aep'
+      - 'financese.lcoe'      # Levelized cost of energy (discounted to base year)

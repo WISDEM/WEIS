@@ -133,8 +133,8 @@ properties:
             potential_model_override:
                 type: integer
                 default: 0
-                enum: [0, 1, 2]
-                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
+                enum: [0, 1, 2, 3]
+                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = use potential BEM modeling only for inviscid forces
             intersection_mesh:
                 type: integer
                 default: 0
@@ -423,8 +423,7 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.2', '2.3', '2.4', '3.1', '3.2', '3.3', '4.1',
-                             '4.2', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '9.1', '9.2', '10.1', '10.2', '12.1','steady','step','ramp','AEP','freedecay']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.2', '2.3', '2.4', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '9.1', '9.2', '10.1', '10.2', '12.1','steady','step','ramp','AEP','freedecay','force_excursion','userwind']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -548,7 +547,7 @@ properties:
                                 uniqueItems: false
                         probabilities:
                             type: array
-                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed.
+                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed_fatigue.
                             default: [1.]
                             items:
                                 type: number
@@ -951,6 +950,15 @@ properties:
                             minimum: 0.0
                             maximum: 50.0
                             uniqueItems: true
+                    wind_speed_fatigue:
+                        type: array
+                        description: Array of wind speeds to calculate fatigue
+                        default: []
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 0
+                            minimum: 0.0
                     wave_height_NSS:
                         type: array
                         description: Array of Hs for NSS conditional to wind speed
@@ -986,12 +994,34 @@ properties:
                             uniqueItems: false
                     wave_period_fatigue:
                         type: array
-                        description: Array of Tp for fatigue computations conditional to wind speed
-                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        description: Array of Tp for fatigue computations
+                        default: []
                         items:
                             type: number
                             unit: s
                             minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_direction_fatigue:
+                        type: array
+                        description: Array of wave direction for fatigue computations
+                        default: []
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 0
+                            minimum: 0.0
+                            maximum: 1000.0  # TODO: check wrapping of these *_direction_fatigue inputs
+                            uniqueItems: false
+                    wind_direction_fatigue:
+                        type: array
+                        description: Array of wind direction for fatigue computations
+                        default: []
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 0
                             minimum: 0.0
                             maximum: 1000.0
                             uniqueItems: false

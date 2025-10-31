@@ -17,8 +17,8 @@ from weis.glue_code.mpi_tools import compute_optimal_nP
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, 
-             geometry_override=None, modeling_override=None, analysis_override=None, 
+def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
+             geometry_override=None, modeling_override=None, analysis_override=None,
              prepMPI=False, maxnP=1):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(
@@ -33,7 +33,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(wt_init, modeling_options, opt_options)
-    
+
     if MPI:
         if not prepMPI:
             nFD = modeling_options['General']['openfast_configuration']['nFD']
@@ -113,6 +113,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
         wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs','totals']
 
         # Setup openmdao problem
+        wt_opt.options['work_dir'] = folder_output  # set the OM working directory
         if opt_options['opt_flag']:
             wt_opt.setup()
         else:
@@ -120,7 +121,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             # memory for the derivative arrays.
             wt_opt.setup(derivatives=False)
 
-        # Estimate number of design variables and parallel calls to OpenFASRT given 
+        # Estimate number of design variables and parallel calls to OpenFASRT given
         # the computational resources available. This is used to setup WEIS for an MPI run
         if prepMPI:
             nFD = 0
@@ -134,7 +135,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             # Compute number of processors
             modeling_options = compute_optimal_nP(nFD, myopt.n_OF_runs, modeling_options, opt_options, maxnP = maxnP)
 
-        # If WEIS is called simply to prep for an MPI call, no need to proceed and simply 
+        # If WEIS is called simply to prep for an MPI call, no need to proceed and simply
         # return the number of finite differences and OpenFAST calls, and stop
         # Otherwise, keep going assigning inputs and running the OpenMDAO model/driver
         if not prepMPI:
@@ -227,10 +228,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             wt_opt = None
             modeling_options = None
             opt_options = None
-        
+
         # MPI.COMM_WORLD.bcast cannot broadcast out a full OpenMDAO problem
         # We don't need it for now, but this might become an issue if we start
-        # stacking multiple WEIS calls on top of each other and we need to 
+        # stacking multiple WEIS calls on top of each other and we need to
         # reuse wt_opt from one call to the next
         modeling_options = MPI.COMM_WORLD.bcast(modeling_options, root = 0)
         opt_options = MPI.COMM_WORLD.bcast(opt_options, root = 0)

@@ -1,8 +1,14 @@
 general:
-    folder_output: outputs/04_iea22_raft_opt
+    folder_output: outputs/11_ps_check
     fname_output: IEA-22-280-RWT
 
 design_variables:
+    control:
+        rosco_tuning:
+        - name: ps_percent
+          start: 0.8
+          min: 0.4
+          max: 1.0
     tower:
         outer_diameter:
             flag: False
@@ -14,11 +20,11 @@ design_variables:
             upper_bound: 2.e-1
     floating:
         joints:
+            flag: True
             z_coordinate:       # draft
                 - names: [main_keel, col1_keel, col2_keel, col3_keel]
                   lower_bound: -30.0
-                  upper_bound: -12.0
-                  flag: True
+                  upper_bound: -8.0
                 # - names: [col1_freeboard, col2_freeboard, col3_freeboard]
                 #   lower_bound: 10.0
                 #   upper_bound: 20.0
@@ -26,11 +32,10 @@ design_variables:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
                   lower_bound: 50.0
                   upper_bound: 70.0
-                  flag: True
         members:
+            flag: True
             groups:
                 - names: [column1, column2, column3]
-                  flag: True
                   diameter:
                       lower_bound: 12.0
                       upper_bound: 16.0
@@ -76,19 +81,19 @@ constraints:
             upper_bound: 0.17453292519943295 # 10 deg
         metacentric_height:
             flag: True
-            lower_bound: 15.0
+            lower_bound: 10.0
         pitch_period:
             flag: True
-            lower_bound: 20. # +/- 10%
+            lower_bound: 15. # +/- 10%
             upper_bound: 80.
         heave_period:
-            flag: True
-            lower_bound: 16. # +/- 10%
+            flag: False
+            lower_bound: 15. # +/- 10%
             upper_bound: 80.
-        fixed_ballast_capacity:
-            flag: True
-        variable_ballast_capacity:
-            flag: True
+        # fixed_ballast_capacity:
+        #     flag: True
+        # variable_ballast_capacity:
+        #     flag: True
         buoyancy:
             flag: False
         stress:
@@ -108,24 +113,41 @@ constraints:
     control:
         Max_PtfmPitch:
             flag: True
-            max: 6.0
+            max: 9.0
         Std_PtfmPitch:
             flag: False
             max: 1.25  # Same as IEA-15MW with same DLCs
         nacelle_acceleration:
-            flag: False
-            max: 0.4
+            flag: True
+            max: 2.0
 
-merit_figure: structural_mass
+merit_figure: [structural_mass, AEP]
+
+# merit_figure_user:
+#     name: raft.Max_PtfmPitch
+#     max_flag: False
+#     ref: 1.e-2
 
 driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-6         # Optimality tolerance
         max_iter: 50      # Maximum number of iterations (SLSQP)
-        max_gen: 2        # Maximum number of generations (DE)
-        #time_limit: 3420
-        solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        maxgen: 2        # Maximum number of generations (DE)
+        # maxtime: 3420
+        pop_size: 200
+        max_gen: 20
+        run_parallel: True
+        solver: NSGA2  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        seed: 12345
+        # procs_per_model: 10
+        # penalty_parameter: 10
+        # penalty_exponent: 10
+        Pc: 0.9
+        # eta_c: 10
+        Pm: 0.3
+        # eta_m: 10
+        compute_pareto: True
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder

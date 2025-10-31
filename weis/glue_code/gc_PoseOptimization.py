@@ -1,10 +1,14 @@
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 import numpy as np
+from weis.inputs.validation import get_modeling_schema
+import weis.inputs as sch
+
+from copy import deepcopy
 
 class PoseOptimizationWEIS(PoseOptimization):
 
     def __init__(self, wt_init, modeling_options, analysis_options):
-        
+
         self.level_flags = np.array([modeling_options[level]['flag'] for level in ['RAFT','OpenFAST_Linear','OpenFAST']])
         # if sum(self.level_flags) > 1:
             # raise Exception('Only one level in WEIS can be enabled at the same time')
@@ -24,7 +28,7 @@ class PoseOptimizationWEIS(PoseOptimization):
             self.floating_period_solve_component = 'raft'
         else:
             self.floating_period_solve_component = 'floatingse'
-        
+
         if modeling_options['OpenFAST']['flag']:
             self.n_OF_runs = modeling_options['DLC_driver']['n_cases']
         elif modeling_options['OpenFAST_Linear']['flag']:
@@ -49,10 +53,14 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
 
         elif merit_figure.lower() == 'std_ptfmpitch':
-            wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.Std_PtfmPitch')
 
         elif merit_figure.lower() == 'max_ptfmpitch':
-            wt_opt.model.add_objective('aeroelastic.Max_PtfmPitch')
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.Max_PtfmPitch')
 
         elif merit_figure.lower() == 'cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
@@ -68,32 +76,106 @@ class PoseOptimizationWEIS(PoseOptimization):
                 
         return wt_opt
 
-    
+
     def set_design_variables(self, wt_opt, wt_init):
         super(PoseOptimizationWEIS, self).set_design_variables(wt_opt, wt_init)
 
         # -- Control --
+        rosco_tuning_dvs    = self.opt['design_variables']['control']['rosco_tuning']
+        discon_dvs          = self.opt['design_variables']['control']['discon']
+        mod_schema          = get_modeling_schema()
+        rosco_params        = mod_schema['properties']['ROSCO']['properties']
+        discon_params       = rosco_params['DISCON']['properties']
+
+        # Generic rosco tuning param
+        for dv in rosco_tuning_dvs:
+
+            # Check that name is in rosco schema
+            if not dv['name'] in rosco_params:
+                raise Exception(f'The design variable {dv["name"]} is not part of the ROSCO schema.')
+
+            # Grab information about DV from ROSCO schema
+            if 'description' in rosco_params[dv['name']]:
+                dv['description'] = rosco_params[dv['name']]['description']
+
+            if 'unit' in rosco_params[dv['name']]:
+                dv['unit'] = rosco_params[dv['name']]['unit']
+
+            # Check that min/max adhere to schema by applying the min/max to a copy of the modeling options and re-validating
+            if 'min' in dv:
+                min_modopts = deepcopy(self.modeling)
+                min_modopts['ROSCO'][dv['name']] = dv['min']  # apply to modopts
+                try:
+                    sch.load_modeling_yaml(min_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (min) against the ROSCO schema.')
+
+            if 'max' in dv:
+                max_modopts = deepcopy(self.modeling)
+                max_modopts['ROSCO'][dv['name']] = dv['max']  # apply to modopts
+                try:
+                    sch.load_modeling_yaml(max_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (max) against the ROSCO schema.')
+
+
+            # # Add design var
+            if 'min' in dv and 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"], upper=dv["max"])
+            elif 'min' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"])
+            elif 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', upper=dv["max"])
+            else:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}')
+
+        # Generic DISCON input
+        # TODO: There's a lot of duplicated code we may be able to combine with the above
+        for dv in discon_dvs:
+
+            # Check that name is in rosco schema
+            if not dv['name'] in discon_params and self.modeling['ROSCO']['flag']:
+                raise Exception(f'The design variable {dv["name"]} is not part of the ROSCO DISCON schema.')
+                # Skip this if we don't have a schema, could create a schema from a sample input
+
+            # Grab information about DV from ROSCO schema
+            if 'description' in discon_params[dv['name']]:
+                dv['description'] = discon_params[dv['name']]['description']
+
+            if 'unit' in discon_params[dv['name']]:
+                dv['unit'] = discon_params[dv['name']]['unit']
+
+            # Check that min/max adhere to schema by applying the min/max to a copy of the modeling options and re-validating
+            if 'min' in dv:
+                min_modopts = deepcopy(self.modeling)
+                min_modopts['ROSCO'][dv['name']] = dv['min']  # apply to modopts
+                try:
+                    sch.load_modeling_yaml(min_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (min) against the ROSCO schema.')
+
+            if 'max' in dv:
+                max_modopts = deepcopy(self.modeling)
+                max_modopts['ROSCO'][dv['name']] = dv['max']  # apply to modopts
+                try:
+                    sch.load_modeling_yaml(max_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (max) against the ROSCO schema.')
+
+
+            # # Add design var
+            if 'min' in dv and 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.discon:{dv["name"]}', lower=dv["min"], upper=dv["max"])
+            elif 'min' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.discon:{dv["name"]}', lower=dv["min"])
+            elif 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.discon:{dv["name"]}', upper=dv["max"])
+            else:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.discon:{dv["name"]}')
+
+        # Other, hardcoded control opts
         control_opt = self.opt['design_variables']['control']
-        if control_opt['servo']['pitch_control']['omega']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.omega_pc', lower=control_opt['servo']['pitch_control']['omega']['min'], 
-                                                            upper=control_opt['servo']['pitch_control']['omega']['max'])
-        if control_opt['servo']['pitch_control']['zeta']['flag']:                            
-            wt_opt.model.add_design_var('tune_rosco_ivc.zeta_pc', lower=control_opt['servo']['pitch_control']['zeta']['min'], 
-                                                           upper=control_opt['servo']['pitch_control']['zeta']['max'])
-        if control_opt['servo']['torque_control']['omega']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.omega_vs', lower=control_opt['servo']['torque_control']['omega']['min'], 
-                                                            upper=control_opt['servo']['torque_control']['omega']['max'])
-        if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
-            wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
-                                                           upper=control_opt['servo']['torque_control']['zeta']['max'])
-        if control_opt['servo']['ipc_control']['Kp']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Kp1p', lower=control_opt['servo']['ipc_control']['Kp']['min'],
-                                                            upper=control_opt['servo']['ipc_control']['Kp']['max'],
-                                                            ref=control_opt['servo']['ipc_control']['Kp']['ref'])
-        if control_opt['servo']['ipc_control']['Ki']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki']['min'],
-                                                            upper=control_opt['servo']['ipc_control']['Ki']['max'],
-                                                            ref=control_opt['servo']['ipc_control']['Kp']['ref'])
+
         if control_opt['servo']['pitch_control']['stability_margin']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.stability_margin', lower=control_opt['servo']['pitch_control']['stability_margin']['min'],
                                                             upper=control_opt['servo']['pitch_control']['stability_margin']['max'])
@@ -105,25 +187,14 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             upper=control_opt['flaps']['te_flap_ext']['max'])
         if 'flap_control' in control_opt['servo']:
             if control_opt['servo']['flap_control']['flp_kp_norm']['flag']:
-                wt_opt.model.add_design_var('tune_rosco_ivc.flp_kp_norm', 
-                                    lower=control_opt['servo']['flap_control']['flp_kp_norm']['min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.flp_kp_norm',
+                                    lower=control_opt['servo']['flap_control']['flp_kp_norm']['min'],
                                     upper=control_opt['servo']['flap_control']['flp_kp_norm']['max'])
             if control_opt['servo']['flap_control']['flp_tau']['flag']:
-                wt_opt.model.add_design_var('tune_rosco_ivc.flp_tau', 
-                                    lower=control_opt['servo']['flap_control']['flp_tau']['min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.flp_tau',
+                                    lower=control_opt['servo']['flap_control']['flp_tau']['min'],
                                     upper=control_opt['servo']['flap_control']['flp_tau']['max'])
 
-        if control_opt['ps_percent']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.ps_percent', lower=control_opt['ps_percent']['lower_bound'],
-                                                            upper=control_opt['ps_percent']['upper_bound'])
-
-        if control_opt['servo']['pitch_control']['Kp_float']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.Kp_float', lower=control_opt['servo']['pitch_control']['Kp_float']['min'], 
-                                                           upper=control_opt['servo']['pitch_control']['Kp_float']['max'])
-
-        if control_opt['servo']['pitch_control']['ptfm_freq']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.ptfm_freq', lower=control_opt['servo']['pitch_control']['ptfm_freq']['min'], 
-                                                           upper=control_opt['servo']['pitch_control']['ptfm_freq']['max'])
 
         if self.opt['design_variables']['TMDs']['flag']:
             TMD_opt = self.opt['design_variables']['TMDs']
@@ -132,13 +203,13 @@ class PoseOptimizationWEIS(PoseOptimization):
             for i_group, tmd_group in enumerate(TMD_opt['groups']):
                 if 'mass' in tmd_group:
                     wt_opt.model.add_design_var(
-                        f'TMDs.TMD_IVCs.group_{i_group}_mass', 
+                        f'TMDs.TMD_IVCs.group_{i_group}_mass',
                         lower=tmd_group['mass']['lower_bound'],
                         upper=tmd_group['mass']['upper_bound'],
                         )
                 if 'stiffness' in tmd_group:
                     wt_opt.model.add_design_var(
-                        f'TMDs.TMD_IVCs.group_{i_group}_stiffness', 
+                        f'TMDs.TMD_IVCs.group_{i_group}_stiffness',
                         lower=tmd_group['stiffness']['lower_bound'],
                         upper=tmd_group['stiffness']['upper_bound']
                         )
@@ -146,7 +217,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                         raise Exception("natural_frequency and stiffness can not be design variables in the same group")
                 if 'damping' in tmd_group:
                     wt_opt.model.add_design_var(
-                        f'TMDs.TMD_IVCs.group_{i_group}_damping', 
+                        f'TMDs.TMD_IVCs.group_{i_group}_damping',
                         lower=tmd_group['damping']['lower_bound'],
                         upper=tmd_group['damping']['upper_bound']
                         )
@@ -154,20 +225,20 @@ class PoseOptimizationWEIS(PoseOptimization):
                         raise Exception("damping_ratio and damping can not be design variables in the same group")
                 if 'natural_frequency' in tmd_group:
                     wt_opt.model.add_design_var(
-                        f'TMDs.TMD_IVCs.group_{i_group}_natural_frequency', 
+                        f'TMDs.TMD_IVCs.group_{i_group}_natural_frequency',
                         lower=tmd_group['natural_frequency']['lower_bound'],
                         upper=tmd_group['natural_frequency']['upper_bound']
                         )
                 if 'damping_ratio' in tmd_group:
                     wt_opt.model.add_design_var(
-                        f'TMDs.TMD_IVCs.group_{i_group}_damping_ratio', 
+                        f'TMDs.TMD_IVCs.group_{i_group}_damping_ratio',
                         lower=tmd_group['damping_ratio']['lower_bound'],
                         upper=tmd_group['damping_ratio']['upper_bound']
                         )
-        
+
         return wt_opt
 
-    
+
     def set_constraints(self, wt_opt):
         super(PoseOptimizationWEIS, self).set_constraints(wt_opt)
 
@@ -180,7 +251,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
-                
+
             if len(blade_opt["structure"]) > 0:
                 wt_opt.model.add_constraint('tcons_post.tip_deflection_ratio', upper=1.0)
             else:
@@ -194,11 +265,11 @@ class PoseOptimizationWEIS(PoseOptimization):
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
             indices_strains_spar_cap_ss = range(
-                blade_constr["strains_spar_cap_ss"]["index_start"], 
+                blade_constr["strains_spar_cap_ss"]["index_start"],
                 blade_constr["strains_spar_cap_ss"]["index_end"]
             )
-            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar", 
-                                        indices = indices_strains_spar_cap_ss, 
+            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar",
+                                        indices = indices_strains_spar_cap_ss,
                                         upper=1.0
             )
 
@@ -210,17 +281,17 @@ class PoseOptimizationWEIS(PoseOptimization):
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
             indices_strains_spar_cap_ps = range(
-                blade_constr["strains_spar_cap_ps"]["index_start"], 
+                blade_constr["strains_spar_cap_ps"]["index_start"],
                 blade_constr["strains_spar_cap_ps"]["index_end"]
             )
-            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", 
+            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar",
                                         indices = indices_strains_spar_cap_ps,
                                         upper=1.0
             )
 
         ### CONTROL CONSTRAINTS
         control_constraints = self.opt['constraints']['control']
-        
+
         # Flap control
         if control_constraints['flap_control']['flag']:
             if self.modeling['OpenFAST']['flag'] != True:
@@ -228,10 +299,10 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2',
                 lower = control_constraints['flap_control']['min'],
-                upper = control_constraints['flap_control']['max'])    
-        
+                upper = control_constraints['flap_control']['max'])
+
         # Rotor overspeed
         if control_constraints['rotor_overspeed']['flag']:
             if not any(self.level_flags):
@@ -239,28 +310,29 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_constraint(f'{self.floating_solve_component}.rotor_overspeed',
                 lower = control_constraints['rotor_overspeed']['min'],
                 upper = control_constraints['rotor_overspeed']['max'])
-        
+
         # Add PI gains if overspeed is merit_figure or constraint
-        if control_constraints['rotor_overspeed']['flag'] or 'rotor_overspeed' in self.opt['merit_figure']:
+        if (control_constraints['rotor_overspeed']['flag'] or 'rotor_overspeed' in self.opt['merit_figure']) \
+            and self.modeling['ROSCO']['flag']:
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
                 upper = 0.0)
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 
-                upper = 0.0)  
-        
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki',
+                upper = 0.0)
+
         # Nacelle Accelleration magnitude
         if control_constraints['nacelle_acceleration']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize with nacelle_acceleration constraint.')
             wt_opt.model.add_constraint(f'{self.floating_solve_component}.max_nac_accel',
                     upper = control_constraints['nacelle_acceleration']['max'])
-        
+
         # Max platform pitch
         if control_constraints['Max_PtfmPitch']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint(f'{self.floating_solve_component}.Max_PtfmPitch',
                 upper = control_constraints['Max_PtfmPitch']['max'])
-        
+
         # Platform pitch motion
         if control_constraints['Std_PtfmPitch']['flag']:
             if not any(self.level_flags):
@@ -270,14 +342,14 @@ class PoseOptimizationWEIS(PoseOptimization):
         if control_constraints['Max_TwrBsMyt']['flag']:
             if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
-            wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio', 
+            wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio',
                 upper = 1.0)
         if control_constraints['DEL_TwrBsMyt']['flag']:
             if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
-            wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio', 
+            wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio',
                 upper = 1.0)
-            
+
         # Blade pitch travel
         if control_constraints['avg_pitch_travel']['flag']:
             if self.modeling['OpenFAST']['flag'] != True:
@@ -306,7 +378,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 f'{self.floating_solve_component}.Max_Offset',
                 upper = self.opt['constraints']['floating']['Max_Offset']['max']
                 )
-                
+
         # Tower constraints
         tower_opt = self.opt["design_variables"]["tower"]
         tower_constr = self.opt["constraints"]["tower"]
@@ -317,9 +389,9 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
-                
+
             wt_opt.model.add_constraint("towerse_post.constr_global_buckling", upper=1.0)
-        
+
         if tower_constr["shell_buckling"]["flag"] and self.modeling['OpenFAST']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_shell_buckling'
@@ -327,9 +399,9 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
-                
+
             wt_opt.model.add_constraint("towerse_post.constr_shell_buckling", upper=1.0)
-        
+
         if tower_constr["stress"]["flag"] and self.modeling['OpenFAST']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_stress'
@@ -337,7 +409,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
-                
+
             wt_opt.model.add_constraint("towerse_post.constr_stress", upper=1.0)
 
         # Damage constraints

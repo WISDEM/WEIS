@@ -102,6 +102,9 @@ class NSGA2:
         self.N_population, self.N_DV = design_vars_init.shape  # extract sizes
         self.design_vars_population = design_vars_init.copy()  # hold on to a copy
 
+        # broadcast the initial population to all MPI ranks
+        if self.comm_mpi is not None: self.design_vars_population = self.comm_mpi.bcast(self.design_vars_population, root=0)
+
         # set up the counts
         self.N_obj = N_obj
         self.N_constr = N_constr
@@ -133,12 +136,13 @@ class NSGA2:
         if rng_seed is not None:
             self.rng_seed = rng_seed
         self._rng_seed_generator = np.random.default_rng(self.rng_seed)
+        if self.comm_mpi is not None: self._rng_seed_generator = self.comm_mpi.bcast(self._rng_seed_generator, root=0)
 
     def next_seed(self):
         """
         Returns repeatable pseudo-random integers to use as seed using the class RNG
         """
-        return self._rng_seed_generator.integers(1000000)
+        return self._rng_seed_generator.integers(100000000)
 
     def update_feasibility(self):
         """
@@ -241,10 +245,10 @@ class NSGA2:
                 print(f"DEBUG!!!!! model_mpi IS {'' if self.model_mpi is None else 'NOT '}NONE")
                 print(f"DEBUG!!!!! ON RANK: {rank} OF {size}, ran {len(local_results_obj)} cases")
 
-                # gather all results at root
-                gathered_results_obj = comm.gather(local_results_obj, root=0)
+                # allgather all results
+                gathered_results_obj = comm.allgather(local_results_obj)
                 if self.N_constr:
-                    gathered_results_constr = comm.gather(local_results_constr, root=0)
+                    gathered_results_constr = comm.allgather(local_results_constr)
 
                 # flatten the gathered results on rank 0
                 if rank == 0:
@@ -670,6 +674,8 @@ class NSGA2:
         idx_fronts_new = []
         design_vars_fronts_new = []
         objs_fronts_new = []
+        if self.N_constr:
+            constrs_fronts_new = []
 
         front_accumulation = 0
         for idx_f, argsort_Df in enumerate(idx_argsort_D):  # loop over the fronts
@@ -678,6 +684,8 @@ class NSGA2:
             front_accumulation += len(argsort_Df)
             design_vars_fronts_new.append(design_vars_fronts[idx_f][argsort_Df, :])
             objs_fronts_new.append(objs_fronts[idx_f][argsort_Df, :])
+            if self.N_constr:
+                constrs_fronts_new.append(constrs_fronts[idx_f][argsort_Df, :])
 
         # store all the results
         self.design_vars_population = np.vstack(design_vars_fronts_new)
@@ -685,6 +693,18 @@ class NSGA2:
         self.idx_fronts = idx_fronts_new
         self.design_vars_fronts = design_vars_fronts_new
         self.objs_fronts = objs_fronts_new
+        if self.N_constr:
+            self.constrs_fronts = constrs_fronts_new
+
+        # broadcast all the results
+        if self.comm_mpi is not None:
+            self.design_vars_population = self.comm_mpi.bcast(self.design_vars_population, root=0)
+            self.objs_population = self.comm_mpi.bcast(self.objs_population, root=0)
+            self.idx_fronts = self.comm_mpi.bcast(self.idx_fronts, root=0)
+            self.design_vars_fronts = self.comm_mpi.bcast(self.design_vars_fronts, root=0)
+            self.objs_fronts = self.comm_mpi.bcast(self.objs_fronts, root=0)
+            if self.N_constr:
+                self.constrs_fronts = self.comm_mpi.bcast(self.constrs_fronts, root=0)
 
         # sanity check the re-sorting
         if not np.allclose(self.design_vars_population.shape, np.array([self.N_population, self.N_DV])):
@@ -771,6 +791,14 @@ class NSGA2:
         assert len(design_vars_proposal) == self.N_population
         changed = np.logical_or(changed, changed_mutation)
 
+        # check if DVs are violating the bounds
+        if np.any(design_vars_proposal < design_vars_l) or np.any(design_vars_proposal > design_vars_u):
+            raise ValueError(
+                "Proposed design variables violate the bounds. "
+                f"Lower bounds: {design_vars_l}, Upper bounds: {design_vars_u}, "
+                f"Proposed: {design_vars_proposal}"
+            )
+
         # update the objectives that have changed
         self.update_data_external(
             design_vars_proposal,
@@ -793,63 +821,77 @@ class NSGA2:
             self.objs_population,
             self.constrs_population,
         )
+
+        # run on root
+        print("PROPOSING NEW GENERATION...", end="", flush=True)
         rv = self.propose_new_generation()
-        design_vars_next = rv[0]
-        objs_next = rv[1]
-        changed_next = rv[2]
-        if self.N_constr:
-            constrs_next = rv[3]
 
-        # combine the populations and compute the fronts
-        design_vars_combo = np.vstack([design_vars_prev, design_vars_next])
-        objs_combo = np.vstack([objs_prev, objs_next])
-        changed_combo = np.hstack([self.needs_recompute, changed_next])
-        if self.N_constr:
-            constrs_combo = np.vstack([constrs_prev, constrs_next])
+        if self.comm_mpi and self.comm_mpi.Get_rank() == 0:
 
-        # compute the fronts of the combined dataset
-        rv = self.get_fronts_external(
-            design_vars_combo,
-            objs_combo,
-            changed_combo,
-            constrs_in=constrs_combo if self.N_constr else None,
-            compute_constrs=True if self.N_constr else False,
-            feasibility_dominates=self.feasibility_dominates,
-        )
-        idx_fronts = rv[0]
-        design_vars_fronts = rv[1]
-        objs_fronts = rv[2]
-        if self.N_constr:
-            constrs_fronts = rv[3]
-        R_fronts = self.get_rank_data(objs_fronts, local=True)
+            design_vars_next = rv[0]
+            objs_next = rv[1]
+            changed_next = rv[2]
+            if self.N_constr:
+                constrs_next = rv[3]
 
-        # new data
-        self.design_vars_population = []
-        self.objs_population = []
-        self.constrs_population = []
-        self.idx_fronts = []
+            # combine the populations and compute the fronts
+            design_vars_combo = np.vstack([design_vars_prev, design_vars_next])
+            objs_combo = np.vstack([objs_prev, objs_next])
+            changed_combo = np.hstack([self.needs_recompute, changed_next])
+            if self.N_constr:
+                constrs_combo = np.vstack([constrs_prev, constrs_next])
 
-        idx_counter = 0  # count how many we get in there
-        for idx_f, f in enumerate(R_fronts):
-            if idx_counter >= self.N_population:
-                break
-            self.idx_fronts.append([])  # add a new front to the map
-            for idx_v in f:  # for each index in the front
+            # compute the fronts of the combined dataset
+            rv = self.get_fronts_external(
+                design_vars_combo,
+                objs_combo,
+                changed_combo,
+                constrs_in=constrs_combo if self.N_constr else None,
+                compute_constrs=True if self.N_constr else False,
+                feasibility_dominates=self.feasibility_dominates,
+            )
+            idx_fronts = rv[0]
+            design_vars_fronts = rv[1]
+            objs_fronts = rv[2]
+            if self.N_constr:
+                constrs_fronts = rv[3]
+            R_fronts = self.get_rank_data(objs_fronts, local=True)
+
+            # new data
+            self.design_vars_population = []
+            self.objs_population = []
+            self.constrs_population = []
+            self.idx_fronts = []
+
+            idx_counter = 0  # count how many we get in there
+            for idx_f, f in enumerate(R_fronts):
                 if idx_counter >= self.N_population:
                     break
-                self.design_vars_population.append(design_vars_fronts[idx_f][idx_v])  # add to the re-sort
-                self.objs_population.append(objs_fronts[idx_f][idx_v])  # add to the re-sort
-                if self.N_constr:
-                    self.constrs_population.append(constrs_fronts[idx_f][idx_v])  # add to the re-sort
-                self.idx_fronts[idx_f].append(idx_counter)  # put the new index in the map
-                idx_counter += 1  # increment counter
+                self.idx_fronts.append([])  # add a new front to the map
+                for idx_v in f:  # for each index in the front
+                    if idx_counter >= self.N_population:
+                        break
+                    self.design_vars_population.append(design_vars_fronts[idx_f][idx_v])  # add to the re-sort
+                    self.objs_population.append(objs_fronts[idx_f][idx_v])  # add to the re-sort
+                    if self.N_constr:
+                        self.constrs_population.append(constrs_fronts[idx_f][idx_v])  # add to the re-sort
+                    self.idx_fronts[idx_f].append(idx_counter)  # put the new index in the map
+                    idx_counter += 1  # increment counter
 
-        if len(self.design_vars_population) != self.N_population:
-            raise ValueError(
-                f"Population size mismatch: expected {self.N_population}, got {len(self.design_vars_population)}"
-            )
+            if len(self.design_vars_population) != self.N_population:
+                raise ValueError(
+                    f"Population size mismatch: expected {self.N_population}, got {len(self.design_vars_population)}"
+                )
 
-        self.design_vars_population = np.array(self.design_vars_population)
-        self.objs_population = np.array(self.objs_population)
-        if self.N_constr:
-            self.constrs_population = np.array(self.constrs_population)
+            self.design_vars_population = np.array(self.design_vars_population)
+            self.objs_population = np.array(self.objs_population)
+            if self.N_constr:
+                self.constrs_population = np.array(self.constrs_population)
+
+        if self.comm_mpi:
+            # broadcast the new populations to all ranks
+            self.design_vars_population = self.comm_mpi.bcast(self.design_vars_population, root=0)
+            self.objs_population = self.comm_mpi.bcast(self.objs_population, root=0)
+            if self.N_constr:
+                self.constrs_population = self.comm_mpi.bcast(self.constrs_population, root=0)
+            self.idx_fronts = self.comm_mpi.bcast(self.idx_fronts, root=0)

@@ -24,12 +24,6 @@ class Outputs_2_Screen(om.ExplicitComponent):
             n_PC = 1
         else:
             n_PC = len(modeling_options['ROSCO']['U_pc'])
-        self.add_input('omega_pc',      val=np.zeros(n_PC), units = 'rad/s')
-        self.add_input('zeta_pc',       val=np.zeros(n_PC))
-        self.add_input('Kp_float',      val=0.0, units = 's')
-        self.add_input('ptfm_freq',     val=0.0, units = 'rad/s')
-        self.add_input('omega_vs',      val=0.0, units='rad/s')
-        self.add_input('zeta_vs',       val=0.0)
         self.add_input('flp_kp_norm',   val=0.0)
         self.add_input('flp_tau',       val=0.0, units='s')
         self.add_input('IPC_Kp1p',      val=0.0, units='s')
@@ -51,33 +45,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
         
         # OpenFAST simulation summary
         if self.options['modeling_options']['OpenFAST']['flag']: 
-            # Print optimization variables
+            # Print optimization variables  TODO: automate?
             
-            # Pitch control params
-            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
-                print('Pitch PI gain inputs: omega_pc[0] = {:2.3f}, zeta_pc[0] = {:2.3f}'.format(inputs['omega_pc'][0], inputs['zeta_pc'][0]))
-            
-            # Torque control params
-            if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
-                print('Torque PI gain inputs: omega_vs = {:2.3f}, zeta_vs = {:2.3f}'.format(inputs['omega_vs'][0], inputs['zeta_vs'][0]))
-            
-            # Floating feedback
-            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag'] :
-                print('Floating Feedback: Kp_float = {:2.3f}, ptfm_freq = {:2.3f}'.format(inputs['Kp_float'][0], inputs['ptfm_freq'][0]))
-            
-            # Flap control
-            if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag']:
-                print('Flap PI gain inputs: flp_kp_norm = {:2.3f}, flp_tau = {:2.3f}'.format(inputs['flp_kp_norm'][0], inputs['flp_tau'][0]))
-            
-            # IPC
-            if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Kp']:
-                print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Kp1p'][0]))
-            if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Ki']:
-                print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
-           
-            # Flaps
-            if self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['flag']:
-                print('Trailing-edge flap end = {:2.3f}%'.format(inputs['te_flap_end'][0]*100.))
+
             # Print merit figure
             if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
                 print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))

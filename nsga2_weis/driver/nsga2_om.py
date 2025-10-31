@@ -1,5 +1,8 @@
 import os
 import copy
+from pprint import pprint
+from openfast_io.FileTools     import save_yaml
+from wisdem.inputs.validation         import simple_types
 
 import numpy as np
 
@@ -66,11 +69,11 @@ class NSGA2Driver(Driver):
         self.supports["optimization"] = True
         self.supports["inequality_constraints"] = True
         self.supports["multiple_objectives"] = True
+        self.supports["two_sided_constraints"] = True
 
         # what we don't support yet
         self.supports["integer_design_vars"] = False  # TODO: implement
         self.supports["equality_constraints"] = False
-        self.supports["two_sided_constraints"] = False
         self.supports["linear_constraints"] = False
         self.supports["simultaneous_derivatives"] = False
         self.supports["active_set"] = False
@@ -389,28 +392,63 @@ class NSGA2Driver(Driver):
         )
         self.optimizer_nsga2.get_fronts()  # evaluate the initial fronts
 
+        # get the debug output file for the openmdao nsga2 driver
+        nsga2_output_dir = model.get_outputs_dir()
+        nsga2_debug_collection = dict()
+
+        rv = self.optimizer_nsga2.get_fronts(
+            compute_constrs=True,
+            feasibility_dominates=True,
+        )
+        nsga2_debug_collection[-1]= {
+            "generation": -1,
+            "design_vars_fronts": rv[1],
+            "objs_fronts": rv[2],
+            "constrs_fronts": rv[3],
+        }
+        # create a yaml file at the path
+        save_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+
         # iterate over the specified generations
         for generation in range(max_gen + 1):
             # iterate the population
+            print(f"\n\n\nDEBUG!!!!! NSGA2 OM DRIVER STARTING GENERATION {generation}\n\n\n")
             self.optimizer_nsga2.iterate_population()
+
+            rv = self.optimizer_nsga2.get_fronts(
+                compute_constrs=True,
+                feasibility_dominates=True,
+            )
+            nsga2_debug_collection[generation] = {
+                "generation": generation,
+                "design_vars_fronts": rv[1],
+                "objs_fronts": rv[2],
+                "constrs_fronts": rv[3],
+            }
+            # create a yaml file at the path
+            save_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+
+        print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
 
         if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2
             # save the non-dominated points
             self.optimizer_nsga2.sort_data()  # re-sort the data
 
             # get the fronts and save the first for the driver
-            rv = self.optimizer_nsga2.get_fronts(compute_constrs=False)
+            rv = self.optimizer_nsga2.get_fronts(compute_constrs=True, feasibility_dominates=True)
             design_vars_fronts = rv[1]
             objs_fronts = rv[2]
+            constrs_fronts = rv[3]
             self.desvar_nd = copy.deepcopy(design_vars_fronts[0])
+            self.constr_nd = copy.deepcopy(constrs_fronts[0])
             self.obj_nd = copy.deepcopy(objs_fronts[0])
 
             # get the median entry to for the point estimate
             median_idx = len(design_vars_fronts[0]) // 2
             desvar_new = design_vars_fronts[0][median_idx, :]
-            obj_new = objs_fronts[0][median_idx, :]
+            # obj_new = objs_fronts[0][median_idx, :]
             for name in desvars:
-                i, j in self._desvar_idx[name]
+                i, j = self._desvar_idx[name]
                 val = desvar_new[i:j]
                 self.set_design_var(name, val)
             # run the nonlinear solve with debugging stdio capture
@@ -455,9 +493,15 @@ class NSGA2Driver(Driver):
                 break
 
         # set the DVs
+        out_of_bounds = False
         for name in self._designvars:
             i, j = self._desvar_idx[name]
             self.set_design_var(name, x[i:j])
+
+            # Check that design variables are within bounds
+            if not (self._designvars[name]["lower"] <= x[i:j]).all() or not (x[i:j] <= self._designvars[name]["upper"]).all():
+                out_of_bounds = True
+                break
 
         # a very large number, but smaller than the result of nan_to_num in Numpy
         almost_inf = INF_BOUND
@@ -465,16 +509,23 @@ class NSGA2Driver(Driver):
         # execute the model under a debugger
         with RecordingDebugging(self._get_name(), self.iter_count, self) as rec:
             self.iter_count += 1
-            try:
-                self._run_solve_nonlinear()
-            except AnalysisError:
-                # tell the optimizer that this is a bad point
-                model._clear_iprint()
-                success = 0
 
-            # get the objective values
-            obj_values = self.get_objective_values()
-            constr_values = self.get_constraint_values()
+            if not out_of_bounds:
+                try:
+                    self._run_solve_nonlinear()
+                except AnalysisError:
+                    # tell the optimizer that this is a bad point
+                    model._clear_iprint()
+                    success = 0
+
+                # get the objective values
+                obj_values = self.get_objective_values()
+                constr_values_raw = self.get_constraint_values()
+            else:
+                # if out of bounds, set the objective to a very large number and skip
+                obj_values = {name: np.inf for name in self._objs}
+                constr_values_raw = self.get_constraint_values()  # get the constraint values, which should be all zeros, but since fitness is inf, it hopefully doesn't matter
+
             if is_single_objective:  # single objective optimization
                 for i in obj_values.values():
                     obj = i  # first and only key in the dict
@@ -486,7 +537,21 @@ class NSGA2Driver(Driver):
                 for name, val in obj_values.items():
                     obj.append(val)
                 obj = np.array(obj)
-            constr = np.atleast_1d(np.array([val for val in constr_values.values()]).squeeze())
+
+            constr_adjusted = []  # convert all bounds to leq zero
+            for name, meta in self._cons.items():
+                # print(f"DEBUG!!!!! lower: {meta['lower']} upper: {meta['upper']} INF_BOUND: {INF_BOUND}")
+                if (meta["lower"] <= -INF_BOUND/10) and (meta["upper"] <= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
+                elif (meta["lower"] >= -INF_BOUND/10) and (meta["upper"] >= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
+                elif (meta["lower"] >= -INF_BOUND/10) and (meta["upper"] <= INF_BOUND/10):  # within an order of magnitude of the inf bound
+                    # add as sequential one-sided constraints
+                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
+                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
+                else:
+                    raise ValueError(f"you've attempted to constraint {name} between numerically infinite values in both directions: \n{meta}")
+            constr = np.hstack(constr_adjusted)
 
         if self.options["penalty_parameter"] != 0:
             raise NotImplementedError("penalty-driven constraints not implemented.")
