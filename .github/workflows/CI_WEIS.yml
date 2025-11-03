@@ -49,7 +49,8 @@ jobs:
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y m2-pkg-config libpython
+          conda install -y gfortran libpython
+          pip install --no-deps control
       
       - name: windio2 branches of other codes
         run: |
