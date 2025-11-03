@@ -2072,6 +2072,7 @@ class FASTLoadCases(ExplicitComponent):
                 if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
                     dlc_generator.cases[i_case].IECturbc = str(dlc_generator.cases[i_case].IECturbc)
                     dlc_generator.cases[i_case].IEC_WindType = 'NTM'        # must use NTM for custom TI
+                    dlc_generator.cases[i_case].ScaleIEC = 1   # Ensures that the specified TI is used
                 else:
                     dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
