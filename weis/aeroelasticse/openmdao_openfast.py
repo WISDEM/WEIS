@@ -2092,7 +2092,7 @@ class FASTLoadCases(ExplicitComponent):
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                     dlc_generator.cases[i_case].PLExp = PLExp
                 # Length of wind grids
-                dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].total_time
+                dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time    # If UsableTime = All, TurbSim output will be periodic, and any AnalysisTime period of TurbSim input will have correct mean/TI
 
         # Generate wind files
         if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
