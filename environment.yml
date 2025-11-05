@@ -23,6 +23,7 @@ dependencies:
   - rosco>=2.10.1
   - wisdem>=4.0.0
   - pip:
+    - control
     - dash-bootstrap-components
     - dash-mantine-components
     - dash-vtk
