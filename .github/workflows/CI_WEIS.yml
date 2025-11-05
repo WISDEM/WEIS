@@ -39,6 +39,15 @@ jobs:
       #  if: contains( matrix.os, 'windows')
       #  run: |
       #    conda install -y -c intel intel-openmp mkl
+
+      # Delete the next entry once WISDEM and RAFT have releases with windio2 branches
+      
+      - name: windio2 branches of other codes
+        run: |
+          conda remove --force openraft
+          pip install https://github.com/dzalkind/RAFT/tree/omdao_update.zip
+          
+      # Don't delete after this
       
       - name: Add dependencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
