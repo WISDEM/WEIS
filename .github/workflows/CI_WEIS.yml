@@ -45,7 +45,7 @@ jobs:
       - name: windio2 branches of other codes
         run: |
           conda remove --force openraft
-          pip install https://github.com/dzalkind/RAFT/tree/omdao_update.zip
+          pip install https://github.com/dzalkind/RAFT/archive/omdao_update.zip
           
       # Don't delete after this
       
