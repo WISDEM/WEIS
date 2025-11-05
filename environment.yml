@@ -21,7 +21,7 @@ dependencies:
   - pyhams>=1.3
   #- pyoptsparse
   - rosco>=2.10.1
-  - wisdem #>=4.0.0
+  - wisdem>=4.0.0
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
