@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "weis"
-version = "1.6"
+version = "2.0"
 description = 'Wind Energy with Integrated Servo-control'
 readme = "README.md"
 requires-python = ">=3.9"
@@ -37,6 +37,8 @@ classifiers = [  # Optional
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
 ]
 
@@ -151,7 +153,7 @@ atomic = true
 #src_paths=isort,test
 
 [tool.coverage.run]
-source = ["weis"]
+source = ["weis", "nsga2_weis/src"]
 omit = ["weis/test/*", "*schema2rst.py"]
 
 #[tool.cibuildwheel]

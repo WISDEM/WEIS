@@ -531,6 +531,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         wind_file_path_InflowWind = os.path.join("wind", turbsim_input_file_name[:-3] + '.bts')
         turbsim_input_file_path = os.path.join(wind_directory, turbsim_input_file_name)
         wind_file_name = turbsim_input_file_path[:-3] + '.bts'
+        wind_file_plexp = dlc_generator.cases[i_case].PLExp
 
         runTS = True
         if os.path.exists(wind_file_name) and os.path.exists(turbsim_input_file_path):
@@ -568,6 +569,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             dlc_generator.cases[i_case].IEC_WindType = actualwindtype
 
     if not dlc_generator.cases[i_case].turbulent_wind or dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
+        wind_file_plexp = dlc_generator.cases[i_case].PLExp_windtype1
         if dlc_generator.cases[i_case].IEC_WindType.split('-')[-1] in ('NWP','Steady'):
             wind_file_type = 1
             wind_file_path_InflowWind = 'unused'
@@ -596,5 +598,5 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
                 wind_file_type = 3
             else:
                 wind_file_type = 2
-    wind_file_plexp = dlc_generator.cases[i_case].PLExp_windtype1
+
     return wind_file_type, wind_file_plexp, wind_file_path_InflowWind

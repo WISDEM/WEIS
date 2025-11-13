@@ -197,16 +197,15 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
 
         table = dbc.Table(table_header + table_body, bordered=True)
     
-    elif gtype == 'nacelle':
+    elif gtype == 'drivetrain':
         multiindex_df = {}
-        for field in ['drivetrain', 'generator']:
+        for field in ['outer_shape', 'generator']:
             data = [wt_options_by_names[gname]['components'][gtype][field] if field in wt_options_by_names[gname]['components'][gtype] else {} for gname in geom_3d_names]
             columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list) and not isinstance(value, dict)).keys())
 
             for c in columns:
                 multiindex_df[(field, c)] = {geom_3d_names[idx] : (html.Code(dictionary[c], style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'}) if c in dictionary else html.Code("-", style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})) for idx, dictionary in enumerate(data)}
 
-        
         df = pd.DataFrame(multiindex_df)
         df.index.set_names("Label", inplace=True)
         # TODO: Freeze first column with fixed_columns={'headers': True, 'data': 1} => Doesn't work..
@@ -216,6 +215,8 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
         # TODO: How and What to visualize for substructure tables?
         table = dbc.Table(children=[])      # Return blank table for now..
 
+    else:
+        breakpoint()
     return table
 
 
