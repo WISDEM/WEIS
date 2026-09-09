@@ -102,6 +102,9 @@ class Schema2RST(object):
         for k in rv.keys():
             print(k)
             try:
+                if isinstance(rv[k].get('type'), list):
+                    # union types (e.g. [number, array]) document as their array form
+                    rv[k] = dict(rv[k], type='array' if 'array' in rv[k]['type'] else rv[k]['type'][0])
                 if 'type' in rv[k]:
                     if rv[k]['type'] == 'object' and 'properties' in rv[k].keys():
                         k_desc = None if not 'description' in rv[k] else rv[k]['description']

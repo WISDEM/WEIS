@@ -243,9 +243,9 @@ class TestMHKDLCGenerator(unittest.TestCase):
             self.assertEqual(c.label, 'AEP')
             # IECturbc should be TI percentage (> 0)
             self.assertGreater(c.IECturbc, 0)
-            # TI at 1.0 m/s should be ~10% → IECturbc ~10
+            # TI at 1.0 m/s is 0.75 (default AEP scale) x the 10% NTM value
             if abs(c.URef - 1.0) < 0.01:
-                self.assertAlmostEqual(c.IECturbc, 10.0, places=0)
+                self.assertAlmostEqual(c.IECturbc, 7.5, places=0)
 
     def test_aep_constant_ti(self):
         _, cases = self._generate_single_dlc('AEP', {'TI': 15.0})
@@ -256,15 +256,28 @@ class TestMHKDLCGenerator(unittest.TestCase):
 
     def test_ti_and_ustar_on_all_turbulent_dlcs(self):
         for dlc in ['1.1', '1.2', '1.3', '7.1', 'AEP']:
-            _, cases = self._generate_single_dlc(dlc)
+            gen, cases = self._generate_single_dlc(dlc)
             turb = [c for c in cases if c.turbulent_wind]
             self.assertGreater(len(turb), 0, msg=f'DLC {dlc} has no turbulent cases')
-            ETM = 'ETM' in turb[0].IEC_WindType
-            table = self.metocean['current_TI_ETM'] if ETM else self.metocean['current_TI_NTM']
+            if 'ETM' in turb[0].IEC_WindType:
+                table = gen.current_TI_ETM
+            elif dlc == 'AEP':
+                table = gen.current_TI_AEP
+            else:
+                table = gen.current_TI_NTM
             for c in turb:
                 TI = np.interp(c.URef, self.metocean['current_speed'], table)
                 self.assertAlmostEqual(c.IECturbc, TI * 100)
                 self.assertAlmostEqual(c.UStar, 1.2814 * TI * c.URef)
+
+    def test_scalar_ti_scales_ntm(self):
+        metocean = dict(self.metocean, current_TI_ETM=1.25, current_TI_AEP=0.75)
+        gen = MHKDLCGenerator(
+            ws_cut_in=self.cs_cut_in, ws_cut_out=self.cs_cut_out, ws_rated=self.cs_rated,
+            metocean=metocean, dlc_driver_options=self.dlc_driver_options,
+        )
+        np.testing.assert_allclose(gen.current_TI_ETM, 1.25 * np.array(self.metocean['current_TI_NTM']))
+        np.testing.assert_allclose(gen.current_TI_AEP, 0.75 * np.array(self.metocean['current_TI_NTM']))
 
     def test_etm_ti_exceeds_ntm(self):
         _, ntm = self._generate_single_dlc('1.1')

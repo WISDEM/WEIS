@@ -53,19 +53,33 @@ class MHKDLCGenerator(DLCGenerator):
         # Tidal turbines have no IEC turbulence class (A/B/C): TI is tabulated
         # against current_speed in the metocean inputs instead
         self.current_TI_NTM = np.array(metocean.get('current_TI_NTM') or metocean.get('current_TI') or [], dtype=float)
-        self.current_TI_ETM = np.array(metocean.get('current_TI_ETM') or [], dtype=float)
-        if self.current_TI_ETM.size == 0:
-            self.current_TI_ETM = self.current_TI_NTM
-        for name, table in [('current_TI_NTM', self.current_TI_NTM), ('current_TI_ETM', self.current_TI_ETM)]:
+        self.current_TI_ETM = self._TI_table(metocean.get('current_TI_ETM'), 1.25)
+        self.current_TI_AEP = self._TI_table(metocean.get('current_TI_AEP'), 0.75)
+        for name in ['current_TI_NTM', 'current_TI_ETM', 'current_TI_AEP']:
+            table = getattr(self, name)
             if table.size and table.size != len(self.metocean[self.flow_key]):
                 raise Exception(f'The vector of metocean conditions {name} in the modeling options must have the same length of the tabulated {self.flow_key}s')
+
+    def _TI_table(self, value, default_scale):
+        '''TI table from metocean input: a list is used as-is, a single number
+        (or nothing, using default_scale) scales the NTM table.'''
+        if value is None or np.size(value) == 0:
+            value = default_scale
+        if np.size(value) == 1:
+            return self.current_TI_NTM * float(np.ravel(value)[0])
+        return np.array(value, dtype=float)
 
     def generate_cases(self, generic_case_inputs, dlc_options):
         '''Generate cases, then set turbulence from the metocean TI tables (TECs have no turbulence class)'''
         n_before = len(self.cases)
         super().generate_cases(generic_case_inputs, dlc_options)
 
-        TI_table = self.current_TI_ETM if 'ETM' in dlc_options.get('IEC_WindType', '') else self.current_TI_NTM
+        if 'ETM' in dlc_options.get('IEC_WindType', ''):
+            TI_table = self.current_TI_ETM
+        elif dlc_options.get('label') == 'AEP':
+            TI_table = self.current_TI_AEP
+        else:
+            TI_table = self.current_TI_NTM
         for idlc in self.cases[n_before:]:
             if not idlc.turbulent_wind:
                 continue
