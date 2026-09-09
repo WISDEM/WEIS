@@ -239,6 +239,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             DLC_label_for_AEP = '1.1'
         dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
         self.modeling_options['DLC_driver']['n_ws_aep'] = len(np.unique(dlc_aep_ws))
+        # OpenFAST AEP is only used if the user explicitly set up the AEP DLC over multiple wind speeds, otherwise WISDEM's AEP is used
+        self.modeling_options['DLC_driver']['use_openfast_aep'] = (
+            DLC_label_for_AEP == 'AEP' and self.modeling_options['DLC_driver']['n_ws_aep'] > 1
+        )
 
         # TMD modeling
         self.modeling_options['flags']['TMDs'] = False

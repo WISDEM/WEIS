@@ -573,7 +573,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_output('pitch_std', val=np.zeros(self.n_ws_aep), units='deg', desc='standard deviation of pitch angles')
             self.add_output('Thrust', val=np.zeros(self.n_ws_aep), units='N', desc='rotor thrust')
             self.add_output('Thrust_std', val=np.zeros(self.n_ws_aep), units='N', desc='standard deviation of rotor thrust')
-            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations, only computed when multiple wind speeds are run, and only used for LCOE when the AEP DLC is set up')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -3318,8 +3318,11 @@ class FASTLoadCases(ExplicitComponent):
             return outputs
 
         if self.n_ws_aep > 0:
-            AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
-            outputs['AEP'] = AEP
+            if self.n_ws_aep > 1:
+                AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
+                outputs['AEP'] = AEP
+            else:
+                logger.warning('WARNING: OpenFAST is run at a single wind speed, AEP is not computed from OpenFAST. Set up the AEP DLC over multiple wind speeds to do so.')
 
             n_seeds_AEP = 0
             if len(idx_pwrcrv) > 0:
@@ -3330,9 +3333,6 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['V'] = dlc_generator.cases[0].URef
                 logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
 
-            if len(U) == 1:
-                logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
-                
             # Calculate AEP and Performance Data
             # Average across turbulent seeds for each wind speed
             def avg_seeds(vec):
