@@ -80,6 +80,10 @@ class MHKDLCGenerator(DLCGenerator):
                 )
             idlc.IECturbc = TI * 100
             # TurbSim's TIDAL/RIVER models are driven by UStar, not IECturbc
+            # Realized TI will not match this request exactly: short records lose
+            # low-frequency variance, and TurbSim's coherence factorization leaks
+            # variance upward across a height-varying spectrum. Use
+            # analysis_time >= 600 s. See docs/known_issues.rst.
             idlc.UStar = 1.2814 * TI * idlc.URef
 
     # ──────────────────────────────────────────────────────────────────────
