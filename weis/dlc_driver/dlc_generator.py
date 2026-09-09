@@ -73,9 +73,9 @@ openfast_input_map = {
     'SD_MaxPitchRate': ("DISCON_in", "SD_MaxPitchRate"),
     
     'shutdown_time': [
-        ("ServoDyn","TPitManS1"),
-        ("ServoDyn","TPitManS2"),
-        ("ServoDyn","TPitManS3"),
+        ("ServoDyn","TPitManS(1)"),
+        ("ServoDyn","TPitManS(2)"),
+        ("ServoDyn","TPitManS(3)"),
         ("ServoDyn","TimGenOf"),
         ],
 
@@ -85,9 +85,9 @@ openfast_input_map = {
         ("ServoDyn","BlPitchF(3)"),
         
     ],
-    'pitchfault_time1': ("ServoDyn","TPitManS1"),
-    'pitchfault_time2': ("ServoDyn","TPitManS2"),
-    'pitchfault_time3': ("ServoDyn","TPitManS3"),
+    'pitchfault_time1': ("ServoDyn","TPitManS(1)"),
+    'pitchfault_time2': ("ServoDyn","TPitManS(2)"),
+    'pitchfault_time3': ("ServoDyn","TPitManS(3)"),
     'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
     'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
     'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
@@ -217,6 +217,10 @@ class DLCGenerator(object):
 
         # Init openfast case list
         self.openfast_case_inputs = []
+        # Labels corresponding 1:1 with entries in openfast_case_inputs (some DLCs, e.g. 6.1a/6.1b,
+        # expand a single user-specified DLC into multiple case groups, so this can be longer than
+        # the user's DLC_driver->DLCs list)
+        self.openfast_case_inputs_labels = []
 
         # Save all metocean conditions
         self.metocean = metocean
@@ -605,6 +609,7 @@ class DLCGenerator(object):
 
         case_inputs_openfast = self.map_generic_to_openfast(generic_case_inputs, comb_options)
         self.openfast_case_inputs.append(case_inputs_openfast)
+        self.openfast_case_inputs_labels.append(dlc_options['label'])
         return generic_case_list
 
     def gen_met_options(self, dlc_options, sea_state='normal'):

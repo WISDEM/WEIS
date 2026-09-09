@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import copy
+import traceback
 import warnings
 import numpy as np
 
@@ -113,28 +114,40 @@ def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
                             analysis_override
                             )
 
-    # If running in parallel, pre-compute number of cores needed in this run
-    if MPI:
-        _, modeling_options, _ = run_weis(fname_wt_input,
-                                          fname_modeling_options, 
-                                          fname_analysis_options, 
-                                          geometry_override=geometry_override,
-                                          modeling_override=modeling_override,
-                                          analysis_override=analysis_override,
-                                          prepMPI=True, 
-                                          maxnP=maxnP)
+    try:
+        # If running in parallel, pre-compute number of cores needed in this run
+        if MPI:
+            _, modeling_options, _ = run_weis(fname_wt_input,
+                                              fname_modeling_options, 
+                                              fname_analysis_options, 
+                                              geometry_override=geometry_override,
+                                              modeling_override=modeling_override,
+                                              analysis_override=analysis_override,
+                                              prepMPI=True, 
+                                              maxnP=maxnP)
 
-        modeling_override = set_modopt_procs(modeling_options, modeling_override)
+            modeling_override = set_modopt_procs(modeling_options, modeling_override)
 
-    # Run WEIS for real now
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
-                                                     fname_modeling_options, 
-                                                     fname_analysis_options,
-                                                     geometry_override=geometry_override,
-                                                     modeling_override=modeling_override,
-                                                     analysis_override=analysis_override,
-                                                     prepMPI=False,
-                                                     maxnP=maxnP)
+        # Run WEIS for real now
+        wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
+                                                         fname_modeling_options, 
+                                                         fname_analysis_options,
+                                                         geometry_override=geometry_override,
+                                                         modeling_override=modeling_override,
+                                                         analysis_override=analysis_override,
+                                                         prepMPI=False,
+                                                         maxnP=maxnP)
+    except Exception:
+        # If a single MPI rank raises here, the other ranks can be left blocked
+        # in a collective call (e.g. during case dispatch) and hang until the
+        # scheduler kills the job at the walltime limit instead of failing
+        # fast. Only abort when we're actually a multi-rank MPI job -- a
+        # single-process caller (tests, notebooks, GUI) should see the
+        # exception propagate normally.
+        if MPI and MPI.COMM_WORLD.Get_size() > 1:
+            traceback.print_exc()
+            MPI.COMM_WORLD.Abort(1)
+        raise
 
     if MPI:
         rank = MPI.COMM_WORLD.Get_rank()

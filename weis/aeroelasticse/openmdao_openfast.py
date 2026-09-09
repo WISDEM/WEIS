@@ -2694,6 +2694,12 @@ class FASTLoadCases(ExplicitComponent):
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                     dlc_generator.cases[i_case].PLExp = PLExp
+                # Turbulence model: for MHK turbines default to the tidal-current
+                # model unless the user overrides TurbModel in a DLC's turbulent_wind
+                # block. 'IECKAI' is the schema default, so a value other than that
+                # means the user set it explicitly and we leave it alone.
+                if modopt['flags']['MHK'] and dlc_generator.cases[i_case].TurbModel == 'IECKAI':
+                    dlc_generator.cases[i_case].TurbModel = 'TIDAL'
                 # Length of wind grids
                 dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time    # If UsableTime = All, TurbSim output will be periodic, and any AnalysisTime period of TurbSim input will have correct mean/TI
 
@@ -2828,7 +2834,10 @@ class FASTLoadCases(ExplicitComponent):
         self.case_list = []
         for i_case, case_inputs in enumerate(dlc_generator.openfast_case_inputs):
             # Generate case list for DLC i
-            dlc_label = DLCs[i_case]['DLC']
+            # Note: use the per-group label recorded during generation rather than indexing into the
+            # user-specified DLCs list, since some DLCs (e.g. 6.1) expand into multiple case groups
+            # (6.1a, 6.1b, ...), so len(dlc_generator.openfast_case_inputs) can exceed len(DLCs).
+            dlc_label = dlc_generator.openfast_case_inputs_labels[i_case]
             case_list_i, case_name_i = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile, filename_ext=f'_DLC{dlc_label}_{i_case}')
             # Add DLC to case names
             case_name_i = [f'DLC{dlc_label}_{i_case}_{cni}' for cni in case_name_i]
