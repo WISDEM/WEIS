@@ -2622,20 +2622,51 @@ class FASTLoadCases(ExplicitComponent):
         self.TMax = np.zeros(dlc_generator.n_cases)
         self.TStart = np.zeros(dlc_generator.n_cases)
 
-        # For MHK turbines, hub_height is negative (below water surface).
-        # TurbSim/InflowWind reference heights from the seabed, so we convert:
-        #   - grid spans the full water depth (seabed to MSL and above) to cover
-        #     both the rotor and any Morison members with freeboard
-        #   - ref_height is the hub depth measured from the seabed
-        #   - hub_height (for TurbSim grid center) becomes the grid half-height
+        # For MHK turbines, hub_height is negative (below the water surface), but
+        # AeroDyn adds WtrDpth to node positions before querying InflowWind, so the
+        # wind grid is referenced from the seabed.
         if modopt['flags']['MHK']:
             water_depth = float(fst_vt['Fst']['WtrDpth'])
-            grid_height = 2. * water_depth - 1.e-3
-            ref_height = float(water_depth - np.abs(hub_height))
-            hub_height = grid_height / 2
+            hub_height = float(water_depth - np.abs(hub_height))
+            ref_height = hub_height
+
+            # AeroDyn queries inflow at every blade and tower node, and SeaState/
+            # HydroDyn pulls the current field from InflowWind for the Morison
+            # members and the requested wave-kinematics output points. That query
+            # happens before the submergence mask is applied, so out-of-water nodes
+            # count too. InflowWind is fatal outside the box (only below it falls
+            # back to tower points), so the grid has to span every one of those
+            # nodes. Model coordinates are MSL-relative, so shift them to the seabed.
+            node_z = [np.asarray(fst_vt['AeroDyn']['TwrElev'], dtype=float) + water_depth,
+                      np.array([hub_height - 0.5*rotorD, hub_height + 0.5*rotorD])]
+            node_y = [np.array([0.5*rotorD])]
+            if fst_vt['HydroDyn'].get('Jointzi') is not None:
+                node_z.append(np.asarray(fst_vt['HydroDyn']['Jointzi'], dtype=float) + water_depth)
+                node_y.append(np.abs(np.asarray(fst_vt['HydroDyn']['Jointyi'], dtype=float)))
+            if fst_vt['SeaState'].get('NWaveKin'):
+                node_z.append(np.asarray(fst_vt['SeaState']['WaveKinzi'], dtype=float) + water_depth)
+                node_y.append(np.abs(np.asarray(fst_vt['SeaState']['WaveKinyi'], dtype=float)))
+            node_z = np.concatenate(node_z)
+            node_y = np.concatenate(node_y)
+
+            # Square box: one side length covering both the vertical node span and
+            # the lateral one. Grid must stay above the seabed, but may extend above
+            # MSL to cover platform freeboard.
+            margin = 0.1 * rotorD
+            z_top = node_z.max() + margin
+            z_bot = max(node_z.min() - margin, 1.e-3)
+            grid_height = max(z_top - z_bot, 2.*(node_y.max() + margin))
+            grid_width = grid_height
+
+            # TurbSim centers the grid on HubHt (GridWidth >= GridHeight), so HubHt
+            # is the box center here, not the rotor hub. Keep the box off the seabed.
+            grid_center = max(0.5 * (z_top + z_bot), 0.5 * grid_height + 1.e-3)
             fst_vt['InflowWind']['WindVziList'] = [ref_height]
         else:
             ref_height = hub_height
+            grid_center = hub_height
+            grid_height = 2. * np.abs(hub_height) - 1.e-3
+            grid_width = 2. * hub_height - 1.e-3
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -2651,14 +2682,14 @@ class FASTLoadCases(ExplicitComponent):
                 if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
                     dlc_generator.cases[i_case].RefHt = ref_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
-                if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
+                if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use computed default if not set
+                    dlc_generator.cases[i_case].HubHt = np.abs(grid_center)
 
-                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridHeight =  2. * np.abs(hub_height) - 1.e-3
+                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use computed default if not set
+                    dlc_generator.cases[i_case].GridHeight = grid_height
 
-                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
+                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use computed default if not set
+                    dlc_generator.cases[i_case].GridWidth = grid_width
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
