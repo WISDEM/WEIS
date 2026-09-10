@@ -38,10 +38,13 @@ class Outputs_2_Screen(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         print('########################################')
         print('Objectives')
-        print('Turbine AEP: {:<8.10f} GWh'.format(inputs['aep'][0]))
-        print('Blade Mass:  {:<8.10f} kg'.format(inputs['blade_mass'][0]))
-        print('LCOE:        {:<8.10f} USD/MWh'.format(inputs['lcoe'][0]))
-        print('Tip Defl.:   {:<8.10f} m'.format(inputs['tip_deflection'][0]))
+        # ponytail: these inputs keep their 0.0 default when glue_code leaves them unconnected (from_openfast runs, no AEP DLC), so skip the line instead of printing a meaningless zero
+        for label, name, unit in [('Turbine AEP', 'aep', 'GWh'),
+                                  ('Blade Mass', 'blade_mass', 'kg'),
+                                  ('LCOE', 'lcoe', 'USD/MWh'),
+                                  ('Tip Defl.', 'tip_deflection', 'm')]:
+            if inputs[name][0] != 0.:
+                print('{:<13}{:<8.10f} {}'.format(label + ':', inputs[name][0], unit))
         
         # OpenFAST simulation summary
         if self.options['modeling_options']['OpenFAST']['flag']:          
