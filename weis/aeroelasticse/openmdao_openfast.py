@@ -3322,25 +3322,19 @@ class FASTLoadCases(ExplicitComponent):
                 AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
                 outputs['AEP'] = AEP
             else:
-                logger.warning('WARNING: OpenFAST is run at a single wind speed, AEP is not computed from OpenFAST. Set up the AEP DLC over multiple wind speeds to do so.')
+                logger.warning('WARNING: OpenFAST is run at a single wind speed, AEP is not computed from OpenFAST (power curve outputs are still reported). Set up the AEP DLC over multiple wind speeds to compute AEP.')
 
-            n_seeds_AEP = 0
-            if len(idx_pwrcrv) > 0:
-                sum_stats = sum_stats.iloc[idx_pwrcrv]
-                outputs['V'] = np.unique(U)
-                n_seeds_AEP = int(len(U) / len(np.unique(U)))
-            else:
-                outputs['V'] = dlc_generator.cases[0].URef
-                logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
+            # n_ws_aep counts the same cases as idx_pwrcrv, so it is non-empty here
+            sum_stats = sum_stats.iloc[idx_pwrcrv]
+            outputs['V'] = np.unique(U)
+            n_seeds_AEP = int(len(U) / len(np.unique(U)))
 
             # Calculate AEP and Performance Data
             # Average across turbulent seeds for each wind speed
             def avg_seeds(vec):
                 vec = np.asarray(vec)
-                if n_seeds_AEP > 1:
-                    return np.array([(vec[i] + vec[i+1]) / n_seeds_AEP for i in range(0, len(vec), n_seeds_AEP)])
-                else:
-                    return vec
+                return vec.reshape(-1, n_seeds_AEP).mean(axis=1)
+            
             outputs['Cp'] = avg_seeds(sum_stats['RtFldCp']['mean'])
             outputs['Ct'] = avg_seeds(sum_stats['RtFldCt']['mean'])
             outputs['Omega'] = avg_seeds(sum_stats['RotSpeed']['mean'])
